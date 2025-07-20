@@ -147,6 +147,7 @@ function resetForm(){
     $('#lineForm')[0].reset();
     $('#lineId').val('');
 }
+
 function fillModal(data){
     resetForm();
     $('#lineModalLabel').text('Edit Line');

@@ -118,13 +118,29 @@
         <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseStocks"
         aria-expanded="true" aria-controls="collapseStocks">
             <i class="fas fa-box-open"></i>
-            <span>Product Stock Management</span>
+            <span>Stock Management</span>
         </a>
         <div id="collapseStocks" class="collapse" data-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
                 <a class="collapse-item" href="{{ route('admin.inventory.stock_entries.index') }}">Stock Entries</a>
-                <a class="collapse-item" href="<a class="collapse-item" href="#">Stock Entry Lines</a>
+                <a class="collapse-item" href="{{ route('admin.inventory.stock_entries.lines.index') }}" class="collapse-item" href="#">Stock Entry Lines</a>
                 <a class="collapse-item" href="{{ route('admin.inventory.stock_entries.transactions.index') }}">Stock Transactions</a>
+                <a class="collapse-item" href="{{ route('admin.inventory.stock.levels.index') }}">Stock Levels</a>
+                <a class="collapse-item" href="{{ route('admin.inventory.stock.levels.low.index') }}">Low Stock Levels</a>
+                <a class="collapse-item" href="{{ route('admin.inventory.stock.aging.index') }}">Stock Aging</a>
+                <a class="collapse-item" href="{{ route('admin.inventory.stock.transfers.index') }}">Stock Transfer</a>
+            </div>
+        </div>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseDashboards"
+        aria-expanded="true" aria-controls="collapseDashboards">
+            <i class="fas fa-tachometer-alt"></i>
+            <span>Stock Dashboard</span>
+        </a>
+        <div id="collapseDashboards" class="collapse" data-parent="#accordionSidebar">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <a class="collapse-item" href="{{ route('admin.inventory.stock.dashboard.index') }}">Stock Dashboard</a>
             </div>
         </div>
     </li>

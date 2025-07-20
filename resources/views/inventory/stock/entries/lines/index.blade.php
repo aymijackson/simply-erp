@@ -157,11 +157,11 @@ $('#cancelLineBtn').click(()=>bootstrap.Modal.getInstance('#lineModal').hide());
 $('#lineForm').submit(function(e){
     e.preventDefault();
     const id  = $('#lineId').val();
-    const url = id ? `/admin/inventory/stock/entry-lines/${id}`
+    const url = id ? `/admin/inventory/stock-entries/lines/${id}`
                    : `{{ route('admin.inventory.stock_entries.lines.store') }}`;
     const data = $(this).serialize() + (id ? '&_method=PUT':'');
     $.post(url,data)
-      .done(()=>{bootstrap.Modal.getInstance('#lineModal').hide(); lineTable.ajax.reload(null,false);})
+      .done(()=>{bootstrap.Modal.getInstance('#lineModal').hide(); lineTable.ajax.reload(null,false); Swal.fire('Success', data.message,'success');})
       .fail(x=>Swal.fire('Error',x.responseJSON?.message||'Save failed','error'));
 });
 

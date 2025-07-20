@@ -183,7 +183,7 @@ class StockController extends Controller
          return response()->json([
              'id'         => $line->id,
              'stock_entry_id'   => $line->stock_entry_id,
-             'product_variant_id ' => $line->product_variant_id,
+             'product_variant_id' => $line->product_variant_id,
              'qty'  => $line->qty,
              'unit_cost'     => $line->unit_cost,      
          ]);
@@ -209,6 +209,26 @@ class StockController extends Controller
             ->make(true);
     }
 
+    /* ---------- helper ---------- */
+    protected function validateLine($r)
+    {
+        return $r->validate([
+            'stock_entry_id'     => 'required|exists:stock_entries,id',
+            'product_variant_id' => 'required|exists:product_variants,id',
+            'qty'                => 'required|integer|min:1',
+            'unit_cost'          => 'nullable|numeric|min:0',
+        ]);
+    }
+
+    /* update */
+    public function updateStockEntryLine(Request $r, $id)
+    {
+        $line = StockEntryLine::findOrFail($id);
+        $line->update($this->validateLine($r));
+        // ↳ optionally re‑post ledger here
+        return response()->json(['message'=>'Line updated']);
+    }
+
     public function stockEntryLineDatatable($entryId)
     {
         $q = StockEntryLine::query()
@@ -231,17 +251,18 @@ class StockController extends Controller
         ->make(true);
     }
 
-    public function storeStockEntryLine(Request $r, $entryId)
+    public function storeStockEntryLine(Request $r)
     {
         $r->validate([
-            'variant_id' => 'required|exists:product_variants,id',
+            'stock_entry_id' => 'required|exists:stock_entries,id',
+            'product_variant_id' => 'required|exists:product_variants,id',
             'qty'        => 'required|integer|min:1',
             'unit_cost'  => 'nullable|numeric|min:0',
         ]);
 
         StockEntryLine::create([
-            'stock_entry_id'    => $entryId,
-            'product_variant_id'=> $r->variant_id,
+            'stock_entry_id'    => $r->stock_entry_id,
+            'product_variant_id'=> $r->product_variant_id,
             'qty'               => $r->qty,
             'unit_cost'         => $r->unit_cost,
         ]);
@@ -283,15 +304,29 @@ class StockController extends Controller
         );
     }
 
+    public function stockTransactionsIndex()
+    {
+        $stores = LocationStore::orderBy('name')->get();
+        $product_variants = ProductVariant::with('product:id,product_name')
+            ->orderBy('sku')->get();
+        return view('inventory.stock.transactions.index', compact('stores', 'product_variants'));
+    }   
+
     public function stockTransactionsDatatable()
     {
-        $q = StockTransaction::with(['product_variant.product:id,product_name','store:id,store_name'])
+        $q = StockTransaction::with(['product_variant.product:id,product_name','location_store:id,name'])
             ->select('stock_transactions.*');
 
         return datatables()->eloquent($q)
+            ->addColumn('checkbox', fn($r)=>
+                '<input type="checkbox" class="row-checkbox" value="'.$r->id.'">')
             ->addColumn('variant', fn($r)=>$r->product_variant->sku.' – '.$r->product_variant->product->product_name)
-            ->addColumn('store',   fn($r)=>$r->store->store_name)
+            ->addColumn('store',   fn($r)=>$r->location_store->name)
             ->addColumn('source',  fn($r)=> class_basename($r->txable_type).' #'.$r->txable_id)
+            ->addColumn('actions', fn($r)=>'
+                <button class="btn btn-sm btn-primary edit-transaction" data-id="'.$r->id.'">Edit</button>
+                <button class="btn btn-sm btn-danger delete-transaction" data-id="'.$r->id.'">Del</button>')
+            ->rawColumns(['checkbox','actions'])
             ->make(true);
     }
 

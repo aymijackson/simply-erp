@@ -388,6 +388,7 @@ class ProductController extends Controller
             'sku' => 'required|unique:product_variants,sku',
             'price' => 'nullable|numeric',
             'stock_quantity' => 'required|integer|min:0',
+            'reorder_point' => 'integer|min:0',
             'attribute_values'   => 'array',
             'attribute_values.*' => 'exists:product_attribute_values,id',
         ]);
@@ -435,10 +436,11 @@ class ProductController extends Controller
             'sku' => 'required|unique:product_variants,sku,'.$id,
             'price' => 'nullable|numeric',
             'stock_quantity' => 'required|integer|min:0',
+            'reorder_point' => 'integer|min:0',
             'attribute_values' => 'array'
         ]);
 
-        $variant->update($request->only('product_id', 'sku', 'price', 'stock_quantity'));
+        $variant->update($request->only('product_id', 'sku', 'price', 'stock_quantity', 'reorder_point'));
         $variant->attributeValues()->sync($request->attribute_values);
 
         return response()->json(['success' => true, 'message' => 'Product variant updated successfully.']);

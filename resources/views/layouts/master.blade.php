@@ -2,82 +2,66 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ env('APP_NAME', 'Simply-ERP') }}</title>
+    <title>{{ env('APP_NAME','Simply‑ERP') }}</title>
 
-    <!-- Fonts and Styles -->
-    <link href="{{ url('/assets/vendor/fontawesome-free/css/all.min.css') }}" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/css/dataTables.jqueryui.min.css" integrity="sha512-x2AeaPQ8YOMtmWeicVYULhggwMf73vuodGL7GwzRyrPDjOUSABKU7Rw9c3WNFRua9/BvX/ED1IK3VTSsISF6TQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link href="{{ url('/assets/css/sb-admin-2.min.css') }}" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.0.1/css/bootstrap.min.css" integrity="sha512-Ez0cGzNzHR1tYAv56860NLspgUGuQw16GiOOp/I2LuTmpSK9xDXlgJz3XN4cnpXWDmkNBKXR/VDMTCnAaEooxA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.2/css/dataTables.bootstrap5.min.css"/>
-    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.4.1/css/responsive.bootstrap5.min.css">
+    {{-- Fonts & SB‑Admin 2 --}}
+    <link rel="stylesheet" href="{{ asset('assets/vendor/fontawesome-free/css/all.min.css') }}">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900">
+    <link rel="stylesheet" href="{{ asset('assets/css/sb-admin-2.min.css') }}">
 
-    <!-- Custom Inline Styles -->
+    {{-- Bootstrap 5 + DataTables 2.x (+Buttons, Responsive) --}}
+    <link rel="stylesheet"
+          href="https://cdn.datatables.net/v/bs5/dt-2.3.2/b-2.4.2/r-2.4.1/datatables.min.css"/>
+
+    {{-- Select2 --}}
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"/>
+
+    {{-- Custom tweaks --}}
     <style>
-        .sidebar {
-            position: fixed;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            height: 100vh;
-            overflow-y: auto;
-            z-index: 970;
-        }
-        #content-wrapper {
-            margin-left: 22%;
-        }
+        .sidebar{position:fixed;top:0;bottom:0;left:0;height:100vh;overflow-y:auto;z-index:970}
+        #content-wrapper{margin-left:22%}
     </style>
     @stack('styles')
 </head>
-
 <body id="page-top">
-    <div id="wrapper">
-        @include('partials.sidebar')
+<div id="wrapper">
+    @include('partials.sidebar')
 
-        <!-- Content Wrapper -->
-        <div id="content-wrapper" class="d-flex flex-column mt-4 mr-5 pt-5">
-            @yield('content')  
-            <!-- Main Content --> 
-             
-            
-            <footer class="sticky-footer bg-white">
-                <div class="container my-auto">
-                    <div class="text-center my-auto">
-                        <span>&copy; {{env('APP_NAME')}} {{date('Y')}}</span>
-                    </div>
-                </div>
-            </footer>
-        </div>
+    <div id="content-wrapper" class="d-flex flex-column mt-4 mr-5 pt-5">
+        @yield('content')
+
+        <footer class="sticky-footer bg-white">
+            <div class="container my-auto text-center">
+                &copy; {{ env('APP_NAME') }} {{ date('Y') }}
+            </div>
+        </footer>
     </div>
+</div>
 
-    <a class="scroll-to-top rounded" href="#page-top">
-        <i class="fas fa-angle-up"></i>
-    </a>
+<a class="scroll-to-top rounded" href="#page-top"><i class="fas fa-angle-up"></i></a>
+@include('partials.dashboard.logout-modal')
 
-    @include('partials.dashboard.logout-modal') <!-- Extract modal into partial -->
+<!-- jQuery first -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
-    <!-- Scripts -->
-     <!-- Include SweetAlert2 from a CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Bootstrap bundle (Popper inside) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/js/jquery.dataTables.min.js" integrity="sha512-BkpSL20WETFylMrcirBahHfSnY++H2O1W+UnEEO4yNIl+jI2+zowyoGJpbtk6bx97fBXf++WJHSSK2MV4ghPcg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!-- JSZip for Excel export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha384-+mbV2IY1Zk/X1p/nWllGySJSUN8uMs+gUAN10Or95UBH0fpj6GfKgPmgC5EXieXG" crossorigin="anonymous"></script>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.0.1/js/bootstrap.min.js" integrity="sha512-EKWWs1ZcA2ZY9lbLISPz8aGR2+L7JVYqBAYTq5AXgBkSjRSuQEGqWx8R1zAX16KdXPaCjOCaKE8MCpU0wcHlHA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>    <script src="{{ url('/assets/vendor/jquery-easing/jquery.easing.min.js') }}"></script>
-    <script src="{{ url('/assets/js/sb-admin-2.min.js') }}"></script>
-    <script src="{{ url('/assets/vendor/chart.js/Chart.min.js') }}"></script>
-    <script src="{{ url('/assets/js/demo/chart-area-demo.js') }}"></script>
-    <script src="{{ url('/assets/js/demo/chart-pie-demo.js') }}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="https://cdn.datatables.net/responsive/2.4.1/js/dataTables.responsive.min.js"></script>
-    <script src="https://cdn.datatables.net/responsive/2.4.1/js/responsive.bootstrap5.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios@1/dist/axios.min.js"></script>
+<!-- *** ONE *** DataTables bundle – core 1.13.8 + Buttons 2.4.2 (+html5) + Responsive 2.5.0  -->
+<script src="https://cdn.datatables.net/v/bs5/dt-1.13.8/b-2.4.2/b-html5-2.4.2/r-2.5.0/datatables.min.js"></script>
 
-    @stack('scripts')
+<!-- other jQuery‑based libs (e.g. Select2) after DataTables -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios@1/dist/axios.min.js"></script>
+
+
+@stack('scripts')
 </body>
 </html>

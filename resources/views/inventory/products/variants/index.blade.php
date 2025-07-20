@@ -30,6 +30,7 @@
                             <th>Attributes</th>
                             <th class="text-end">Price</th>
                             <th class="text-end">Stock</th>
+                            <th class="text-end">Re-Order Point</th>
                             <th class="text-end">Actions</th>
                         </tr>
                     </thead>
@@ -77,6 +78,11 @@
                     <input id="stock_quantity" name="stock_quantity" type="number" min="0" class="form-control" required>
                 </div>
 
+                <div class="col-md-6">
+                    <label class="form-label">Re-Order Point </label>
+                    <input id="reorder_point" name="reorder_point" type="number" min="0" class="form-control" required>
+                </div>
+
                 {{-- Dynamic attribute selects are injected here --}}
                 <div id="attributeContainer" class="row g-3"></div>
 
@@ -103,29 +109,45 @@
 $.ajaxSetup({ headers:{ 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') }});
 
 /* ───── Attribute select builder ───── */
-function loadAttributeSelects(productId, selectedIds = [])
-{
-    if(!productId){ $('#attributeContainer').empty(); return; }
+function loadAttributeSelects(productId, selectedIds = [], callback = () => {}) {
+    if (!productId) {
+        $('#attributeContainer').empty();
+        return;
+    }
 
     $('#attributeContainer').html('<p class="text-muted">Loading attributes…</p>');
 
-    $.getJSON(`/admin/inventory/products/${productId}/attributes`, function(types){
-        let html='';
-        types.forEach(t=>{
-            html += `<div class="col-md-6">
-                       <label class="form-label">${t.type_name}</label>
-                       <select class="form-control attribute-select" 
-                               name="attribute_values[${t.type_id}]">
-                           <option value="">-- Select ${t.type_name} --</option>`;
-            t.values.forEach(v=>{
-                const sel = selectedIds.includes(String(v.id)) ? 'selected' : '';
-                html += `<option value="${v.id}" ${sel}>${v.value}</option>`;
-            });
+    $.getJSON(`/admin/inventory/products/${productId}/attributes`, function (types) {
+        let html = '';
+        types.forEach(t => {
+            html += `
+                <div class="col-md-6">
+                    <label class="form-label">${t.type_name}</label>
+                    <select class="form-control attribute-select" name="attribute_values[${t.type_id}]" data-type-id="${t.type_id}">
+                        <option value="">-- Select ${t.type_name} --</option>`;
+            t.values.forEach(v => {
+                html += `<option value="${v.id}">${v.value}</option>`;
+            }); 
             html += `</select></div>`;
         });
+
         $('#attributeContainer').html(html);
+
+// Apply selected values
+selectedIds.forEach(id => { 
+    $(`#attributeContainer select option[value="${id}"]`).prop('selected', true);
+});
+
+// Initialize Select2 if used
+$('.attribute-select').select2({
+    width: '100%',
+    dropdownParent: $('#variantModal')
+});
+
+callback();
     });
 }
+
 
 /* ───── Reset modal form ───── */
 function resetForm(){
@@ -145,12 +167,14 @@ function fillModal(res){
     $('#sku').val(data.sku);
     $('#price').val(data.price);
     $('#stock_quantity').val(data.stock_quantity);
+    $('#reorder_point').val(data.reorder_point);
 
-    const selected = (data.attribute_values||[]).map(v=>String(v.id));
+    const selected = (data.attribute_values || []).map(v => String(v.id));
     loadAttributeSelects(data.product_id, selected);
 
     new bootstrap.Modal('#variantModal').show();
 }
+
 
 $(function () {
 
@@ -166,6 +190,7 @@ $(function () {
             {data:'attributes'},  
             {data:'price', className:'text-end'},
             {data:'stock_quantity', className:'text-end'},
+            {data:'reorder_point', className:'text-end'},
             {data:'action', orderable:false, searchable:false, className:'text-end'},
         ],
         drawCallback:function(){

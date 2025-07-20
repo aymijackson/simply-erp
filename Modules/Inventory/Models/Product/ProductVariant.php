@@ -15,6 +15,7 @@ class ProductVariant extends Model
         'sku',
         'price',
         'stock_quantity',
+        'reorder_point',
     ];
 
     public function product()
@@ -26,4 +27,17 @@ class ProductVariant extends Model
     {
         return $this->belongsToMany(ProductAttributeValue::class);
     }
+
+    /* Scope for the report */
+    public function scopeLowStock($q)
+    {
+        return $q->whereColumn('stock_quantity', '<=', 'reorder_point');
+    }
+
+    /* Helper accessor (optional) */
+    public function getLowStockFlagAttribute(): bool
+    {
+        return $this->qty_on_hand <= $this->reorder_point;
+    }
+
 }

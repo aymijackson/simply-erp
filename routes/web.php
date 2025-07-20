@@ -23,10 +23,15 @@ use Modules\HRM\Http\Controllers\EmployeeController;
 use Modules\HRM\Http\Controllers\PayrollController;
 use Modules\HRM\Http\Controllers\TrainingController;
 use Modules\HRM\Http\Controllers\PerformanceController;
+
 use Modules\Inventory\Http\Controllers\BrandController;
 use Modules\Inventory\Http\Controllers\ManufacturerController;
 use Modules\Inventory\Http\Controllers\ProductController;
+use Modules\Inventory\Http\Controllers\StockAgingController;
 use Modules\Inventory\Http\Controllers\StockController;
+use Modules\Inventory\Http\Controllers\StockDashboardController;
+use Modules\Inventory\Http\Controllers\StockLevelController;
+use Modules\Inventory\Http\Controllers\StockTransferController;
 use Modules\Inventory\Http\Controllers\UnitController;
 
 use Modules\Production\Http\Controllers\BillOfMaterialController;
@@ -774,6 +779,63 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
                Route::get('/export/excel', [SupplierController::class, 'exportExcel'])->name('export.excel');
           });
 
+          Route::prefix('/stock')
+               ->name('stock.')
+               ->controller(StockLevelController::class)
+               ->group(function () {
+                    Route::prefix('dashboard')->name('dashboard.')->group(function () {
+                         # routes/web.php   (within the inventory group / auth middleware)
+                         Route::get('/',                 [StockDashboardController::class,'index'])
+                         ->name('index');
+
+                         Route::get('/cards',           [StockDashboardController::class,'cards'])->name('cards');;
+                         Route::get('/top-movers',      [StockDashboardController::class,'topMovers'])->name('top-movers');
+                         Route::get('/low-stock',       [StockDashboardController::class,'lowStock'])->name('low-stock');;
+                         Route::get('/aging-chart',     [StockDashboardController::class,'agingChart'])->name('aging-chart');;
+                    });
+
+                    Route::prefix('aging')->name('aging.')->group(function () {
+                         /* aging */
+                         Route::get('/',            [StockAgingController::class,'index'])
+                              ->name('index');
+                     
+                         Route::get('datatable',  [StockAgingController::class,'datatable'])
+                              ->name('datatable');
+                     });
+
+                    Route::prefix('/levels')->name('levels.')->group(function () {
+                         Route::prefix('/low')->name('low.')->group(function () {
+                              Route::get('/', [StockLevelController::class,'lowStockLevelsIndex'])
+                                   ->name('index');
+                         
+                              Route::get('datatable', [StockLevelController::class,'lowStockLevelsDatatable'])
+                                   ->name('datatable');
+                         });
+
+                         Route::get('/', 'index')->name('index');
+                         Route::get('/datatable','datatable')->name('datatable');
+                         Route::get('/totals', 'totals')->name('totals');
+                    });
+
+                    Route::prefix('/transfers')
+                         ->name('transfers.')
+                         //->middleware(['auth','permission:inventory.transfer'])
+                         ->group(function () {
+                              Route::get('/fetch-variants', [StockTransferController::class,'fetch_variants'])->name('fetch-variants');
+
+                              Route::get('/', [StockTransferController::class,'index'])->name('index');
+                              Route::get('datatable', [StockTransferController::class,'datatable'])->name('datatable');
+
+                              Route::get('create', [StockTransferController::class,'create'])->name('create');
+                              Route::post('/', [StockTransferController::class,'store'])->name('store');
+
+                              Route::get('{transfer}/edit', [StockTransferController::class,'edit'])->name('edit');
+                              Route::post('{transfer}/post', [StockTransferController::class,'post'])->name('post');
+                              Route::delete('{transfer}',    [StockTransferController::class,'destroy'])->name('destroy');
+                         });
+
+                    });
+
           // Stock Entries routes
           Route::prefix('stock-entries')->name('stock_entries.')->group(function () {
 
@@ -781,7 +843,11 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
                      /* Ledger */
                     Route::get('/', [StockController::class,'stockTransactionsIndex'])->name('index');
 
+                    Route::post('/', [StockController::class,'storeStockTransaction'])->name('store');
+
                     Route::get('/datatable', [StockController::class,'stockTransactionsDatatable'])->name('datatable');
+
+                    Route::get('/bulk-delete', [StockController::class,'bulkDeleteStockTransactions'])->name('bulk-delete');
 
                });
 
@@ -802,7 +868,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
                /* Entry lines */
                Route::get ('{entry}/lines/datatable', [StockController::class,'stockEntryLinesDatatable'])->name('line.datatable');
 
-               Route::get('/{stock_entry}/lines', [StockController::class,'stockEntryLinesIndex'])->name('lines.index');
+               Route::get('/{stock_entry}/lines', [StockController::class,'stockEntryLinesIndex'])->name('lines.fetch');
                Route::post('/{entry}/lines', [StockController::class,'lines.store']);
 
                Route::delete('/lines/{id}', [StockController::class,'lines.destroy']);
