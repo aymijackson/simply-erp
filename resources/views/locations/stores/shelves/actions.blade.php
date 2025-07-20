@@ -1,0 +1,2 @@
+<button class="btn btn-sm btn-primary edit-shelf" data-id="{{ $shelf->id }}"><i class="fa fa-edit"></i></button>
+<button class="btn btn-sm btn-danger delete-shelf" data-id="{{ $shelf->id }}"><i class="fa fa-trash"></i></button>

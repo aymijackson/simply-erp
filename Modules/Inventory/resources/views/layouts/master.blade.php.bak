@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="{{ asset('modules/inventory/img/favicon.png') }}">
+    <title>@yield('title', 'Inventory Management')</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700,800" rel="stylesheet" />
+    <!-- Icons -->
+    <link href="{{ asset('modules/inventory/css/nucleo-icons.css') }}" rel="stylesheet" />
+    <link href="{{ asset('modules/inventory/css/nucleo-svg.css') }}" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/css/dataTables.jqueryui.min.css" integrity="sha512-x2AeaPQ8YOMtmWeicVYULhggwMf73vuodGL7GwzRyrPDjOUSABKU7Rw9c3WNFRua9/BvX/ED1IK3VTSsISF6TQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Styles -->
+    <link href="{{ asset('modules/inventory/css/soft-ui-dashboard.css?v=1.1.0') }}" rel="stylesheet" />
+    @stack('styles')
+</head>
+
+<body class="g-sidenav-show bg-gray-100">
+    <!-- Sidebar -->
+    @include('inventory::partials.sidebar')
+
+    <!-- Main Content -->
+    <main class="main-content position-relative max-height-vh-100 h-100 border-radius-lg">
+        <!-- Navbar -->
+        @include('inventory::partials.navbar')
+        
+        <!-- Page Content -->
+        <div class="container-fluid py-4">
+            @yield('content')
+        </div>
+
+        <!-- Footer -->
+        @include('inventory::partials.footer')
+    </main>
+
+    <!-- Fixed Plugin -->
+    @include('inventory::partials.fixed-plugin')
+
+    <!-- Scripts -->
+     
+     <!-- Include SweetAlert2 from a CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/js/jquery.dataTables.min.js" integrity="sha512-BkpSL20WETFylMrcirBahHfSnY++H2O1W+UnEEO4yNIl+jI2+zowyoGJpbtk6bx97fBXf++WJHSSK2MV4ghPcg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="{{ asset('modules/inventory/js/core/popper.min.js') }}"></script>
+    <script src="{{ asset('modules/inventory/js/core/bootstrap.min.js') }}"></script>
+    <script src="{{ asset('modules/inventory/js/plugins/perfect-scrollbar.min.js') }}"></script>
+    <script src="{{ asset('modules/inventory/js/plugins/smooth-scrollbar.min.js') }}"></script>
+    <script src="{{ asset('modules/inventory/js/plugins/fontawesome-all.js') }}"></script>
+    <script src="{{ asset('modules/inventory/js/soft-ui-dashboard.min.js?v=1.1.0') }}"></script>
+    @stack('scripts')
+</body>
+
+</html>

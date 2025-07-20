@@ -1,0 +1,20 @@
+<?php
+
+namespace Modules\HRM\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Modules\HRM\Models\Employee;
+use Modules\HRM\Models\Payroll;
+
+class Training extends Model
+{
+    use HasFactory;
+
+    protected $fillable = ['title', 'description', 'trainer', 'start_date', 'location', 'end_date'];
+
+    public function payroll()
+    {
+        return $this->belongsTo(Payroll::class);
+    }
+}

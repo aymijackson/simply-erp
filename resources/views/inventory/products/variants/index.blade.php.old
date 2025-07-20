@@ -1,0 +1,268 @@
+@extends('layouts.master')
+
+@section('title', 'Manage Product Variants')
+
+@section('content')
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 text-primary">Product Variants <small class="text-muted">Inventory</small></h1>
+        <div>
+            <button class="btn btn-danger me-2 d-none" id="bulkDeleteBtn">
+                <i class="fas fa-trash-alt me-1"></i> Delete Selected
+            </button>
+            <button class="btn btn-primary" id="addVariantBtn">
+                <i class="fas fa-plus me-1"></i> Add Variant
+            </button>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm">
+                <div class="card-body d-flex align-items-center">
+                    <div class="icon icon-shape bg-primary text-white rounded-circle shadow text-center me-3">
+                        <i class="fas fa-stream"></i>
+                    </div>
+                    <div>
+                        <h6>Total Variants</h6>
+                        <h4 class="mb-0" id="totalVariants">{{ number_format($variants_count ?? 0) }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered w-100" id="variantTable">
+                    <thead class="thead-light">
+                        <tr>
+                            <th><input type="checkbox" id="selectAllVariants"></th>
+                            <th>SKU</th>
+                            <th>Product</th>
+                            <th class="text-end">Price</th>
+                            <th class="text-end">Stock Qty</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Add / Edit Variant Modal --}}
+<div class="modal fade" id="variantModal" tabindex="-1" aria-labelledby="variantModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form id="variantForm" class="modal-content">
+            @csrf
+            <input type="hidden" id="variantId">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="variantModalLabel">Add Variant</h5>
+                <button type="button" class="btn-close text-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body row g-3">
+                <div class="col-md-12">
+                    <label for="product_id" class="form-label">Product *</label>
+                    <select class="form-control" id="product_id" name="product_id" required>
+                        <option value="">-- Select Product --</option>
+                        @foreach($products as $product)
+                            <option value="{{ $product->id }}">{{ $product->product_name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="sku" class="form-label">SKU *</label>
+                    <input type="text" class="form-control" id="sku" name="sku" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="price" class="form-label">Price</label>
+                    <input type="number" step="0.01" class="form-control" id="price" name="price">
+                </div>
+                <div class="col-md-6">
+                    <label for="stock_quantity" class="form-label">Stock Quantity *</label>
+                    <input type="number" class="form-control" id="stock_quantity" name="stock_quantity" min="0" required>
+                </div>
+
+                <div class="col-md-12">
+                    <label for="attribute_values" class="form-label">Attribute Values</label>
+                    <select multiple class="form-control" id="attribute_values" name="attribute_values[]">
+                        @foreach($attributeValues as $id => $val)
+                            <option value="{{ $id }}">{{ $val->productAttribute->type->name }} : {{ $val->value }}</option>
+                        @endforeach
+                    </select>
+                    <small class="text-muted">Hold Ctrl/Cmd to select multiple</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="cancelVariantBtn" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-success">Save Variant</button>
+            </div>
+        </form>
+    </div>
+</div>
+@endsection
+
+@push('scripts')
+<script>
+$(function () {
+
+    /* -------------------------------------------------------------
+     * CSRF header for EVERY jQuery Ajax request
+     * ----------------------------------------------------------- */
+    $.ajaxSetup({
+        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') }
+    });
+
+    /* -------------------------------------------------------------
+     * DataTable
+     * ----------------------------------------------------------- */
+    const table = $('#variantTable').DataTable({
+        processing : true,
+        serverSide : true,
+        ajax : "{{ route('admin.inventory.products.variants.datatable') }}",
+        columns : [
+            { data:'checkbox', orderable:false, searchable:false },
+            { data:'sku' },
+            { data:'product_name' },
+            { data:'price', className:'text-end' },
+            { data:'stock_quantity', className:'text-end' },
+            { data:'action', orderable:false, searchable:false, className:'text-end' },
+        ],
+        order:[[1,'asc']],
+        drawCallback(){
+            $('.edit-btn').on('click', loadForEdit);
+            $('.delete-btn').on('click', deleteSingle);
+            $('.row-checkbox').on('change', toggleBulkBtn);
+            $('#selectAllVariants').prop('checked', false).on('change', () => {
+                $('.row-checkbox').prop('checked', $('#selectAllVariants').is(':checked')).trigger('change');
+            });
+        }
+    });
+
+    function toggleBulkBtn(){
+        $('#bulkDeleteBtn').toggleClass('d-none', $('.row-checkbox:checked').length === 0);
+    }
+
+    /* -------------------------------------------------------------
+     * Open modal: create
+     * ----------------------------------------------------------- */
+    $('#addVariantBtn').click(() => {
+        resetForm();
+        $('#variantModalLabel').text('Add Variant');
+        new bootstrap.Modal('#variantModal').show();
+    });
+
+    $('#cancelVariantBtn').click(() =>
+        bootstrap.Modal.getInstance('#variantModal').hide()
+    );
+
+    /* -------------------------------------------------------------
+     * Fetch + fill modal: edit
+     * ----------------------------------------------------------- */
+    function loadForEdit(){
+        const id = $(this).data('id');
+
+        $.getJSON(`/admin/inventory/products/variants/${id}`, function (data) {
+            resetForm();
+            $('#variantModalLabel').text('Edit Variant');
+            $('#variantId').val(data.id);
+            $('#product_id').val(data.product_id);
+            $('#sku').val(data.sku);
+            $('#price').val(data.price);
+            $('#stock_quantity').val(data.stock_quantity);
+            $('#attribute_values').val(data.attribute_values?.map(v => v.id)).trigger('change');
+
+            new bootstrap.Modal('#variantModal').show();
+        });
+    }
+
+    /* -------------------------------------------------------------
+     * Save (create / update)
+     * ----------------------------------------------------------- */
+    $('#variantForm').submit(function (e) {
+        e.preventDefault();
+
+        const id      = $('#variantId').val();
+        const url     = id
+                        ? `/admin/inventory/products/variants/${id}`
+                        : `{{ route('admin.inventory.products.variants.store') }}`;
+
+        const payload = $(this).serialize() + (id ? '&_method=PUT' : '');
+
+        $.post(url, payload)
+            .done(res => {
+                bootstrap.Modal.getInstance('#variantModal').hide();
+                table.ajax.reload(null,false);
+                Swal.fire('Success', res.message, 'success');
+            })
+            .fail(xhr => {
+                const msg = xhr.responseJSON?.message ?? 'Failed to save';
+                Swal.fire('Error', msg, 'error');
+            });
+    });
+
+    /* -------------------------------------------------------------
+     * Delete single
+     * ----------------------------------------------------------- */
+    function deleteSingle(){
+        const id = $(this).data('id');
+
+        Swal.fire({
+            title:'Delete variant?',
+            icon:'warning',
+            showCancelButton:true,
+            confirmButtonText:'Yes, delete'
+        }).then(result => {
+            if(result.isConfirmed){
+                $.ajax({
+                    url: `/admin/inventory/products/variants/${id}`,
+                    type: 'POST',
+                    data: { _method:'DELETE' },
+                    success: r => {
+                        table.ajax.reload(null,false);
+                        Swal.fire('Deleted!', r.message, 'success');
+                    }
+                });
+            }
+        });
+    }
+
+    /* -------------------------------------------------------------
+     * Bulk delete
+     * ----------------------------------------------------------- */
+    $('#bulkDeleteBtn').click(() => {
+        const ids = $('.row-checkbox:checked').map((_,el)=>el.value).get();
+        if(!ids.length) return;
+
+        Swal.fire({
+            title:`Delete ${ids.length} variants?`,
+            icon:'warning',
+            showCancelButton:true,
+            confirmButtonText:'Yes, delete'
+        }).then(result => {
+            if(result.isConfirmed){
+                $.post('{{ route('admin.inventory.products.variants.bulk-delete') }}', { ids })
+                    .done(r => {
+                        table.ajax.reload();
+                        $('#bulkDeleteBtn').addClass('d-none');
+                        Swal.fire('Deleted!', r.message, 'success');
+                    });
+            }
+        });
+    });
+
+    /* -------------------------------------------------------------
+     * Helpers
+     * ----------------------------------------------------------- */
+    function resetForm(){
+        $('#variantForm')[0].reset();
+        $('#attribute_values').val([]).trigger('change');
+        $('#variantId').val('');
+    }
+
+});
+</script>
+@endpush
