@@ -790,6 +790,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
                    Route::get('/', [StockController::class,'stockEntryLinesIndex'])->name('index');
 
                    Route::get('/datatable', [StockController::class,'stockEntryLinesDatatable'])->name('datatable');
+                   Route::get('/{line}', [StockController::class,'showStockEntryLine'])->name('show');
                    
                    Route::post('/store', [StockController::class, 'storeStockEntryLine'])->name('store');
                    Route::put('/{id}', [StockController::class, 'updateStockEntryLine'])->name('update');

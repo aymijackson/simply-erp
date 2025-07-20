@@ -89,7 +89,7 @@
       <div class="modal-body row g-3">
           <div class="col-12">
               <label class="form-label">Variant *</label>
-              <select id="variant_id" name="product_variant_id" class="form-control" required>
+              <select id="product_variant_id" name="product_variant_id" class="form-control" required>
                   <option value="">-- Select Variant --</option>
                   @foreach($variants as $v)
                       <option value="{{ $v->id }}">{{ $v->sku }} – {{ $v->product->product_name }}</option>
@@ -151,7 +151,7 @@ function fillModal(data){
     resetForm();
     $('#lineModalLabel').text('Edit Line');
     $('#lineId').val(data.id);
-    $('#variant_id').val(data.product_variant_id);
+    $('#product_variant_id').val(data.product_variant_id);
     $('#qty').val(data.qty);
     $('#unit_cost').val(data.unit_cost);
     new bootstrap.Modal('#lineModal').show();

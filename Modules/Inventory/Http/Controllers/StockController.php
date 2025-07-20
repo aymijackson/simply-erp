@@ -177,6 +177,18 @@ class StockController extends Controller
         return response()->json(['success' => true, 'message' => 'Selected stock entries deleted.']);
     }
 
+     /** GET /admin/inventory/stock/entries/{id}  */
+     public function showStockEntryLine(StockEntryLine $line)
+     { 
+         return response()->json([
+             'id'         => $line->id,
+             'stock_entry_id'   => $line->stock_entry_id,
+             'product_variant_id ' => $line->product_variant_id,
+             'qty'  => $line->qty,
+             'unit_cost'     => $line->unit_cost,      
+         ]);
+     }
+
     public function stockEntryLinesDatatable()
     {
         $q = StockEntryLine::with([
