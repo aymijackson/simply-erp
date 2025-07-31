@@ -16,11 +16,3 @@ class StockTransfer extends Model
     public function fromStore() { return $this->belongsTo(LocationStore::class, 'from_store_id'); }
     public function toStore()   { return $this->belongsTo(LocationStore::class, 'to_store_id'); }
 }
-
-// app/Models/StockTransferLine.php
-class StockTransferLine extends Model
-{
-    protected $fillable = ['product_variant_id','qty','unit_cost'];
-    public function transfer()       { return $this->belongsTo(StockTransfer::class); }
-    public function variant()        { return $this->belongsTo(ProductVariant::class,'product_variant_id'); }
-}

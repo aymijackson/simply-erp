@@ -16,7 +16,7 @@ class StockEntry extends Model
     use HasFactory;
 
     protected $fillable = [
-        'product_variant_id', 'store_id', 'shelf_id', 'reference', 'status', 'entry_date'];
+        'product_variant_id', 'store_id', 'shelf_id', 'reference', 'supplier_id', 'status', 'entry_date'];
 
     public function lines()
     {
@@ -39,5 +39,10 @@ class StockEntry extends Model
     public function store()
     {
         return $this->belongsTo(LocationStore::class);
+    }
+
+    public function supplier()
+    {
+        return $this->belongsTo(\App\Models\Supplier::class);
     }
 }

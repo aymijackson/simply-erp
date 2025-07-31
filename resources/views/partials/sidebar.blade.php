@@ -1,39 +1,40 @@
-<ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
+{{-- -------------- 1.  SIDEBAR NAV -------------- --}}
+<ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion"
+    id="accordionSidebar">
 
-    <!-- Brand -->
-    <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('admin.dashboard') }}">
-        <div class="sidebar-brand-icon rotate-n-15">
-            <i class="fas fa-laugh-wink"></i>
-        </div>
-        <div class="sidebar-brand-text mx-3">{{ env('APP_NAME', 'Simply-ERP') }}</div>
+    {{-- Brand --}}
+    <a class="sidebar-brand d-flex align-items-center justify-content-center"
+       href="{{ route('admin.dashboard') }}">
+        <div class="sidebar-brand-icon rotate-n-15"><i class="fas fa-laugh-wink"></i></div>
+        <div class="sidebar-brand-text mx-3">{{ env('APP_NAME','Simply‑ERP') }}</div>
     </a>
 
     <hr class="sidebar-divider my-0">
 
-    <!-- Dashboard -->
-    <li class="nav-item active">
-        <a class="nav-link" href="{{ route('admin.dashboard') }}">
-            <i class="fas fa-tachometer-alt"></i>
-            <span>Dashboard</span>
+    {{-- Dashboard --}}
+    <li class="nav-item">
+        <a  class="nav-link" href="{{ route('admin.dashboard') }}">
+            <i class="fas fa-tachometer-alt"></i><span>Dashboard</span>
         </a>
     </li>
 
     <hr class="sidebar-divider">
-
-    <!-- Core ERP -->
     <div class="sidebar-heading">Core ERP</div>
 
-    <!-- Geography -->
+    {{-- Geography --------------------------------------------------------- --}}
     <li class="nav-item">
-        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseGeography"
-        aria-expanded="true" aria-controls="collapseGeography">
-            <i class="fas fa-map-marked-alt"></i>
-            <span>Geography</span>
+        <a  href="#"
+            class="nav-link collapsed"
+            data-bs-toggle="collapse"
+            data-bs-target="#collapseGeography"
+            aria-expanded="false"
+            aria-controls="collapseGeography">
+            <i class="fas fa-map-marked-alt"></i><span>Geography</span>
         </a>
-        <div id="collapseGeography" class="collapse" data-parent="#accordionSidebar">
+        <div id="collapseGeography" class="collapse" data-bs-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
                 <a class="collapse-item" href="{{ route('admin.regions.index') }}">Regions</a>
-                <a class="collapse-item" href="{{ route('admin.subregions.index') }}">Subregions</a>
+                <a class="collapse-item" href="{{ route('admin.subregions.index') }}">Sub‑regions</a>
                 <a class="collapse-item" href="{{ route('admin.countries.index') }}">Countries</a>
                 <a class="collapse-item" href="{{ route('admin.states.index') }}">States</a>
                 <a class="collapse-item" href="{{ route('admin.cities.index') }}">Cities</a>
@@ -41,16 +42,19 @@
         </div>
     </li>
 
-    <!-- Locations -->
+    {{-- Locations --------------------------------------------------------- --}}
     <li class="nav-item">
-        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseLocation"
-        aria-expanded="true" aria-controls="collapseLocation">
-            <i class="fas fa-building"></i>
-            <span>Locations</span>
+        <a  href="#"
+            class="nav-link collapsed"
+            data-bs-toggle="collapse"
+            data-bs-target="#collapseLocation"
+            aria-expanded="false"
+            aria-controls="collapseLocation">
+            <i class="fas fa-building"></i><span>Locations</span>
         </a>
-        <div id="collapseLocation" class="collapse" data-parent="#accordionSidebar">
+        <div id="collapseLocation" class="collapse" data-bs-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
-                <a class="collapse-item" href="{{ route('admin.location_types.index') }}">Location Types</a>
+                <a class="collapse-item" href="{{ route('admin.location_types.index') }}">Location&nbsp;Types</a>
                 <a class="collapse-item" href="{{ route('admin.locations.index') }}">Locations</a>
                 <a class="collapse-item" href="{{ route('admin.location_blocks.index') }}">Blocks</a>
                 <a class="collapse-item" href="{{ route('admin.location_floors.index') }}">Floors</a>
@@ -66,7 +70,7 @@
             <i class="fas fa-warehouse"></i>
             <span>Storage</span>
         </a>
-        <div id="collapseStorage" class="collapse" data-parent="#accordionSidebar">
+        <div id="collapseStorage" class="collapse" data-bs-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
                 <a class="collapse-item" href="{{ route('admin.location_stores.index') }}">Stores</a>
                 <a class="collapse-item" href="{{ route('admin.store_shelves.index') }}">Shelves</a>
@@ -81,7 +85,7 @@
             <i class="fas fa-sliders-h"></i>
             <span>Parameters</span>
         </a>
-        <div id="collapseParameters" class="collapse" data-parent="#accordionSidebar">
+        <div id="collapseParameters" class="collapse" data-bs-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
                 <a class="collapse-item" href="{{ route('admin.modules.index') }}">Modules</a>
                 <a class="collapse-item" href="{{ route('admin.roles.index') }}">Roles</a>
@@ -101,7 +105,7 @@
             <i class="fas fa-boxes"></i>
             <span>Products</span>
         </a>
-        <div id="collapseProducts" class="collapse" data-parent="#accordionSidebar">
+        <div id="collapseProducts" class="collapse" data-bs-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
                 <a class="collapse-item" href="{{ route('admin.inventory.products.manufacturers.list') }}">Manufacturers</a>
                 <a class="collapse-item" href="{{ route('admin.inventory.products.brands.list') }}">Brands</a>
@@ -120,7 +124,7 @@
             <i class="fas fa-box-open"></i>
             <span>Stock Management</span>
         </a>
-        <div id="collapseStocks" class="collapse" data-parent="#accordionSidebar">
+        <div id="collapseStocks" class="collapse" data-bs-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
                 <a class="collapse-item" href="{{ route('admin.inventory.stock_entries.index') }}">Stock Entries</a>
                 <a class="collapse-item" href="{{ route('admin.inventory.stock_entries.lines.index') }}" class="collapse-item" href="#">Stock Entry Lines</a>
@@ -129,6 +133,7 @@
                 <a class="collapse-item" href="{{ route('admin.inventory.stock.levels.low.index') }}">Low Stock Levels</a>
                 <a class="collapse-item" href="{{ route('admin.inventory.stock.aging.index') }}">Stock Aging</a>
                 <a class="collapse-item" href="{{ route('admin.inventory.stock.transfers.index') }}">Stock Transfer</a>
+                <a class="collapse-item" href="{{ route('admin.inventory.stock_issues.index') }}">Stock Issues</a>
             </div>
         </div>
     </li>
@@ -138,7 +143,7 @@
             <i class="fas fa-tachometer-alt"></i>
             <span>Stock Dashboard</span>
         </a>
-        <div id="collapseDashboards" class="collapse" data-parent="#accordionSidebar">
+        <div id="collapseDashboards" class="collapse" data-bs-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
                 <a class="collapse-item" href="{{ route('admin.inventory.stock.dashboard.index') }}">Stock Dashboard</a>
             </div>
@@ -179,6 +184,19 @@
             </div>
         </div>
     </li>
+
+    <li class="nav-item">
+        <a class="nav-link collapsed" data-bs-toggle="collapse" data-bs-target="#collapseReturns">
+            <i class="fas fa-undo"></i><span>Returns</span>
+        </a>
+        <div id="collapseReturns" class="collapse" data-bs-parent="#accordionSidebar">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <a class="collapse-item" href="{{ route('admin.inventory.returns.customer.index') }}">Customer Returns</a>
+                <a class="collapse-item" href="{{ route('admin.inventory.returns.supplier.index') }}">Supplier Returns</a>
+            </div>
+        </div>
+    </li>
+
 
     <!-- Procurement -->
     <div class="sidebar-heading">Procurement</div>

@@ -50,15 +50,15 @@ class StockLevelController extends Controller
 
     public function lowStockLevelsDatatable()
     {
-        $q = ProductVariant::with('product.brand')   // eager stuff you need
-              ->lowStock();
+        $q = ProductVariant::with('product.brand')
+        ->lowStock();                           // uses the new scope
 
         return DataTables::eloquent($q)
-            ->addColumn('product', fn($v) => $v->product->product_name)
-            ->addColumn('brand',   fn($v) => $v->product->brand->brand_name ?? '-')
-            ->addColumn('sku',     fn($v) => $v->sku)
-            ->addColumn('qty',     fn($v) => number_format($v->stock_quantity))
-            ->addColumn('rop',     fn($v) => number_format($v->reorder_point))
-            ->make();
+                ->addColumn('sku',     fn ($v) => $v->sku)
+                ->addColumn('product', fn ($v) => $v->product->product_name)
+                ->addColumn('brand',   fn ($v) => $v->product->brand->brand_name ?? '-')
+                ->addColumn('qty',     fn ($v) => number_format($v->qty_on_hand))    // << from view
+                ->addColumn('rop',     fn ($v) => number_format($v->reorder_point))
+                ->make(true);
     }
 }

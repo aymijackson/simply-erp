@@ -13,6 +13,18 @@ use Illuminate\Support\Facades\Validator;
 
 class SupplierController extends Controller
 {
+    public function select2(Request $r)
+    {
+        $q = Supplier::query()
+            ->when($r->filled('q'),
+                    fn($qq) => $qq->where('name','like',"%{$r->q}%"))
+            ->orderBy('name')
+            ->limit(15)
+            ->get(['id','name as text']);     // rename to 'text' for Select2
+
+        return response()->json($q);
+    }
+
     /**
      * Display the supplier management view.
      */

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 // use Modules\Inventory\Database\Factories\BrandFactory;
 use Modules\Inventory\Models\Product\BrandManufacturer;
 use Modules\Inventory\Models\Product\Product;
+use Illuminate\Support\Facades\DB;
 
 class ProductVariant extends Model
 {
@@ -31,7 +32,15 @@ class ProductVariant extends Model
     /* Scope for the report */
     public function scopeLowStock($q)
     {
-        return $q->whereColumn('stock_quantity', '<=', 'reorder_point');
+        $sub = DB::table('v_stock_levels')
+                ->selectRaw('product_variant_id, SUM(qty_on_hand) AS qty_on_hand')
+                ->groupBy('product_variant_id');
+
+        return $q->joinSub($sub, 'v', function ($j) {
+                    $j->on('v.product_variant_id', '=', 'product_variants.id');
+                })
+                ->whereColumn('v.qty_on_hand', '<=', 'product_variants.reorder_point')
+                ->addSelect('product_variants.*', 'v.qty_on_hand');   // expose qty_on_hand
     }
 
     /* Helper accessor (optional) */

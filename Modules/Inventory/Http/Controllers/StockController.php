@@ -48,6 +48,7 @@ class StockController extends Controller
             ->addColumn('checkbox', fn($row) =>
                 '<input type="checkbox" class="row-checkbox" value="'.$row->id.'">')
             ->addColumn('store_name', fn($row)=>$row->store->name)
+            ->addColumn('supplier', fn($row)=>$row->supplier?->name)
             ->addColumn('entry_date', fn($row)=>date('d-m-Y', strtotime($row->entry_date)))
             ->addColumn('actions', fn($row)=>'
                 <button class="btn btn-sm btn-primary edit-entry" data-id="'.$row->id.'">Edit</button>
@@ -88,6 +89,7 @@ class StockController extends Controller
             'store_id'   => $entry->store_id,
             'entry_date' => $entry->entry_date,
             'reference'  => $entry->reference,
+            'status'     => $entry->supplier_id, 
             'status'     => $entry->status,      // draft | approved
             'lines'      => $entry->lines->map(fn ($l) => [
                 'product_variant_id' => $l->product_variant_id,
@@ -158,7 +160,7 @@ class StockController extends Controller
         }
 
         return [
-            'header' => $request->only('store_id','entry_date','reference','status'),
+            'header' => $request->only('store_id','entry_date','reference', 'supplier_id','status'),
             'lines'  => $lines,
         ];
     }
@@ -193,7 +195,8 @@ class StockController extends Controller
     {
         $q = StockEntryLine::with([
                 'entry.store:id,name',
-                'product_variant.product:id,product_name'
+                'product_variant.product:id,product_name',
+                'entry.supplier'
             ])->select('stock_entry_lines.*');
     
         return datatables()->eloquent($q)
@@ -201,6 +204,7 @@ class StockController extends Controller
                 '<input type="checkbox" class="row-checkbox" value="'.$r->id.'">')
             ->addColumn('entry_id',   fn($r)=> $r->stock_entry_id)
             ->addColumn('store',   fn($r)=> $r->entry->store?->name)
+            ->addColumn('supplier',   fn($r)=> $r->entry->supplier?->name)
             ->addColumn('variant', fn($r)=> $r->product_variant->sku.' – '.$r->product_variant->product->product_name)
             ->addColumn('actions', fn($r)=>'
                 <button class="btn btn-sm btn-primary edit-line" data-id="'.$r->id.'">Edit</button>

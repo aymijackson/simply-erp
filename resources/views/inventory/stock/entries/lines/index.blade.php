@@ -27,6 +27,7 @@
               <th><input type="checkbox" id="selectAllLines"></th>
               <th>Entry #</th>
               <th>Store</th>
+              <th>Supplier</th>
               <th>Variant</th>
               <th class="text-end">Qty</th>
               <th class="text-end">Unit Cost</th>
@@ -110,6 +111,7 @@ const lineTable = $('#lineTable').DataTable({
       {data:'checkbox', orderable:false, searchable:false},
       {data:'entry_id'},
       {data:'store'},
+      {data:'supplier'},
       {data:'variant'},
       {data:'qty',        className:'text-end'},
       {data:'unit_cost',  className:'text-end'},
@@ -171,7 +173,7 @@ function deleteOne(){
   Swal.fire({title:'Delete?',icon:'warning',showCancelButton:true})
       .then(res=>{
         if(res.isConfirmed){
-            $.post(`/admin/inventory/stock/entry-lines/${id}`,{_method:'DELETE'})
+            $.post(`/admin/inventory/stock-entries/lines/${id}`,{_method:'DELETE'})
               .done(()=>lineTable.ajax.reload(null,false));
         }
       });

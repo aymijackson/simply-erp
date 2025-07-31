@@ -46,6 +46,7 @@
 
 <!-- jQuery first -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
 <!-- Bootstrap bundle (Popper inside) -->
@@ -60,8 +61,6 @@
 <!-- other jQuery‑based libs (e.g. Select2) after DataTables -->
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/axios@1/dist/axios.min.js"></script>
-
-
 @stack('scripts')
 </body>
 </html>

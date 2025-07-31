@@ -28,6 +28,7 @@
                             <th>Reference #</th>
                             <th>Store</th>
                             <th>Entry Date</th>
+                            <th>Supplier</th>
                             <th>Status</th>
                             <th class="text-end">Actions</th>
                         </tr>
@@ -68,6 +69,12 @@
             <div class="col-md-4">
                 <label class="form-label">Reference #</label>
                 <input type="text" name="reference" id="reference" class="form-control">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Supplier</label>
+                <select name="supplier_id" id="supplier_id" class="form-select form-control">
+                    <option value="">-- optional --</option>
+                </select>
             </div>
             <div class="col-md-4">
                 <label class="form-label">Status</label>
@@ -118,6 +125,7 @@
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
 $.ajaxSetup({headers:{'X-CSRF-TOKEN':$('meta[name="csrf-token"]').attr('content')}});
@@ -186,9 +194,10 @@ $(function(){
         {data:'reference'},
         {data:'store_name'},
         {data:'entry_date'},
+        {data:'supplier'},
         {data:'status', render:d=> d==='draft'
-              ? '<span class="badge bg-secondary">Draft</span>'
-              : '<span class="badge bg-success">Approved</span>'},
+              ? '<span class="badge bg-secondary text-white">Draft</span>'
+              : '<span class="badge bg-success text-white">Approved</span>'},
         {data:'actions', orderable:false, searchable:false, className:'text-end'},
       ],
       drawCallback(){
@@ -243,6 +252,21 @@ $(function(){
               }
           });
   }
+
+  /* ---- Supplier live‑search ---- */
+    $('#supplier_id').select2({
+        ajax: {
+            url: "{{ route('admin.inventory.suppliers.select2') }}",   // sample route
+            dataType: 'json',
+            delay: 250,
+            data: params => ({ q: params.term }),
+            processResults: data => ({ results: data })      // expects [{id,text}]
+        },
+        placeholder: '-- optional --',
+        minimumInputLength: 2,
+        dropdownParent: $('#entryModal'),  // keep dropdown inside the modal
+        width: '100%'
+    });
 });
 </script>
 @endpush

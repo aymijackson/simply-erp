@@ -30,6 +30,7 @@ use Modules\Inventory\Http\Controllers\ProductController;
 use Modules\Inventory\Http\Controllers\StockAgingController;
 use Modules\Inventory\Http\Controllers\StockController;
 use Modules\Inventory\Http\Controllers\StockDashboardController;
+use Modules\Inventory\Http\Controllers\StockIssueController;
 use Modules\Inventory\Http\Controllers\StockLevelController;
 use Modules\Inventory\Http\Controllers\StockTransferController;
 use Modules\Inventory\Http\Controllers\UnitController;
@@ -736,6 +737,32 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
                Route::post('/bulk-delete', [ProductController::class, 'bulkDelete'])->name('bulk-delete');
           });
 
+          // routes/web.php  (or your module route file)
+          Route::prefix('returns')
+               ->as('admin.inventory.returns.')
+               ->middleware(['auth'])
+               ->group(function () {
+
+          Route::controller(CustomerReturnController::class)
+               ->prefix('customer')
+               ->as('customer.')
+               ->group(function(){
+               Route::get('/',             'index')->name('index');
+               Route::get('datatable',     'datatable')->name('datatable');
+               Route::post('/',            'store')->name('store');
+               Route::get('{return}',      'edit')->name('edit');
+               Route::put('{return}',      'update')->name('update');
+               Route::post('{return}/approve','approve')->name('approve');
+               Route::post('{return}/post',   'post')->name('post');
+          });
+
+          Route::controller(SupplierReturnController::class)
+          ->prefix('supplier')
+          ->as('supplier.')
+          ->group(/* same set as above */);
+          });
+
+
           Route::prefix('/suppliers')->name('suppliers.')->group(function () {
                Route::prefix('/addresses')->name('addresses.')->group(function () {
                     Route::get('/', [SupplierController::class, 'suppliersAddressesIndex'])->name('index');
@@ -767,6 +794,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
                     Route::get('/export/excel', [SupplierController::class, 'exportExcel'])->name('export.excel');
                });
      
+               Route::get('/select2', [SupplierController::class, 'select2'])->name('select2');
                Route::get('/', [SupplierController::class, 'index'])->name('index');
                Route::get('/datatable', [SupplierController::class, 'datatable'])->name('datatable');
                Route::post('/store', [SupplierController::class, 'store'])->name('store');
@@ -871,7 +899,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
                Route::get('/{stock_entry}/lines', [StockController::class,'stockEntryLinesIndex'])->name('lines.fetch');
                Route::post('/{entry}/lines', [StockController::class,'lines.store']);
 
-               Route::delete('/lines/{id}', [StockController::class,'lines.destroy']);
+               Route::delete('/lines/{id}', [StockController::class,'destroyStockEntryLine']);
 
                Route::get('/', [StockController::class, 'index'])->name('index');
                Route::get('/datatable', [StockController::class, 'datatable'])->name('datatable');
@@ -882,6 +910,20 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
                Route::post('/bulk-delete', [StockController::class, 'bulkDelete'])->name('bulkdelete');
           });
 
+          Route::prefix('stock-issues')->name('stock_issues.')->group(function(){
+
+               Route::post('/{issue}/approve', [StockIssueController::class,'approve'])->name('approve');
+
+               Route::get('/{issue}/lines/table', [StockIssueController::class,'linesDatatable'])->name('lines');
+
+               Route::get('/fetch_variants', [StockIssueController::class,'fetch_variants'])->name('fetch_variants');
+               Route::get('/', [StockIssueController::class,'index'])->name('index');
+               Route::get('/datatable', [StockIssueController::class,'datatable'])->name('datatable');
+               Route::post('/', [StockIssueController::class,'store'])->name('store');
+               Route::post('/{issue}/post', [StockIssueController::class,'post'])->name('post');
+               
+               Route::get('/{issue}', [StockIssueController::class,'show'])->name('show');
+           });
      });
 
 });
