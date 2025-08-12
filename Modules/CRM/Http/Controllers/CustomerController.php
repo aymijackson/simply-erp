@@ -9,6 +9,18 @@ use Yajra\DataTables\DataTables;
 
 class CustomerController extends Controller
 {
+    public function select2(Request $r)
+    {
+        $q = Customer::query()
+            ->when($r->filled('q'),
+                    fn($qq) => $qq->where('name','like',"%{$r->q}%"))
+            ->orderBy('name')
+            ->limit(15)
+            ->get(['id','name as text']);     // rename to 'text' for Select2
+
+        return response()->json($q);
+    }
+
     public function index()
     {
         $companies = Company::all();

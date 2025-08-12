@@ -65,7 +65,7 @@ class RawMaterialController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        $rawMaterial->update($data);
+        $raw_material->update($data);
         return response()->json(['message' => 'Raw material updated']);
     }
 

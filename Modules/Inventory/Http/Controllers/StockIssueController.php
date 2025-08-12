@@ -4,13 +4,18 @@ namespace Modules\Inventory\Http\Controllers;
 
 use Illuminate\Routing\Controller;
 use Modules\Inventory\Models\StockAge;
-use Modules\Inventory\Models\Product\ProductVariant;
+use Modules\Production\Models\BomItem;
 use App\Models\LocationStore;
-use Modules\Inventory\Models\StockIssue;
+use Modules\Inventory\Models\{
+    StockIssue, StockTransaction, Product\ProductVariant
+};
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Modules\Inventory\Services\StockIssueService;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class StockIssueController extends Controller
 {
@@ -56,30 +61,46 @@ class StockIssueController extends Controller
 
     public function store(Request $r)
     {
-        $hdr = StockIssue::create([
-            'issue_no'      => $this->nextNumber(),
-            'from_store_id' => $r->from_store_id,
-            'reference'     => $r->reference,
-            'reason'        => $r->reason,
-            'requested_by'  => auth()->id()
-        ]);
-        foreach ($r->lines as $ln)
-        {
-            if($ln['unit_cost'])
-            {
-                $ln['unit_cost'] = (float)$ln['unit_cost'];  // ensure float
-                $ln['value'] = $ln['qty'] * $ln['unit_cost']; // calculate value
-            }
-            else
-            {
-                $ln['unit_cost'] = 0.0;  // default to zero if not provided
-            }
-            $hdr->lines()->create($ln);
-        }
+        $hdr = DB::transaction(function () use ($r) {
+            $hdr = StockIssue::create([
+                'issue_no'          => $this->nextNumber(),
+                'issue_type'        => $r->input('issue_type', 'normal'),
+                'from_store_id'     => $r->input('from_store_id'),
+                'reference'         => $r->input('reference'),
+                'reason'            => $r->input('reason'),
+                'requested_by'      => auth()->id(),
+                'issue_date'        => $r->input('issue_date', now()),
+                // header-level links only; no linking in drafts
+                'bom_header_id'     => $r->input('bom_header_id'),
+                'sales_delivery_id' => $r->input('sales_delivery_id'),
+                'status'            => 'draft',
+            ]);
 
-        return response()->json(['id'=>$hdr->id,'message'=>'Issue saved (draft).']);
+            $lines = collect($r->input('lines', []))
+                ->filter(fn ($ln) => !empty($ln['product_variant_id']))
+                ->map(function ($ln) {
+                    $qty       = (float) ($ln['qty'] ?? 0);
+                    $unit_cost = (float) ($ln['unit_cost'] ?? 0);
+                    return [
+                        'product_variant_id' => (int) $ln['product_variant_id'],
+                        'qty'                => $qty,
+                        'unit_cost'          => $unit_cost,
+                        'value'              => $qty * $unit_cost,
+                    ];
+                });
+
+            if ($lines->isEmpty()) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'lines' => 'At least one valid line is required.',
+                ]);
+            }
+
+            $hdr->lines()->createMany($lines->all());
+            return $hdr;
+        });
+
+        return response()->json(['id' => $hdr->id, 'message' => 'Issue saved (draft).']);
     }
-
     /* -----------------------------------------------------------------
      *  POST /stock-issues/{issue}/approve   (route name: inventory.stock.issues.approve)
      * ----------------------------------------------------------------*/
@@ -105,28 +126,33 @@ class StockIssueController extends Controller
      *  POST /stock-issues/{issue}/post     (route name: inventory.stock.issues.post)
      * ----------------------------------------------------------------*/
     public function post(StockIssue $issue, StockIssueService $service)
-    {
-        // rule: must be approved first
-        if ($issue->status !== 'approved') {
-            return response()->json([
-                'message' => 'Issue must be approved before it can be posted'
-            ], 422);
-        }
+{
+    try {
+        // The service handles: ensureLinks, deficit reconciliation,
+        // availability guard, stock txns, and marking as posted.
+        $service->post($issue->loadMissing('lines.variant'));
 
-        DB::transaction(function () use ($issue, $service) {
-            // write ledger rows & update variant balances
-            $service->post($issue);
+        $fresh = $issue->fresh(); // get updated status/posted_at
+        return response()->json([
+            'id'        => $fresh->id,
+            'status'    => $fresh->status,
+            'posted_at' => optional($fresh->posted_at)->toDateTimeString(),
+            'message'   => 'Issue posted successfully.',
+        ]);
 
-            // mark header as posted
-            $issue->update([
-                'status'     => 'posted',
-                'posted_by'  => auth()->id(),
-                'posted_at'  => now(),
-            ]);
-        });
+    } catch (ValidationException $e) {
+        // e.g., insufficient stock – returns 422 with messages
+        throw $e;
 
-        return response()->json(['message' => 'Issue posted']);
+    } catch (HttpException $e) {
+        // e.g., “Only approved issues can be posted” (422) or “already posted” (400)
+        return response()->json(['message' => $e->getMessage()], $e->getStatusCode());
+
+    } catch (\Throwable $e) {
+        report($e);
+        return response()->json(['message' => 'Post failed', 'error' => $e->getMessage()], 500);
     }
+}
 
 
     /** small helper */
@@ -158,7 +184,7 @@ class StockIssueController extends Controller
             ->addColumn('name',  fn($l)=> $l->variant->product->product_name)
             ->addColumn('qty',   fn($l)=> number_format($l->qty, 3))
             ->addColumn('u_cost',fn($l)=> number_format($l->unit_cost, 2))
-            ->addColumn('value', fn($l)=> number_format($l->qty * $l->unit_cost, 2))
+            ->addColumn('value', fn($l)=> number_format($l->qty * $l->value, 2))
             ->make(true);
     }
 

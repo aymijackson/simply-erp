@@ -21,6 +21,9 @@ use Illuminate\Http\Request;
 use Yajra\DataTables\DataTables;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Modules\Inventory\Exports\StockEntryExport;
 
 class StockController extends Controller
 {
@@ -33,6 +36,35 @@ class StockController extends Controller
         ]);
     }
 
+    public function export(Request $request)
+    {
+        // ----- build one query used for both file types -----
+        $entries = StockEntry::with(['store', 'supplier', 'customer', 'lines.product_variant'])
+            ->when($request->filled('from'),     fn ($q) => $q->whereDate('entry_date', '>=', $request->from))
+            ->when($request->filled('to'),       fn ($q) => $q->whereDate('entry_date', '<=', $request->to))
+            ->when($request->filled('store_id'), fn ($q) => $q->where('store_id', $request->store_id))
+            ->when($request->filled('supplier_id'), fn ($q) => $q->where('supplier_id', $request->supplier_id))
+            ->when($request->filled('customer_id'), fn ($q) => $q->where('customer_id', $request->customer_id))
+            ->when($request->filled('variant_id'), function ($q) use ($request) {
+                $q->whereHas('lines', fn ($l) => $l->where('product_variant_id', $request->variant_id));
+            })
+            ->orderBy('entry_date', 'desc')
+            ->get();
+
+        // ----- dispatch by requested file type -----
+        switch ($request->type) {
+            case 'excel':
+                return Excel::download(new StockEntryExport($entries), 'stock-report.xlsx');
+
+            case 'pdf':
+                $pdf = Pdf::loadView('inventory.stock.entries.pdf', ['entries' => $entries]);
+                return $pdf->download('stock-report.pdf');
+        }
+
+        // if user hits the endpoint without ?type=…
+        return back()->with('error', 'Unknown export type');
+    }
+
     public function getShelvesByStore($storeId)
     {
         $shelves = StoreShelf::where('store_id', $storeId)->get();
@@ -42,13 +74,27 @@ class StockController extends Controller
     public function datatable()
     {
         $q = StockEntry::with('store:id,name')
-        ->select('stock_entries.*');
-
+        ->select('stock_entries.*')
+        ->orderBy('id', 'desc');
         return datatables()->eloquent($q)
             ->addColumn('checkbox', fn($row) =>
                 '<input type="checkbox" class="row-checkbox" value="'.$row->id.'">')
             ->addColumn('store_name', fn($row)=>$row->store->name)
-            ->addColumn('supplier', fn($row)=>$row->supplier?->name)
+            ->addColumn('party', function ($row) {
+                return match ($row->entry_type) {
+                    // customer return
+                    'cust_return' => 'Customer: '
+                                    . (($row->customer?->name) ?? 'N/A'),
+            
+                    // normal supplier entry
+                    'normal'     => 'Supplier: '
+                                    . (($row->supplier?->name) ?? 'N/A'),
+            
+                    // fallback
+                    default      => 'N/A',
+                };
+            })
+            
             ->addColumn('entry_date', fn($row)=>date('d-m-Y', strtotime($row->entry_date)))
             ->addColumn('actions', fn($row)=>'
                 <button class="btn btn-sm btn-primary edit-entry" data-id="'.$row->id.'">Edit</button>
@@ -70,7 +116,7 @@ class StockController extends Controller
             }
 
             // auto‑approve & post, or keep as draft
-            if ($data['header']['status'] === 'approved') {
+            if ($data['header']['status'] === 'posted') {
                 StockService::postEntry($entry);
             }
         });
@@ -140,7 +186,7 @@ class StockController extends Controller
             'store_id'        => 'required|exists:location_stores,id',
             'entry_date'      => 'required|date',
             'reference'       => 'nullable|string|max:50',
-            'status'          => 'required|in:draft,approved',
+            'status'          => 'required|in:draft,approved,posted',
             'lines.variant_id'=> 'required|array|min:1',
             'lines.variant_id.*' => 'exists:product_variants,id',
             'lines.qty'       => 'required|array',
@@ -160,7 +206,7 @@ class StockController extends Controller
         }
 
         return [
-            'header' => $request->only('store_id','entry_date','reference', 'supplier_id','status'),
+            'header' => $request->only('store_id','entry_date', 'entry_type', 'reference', 'supplier_id', 'customer_id', 'status'),
             'lines'  => $lines,
         ];
     }
@@ -282,7 +328,7 @@ class StockController extends Controller
         $line->delete();
 
         // re‑post ledger if approved
-        if ($entry->status === 'approved') {
+        if ($entry->status === 'posted') {
             StockService::postEntry($entry->fresh('lines'));
         }
         return response()->json(['message'=>'Line deleted']);

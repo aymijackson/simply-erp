@@ -354,6 +354,23 @@ class ProductController extends Controller
 
         ->addColumn('product_name', fn($row) =>
             $row->product?->product_name ?? '—')
+            
+        ->addColumn('type', function ($row) {
+            switch ($row->item_type) {
+                case 'raw':
+                    return 'Raw Material';
+                case 'wip':
+                    return 'Work In Progress';
+                case 'fg':
+                    return 'Finished Goods';
+                case 'tool':
+                    return 'Tool';
+                case 'service':
+                    return 'Service';
+                default:
+                    return 'Unknown';
+            }
+        })
 
         ->addColumn('price', fn($row) =>
             'NGN '. number_format($row->price, 2) ?? '—')
@@ -387,6 +404,7 @@ class ProductController extends Controller
             'product_id' => 'required|exists:products,id',
             'sku' => 'required|unique:product_variants,sku',
             'price' => 'nullable|numeric',
+            'item_type' => 'required|in:raw,wip,fg,tool,service',
             'stock_quantity' => 'required|integer|min:0',
             'reorder_point' => 'integer|min:0',
             'attribute_values'   => 'array',
@@ -435,6 +453,7 @@ class ProductController extends Controller
             'product_id' => 'required|exists:products,id',
             'sku' => 'required|unique:product_variants,sku,'.$id,
             'price' => 'nullable|numeric',
+            'item_type' => 'required|in:raw,wip,fg,tool,service',
             'stock_quantity' => 'required|integer|min:0',
             'reorder_point' => 'integer|min:0',
             'attribute_values' => 'array'

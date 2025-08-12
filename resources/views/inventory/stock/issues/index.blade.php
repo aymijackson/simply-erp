@@ -72,17 +72,46 @@ $(function(){
    // open modal
    $('#addBtn').on('click', ()=> $('#issueModal').modal('show'));
 
-   // post
-   $('#issueTbl').on('click','.post-btn', function(){
-        const id = $(this).data('id');
-        Swal.fire({title:'Post this issue?',icon:'question',showCancelButton:true})
-            .then(res=>{
-                if(res.isConfirmed){
-                   $.post(`/admin/inventory/stock-issues/${id}/post`, {_token:'{{ csrf_token() }}'})
-                    .done(()=>{ tbl.ajax.reload(); Swal.fire('Done','','success');});
-                }
-            });
-   });
+   // POST  (approved → posted)
+$('#issueTbl').on('click', '.post-btn', function () {
+    const id = $(this).data('id');
+
+    Swal.fire({
+        title: 'Post this issue?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, post'
+    }).then(res => {
+        if (!res.isConfirmed) return;
+
+        $.post(`/admin/inventory/stock-issues/${id}/post`, {
+            _token: '{{ csrf_token() }}'
+        })
+        .done(() => {
+            tbl.ajax.reload(null, false);                 // keep paging
+            Swal.fire('Posted', 'Issue successfully posted', 'success');
+        })
+        .fail(xhr => {
+            /* 422 = ValidationException from StockIssueService */
+            if (xhr.status === 422 && xhr.responseJSON?.errors?.qty?.length) {
+                Swal.fire({
+                    icon:   'error',
+                    title:  'Insufficient stock',
+                    html:   xhr.responseJSON.errors.qty[0]   // e.g. “122aaaa22 (have 0, need 3)…”
+                });
+                return;
+            }
+
+            /* fallback for any other server error */
+            Swal.fire(
+                'Error',
+                xhr.responseJSON?.message || 'Post failed',
+                'error'
+            );
+        });
+    });
+});
+
    
 });
 </script>

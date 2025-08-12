@@ -25,6 +25,8 @@ use Modules\HRM\Http\Controllers\TrainingController;
 use Modules\HRM\Http\Controllers\PerformanceController;
 
 use Modules\Inventory\Http\Controllers\BrandController;
+use Modules\Inventory\Http\Controllers\CustomerReturnController;
+use Modules\Inventory\Http\Controllers\SupplierReturnController;
 use Modules\Inventory\Http\Controllers\ManufacturerController;
 use Modules\Inventory\Http\Controllers\ProductController;
 use Modules\Inventory\Http\Controllers\StockAgingController;
@@ -35,7 +37,7 @@ use Modules\Inventory\Http\Controllers\StockLevelController;
 use Modules\Inventory\Http\Controllers\StockTransferController;
 use Modules\Inventory\Http\Controllers\UnitController;
 
-use Modules\Production\Http\Controllers\BillOfMaterialController;
+use Modules\Production\Http\Controllers\BomController;
 use Modules\Production\Http\Controllers\BOMItemController;
 use Modules\Production\Http\Controllers\WorkOrderController;     
 use Modules\Production\Http\Controllers\RawMaterialController;
@@ -44,7 +46,10 @@ use Modules\Production\Http\Controllers\WorkOrderMaterialController;
 use Modules\Production\Http\Controllers\WorkOrderStepController;
 ;
 
-use App\Http\Controllers\SalesController;
+use Modules\Sales\Http\Controllers\SalesController;
+;
+
+
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\ReportController;
 
@@ -303,6 +308,8 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
           });
 
           Route::prefix('customers')->name('customers.')->group(function () {
+
+               Route::get('/select2', [CustomerController::class, 'select2'])->name('select2');
                Route::get('/', [CustomerController::class, 'index'])->name('index');
                Route::post('/', [CustomerController::class, 'store'])->name('store');
                Route::get('/datatable', [CustomerController::class, 'datatable'])->name('datatable');
@@ -442,11 +449,33 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
           
      });
 
+     /** Sales */
+     Route::prefix('sales')->name('sales.')->group(function () {
+          Route::prefix('invoices')->name('invoices.')->group(function () {
+               Route::prefix('lines')->name('lines.')->group(function () {
+                    Route::get('/select2', [SalesController::class, 'select2'])->name('select2');
+               });
+          });
+          Route::prefix('delivery')->name('delivery.')->group(function () {
+               Route::prefix('lines')->name('lines.')->group(function () {
+                    Route::get('/select2', [SalesController::class, 'select2'])->name('select2');
+               });
+
+               Route::get('/select2', [SalesController::class, 'select2'])->name('select2');
+          });
+     });
+
      /** Production */
      Route::prefix('production')->name('production.')->group(function () {
           Route::prefix('boms')->name('boms.')->group(function () {
 
+               Route::prefix('headers')->name('headers.')->group(function () {
+                    Route::get('/select2', [BomController::class, 'select2'])->name('select2');
+               });
+
+
                Route::prefix('items')->name('items.')->group(function () {
+                    Route::get('/select2', [BOMItemController::class, 'select2'])->name('select2');
                     Route::get('/', [BOMItemController::class, 'index'])->name('index');
                     Route::post('/', [BOMItemController::class, 'store'])->name('store');
                     Route::get('/datatable', [BOMItemController::class, 'datatable'])->name('datatable');
@@ -456,13 +485,13 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
                     Route::delete('/{id}', [BOMItemController::class, 'destroy'])->name('destroy');     
                });
 
-               Route::get('/', [BillOfMaterialController::class, 'index'])->name('index');
-               Route::post('/', [BillOfMaterialController::class, 'store'])->name('store');
-               Route::get('/datatable', [BillOfMaterialController::class, 'datatable'])->name('datatable');
-               Route::get('/{bom}/edit', [BillOfMaterialController::class, 'edit'])->name('edit');
-               Route::put('/{bom}', [BillOfMaterialController::class, 'update'])->name('update');
-               Route::delete('/bulk-delete', [BillOfMaterialController::class, 'bulkDelete'])->name('bulk-delete');
-               Route::delete('/{bom}', [BillOfMaterialController::class, 'destroy'])->name('destroy');   
+               Route::get('/', [BomController::class, 'index'])->name('index');
+               Route::post('/', [BomController::class, 'store'])->name('store');
+               Route::get('/datatable', [BomController::class, 'datatable'])->name('datatable');
+               Route::get('/{bom}', [BomController::class, 'show'])->name('show');
+               Route::put('/{bom}', [BomController::class, 'update'])->name('update');
+               Route::delete('/bulk-delete', [BomController::class, 'bulkDelete'])->name('bulk-delete');
+               Route::delete('/{bom}', [BomController::class, 'destroy'])->name('destroy');   
                
                
           });
@@ -739,27 +768,34 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
 
           // routes/web.php  (or your module route file)
           Route::prefix('returns')
-               ->as('admin.inventory.returns.')
-               ->middleware(['auth'])
+               ->name('returns.')
                ->group(function () {
 
-          Route::controller(CustomerReturnController::class)
-               ->prefix('customer')
-               ->as('customer.')
-               ->group(function(){
-               Route::get('/',             'index')->name('index');
-               Route::get('datatable',     'datatable')->name('datatable');
-               Route::post('/',            'store')->name('store');
-               Route::get('{return}',      'edit')->name('edit');
-               Route::put('{return}',      'update')->name('update');
-               Route::post('{return}/approve','approve')->name('approve');
-               Route::post('{return}/post',   'post')->name('post');
-          });
+               Route::controller(CustomerReturnController::class)
+                    ->prefix('customer')
+                    ->name('customer.')
+                    ->group(function(){
+                    Route::get('/',             'index')->name('index');
+                    Route::get('datatable',     'datatable')->name('datatable');
+                    Route::post('/',            'store')->name('store');
+                    Route::get('{return}',      'edit')->name('edit');
+                    Route::put('{return}',      'update')->name('update');
+                    Route::post('{return}/approve','approve')->name('approve');
+                    Route::post('{return}/post',   'post')->name('post');
+               });
 
-          Route::controller(SupplierReturnController::class)
-          ->prefix('supplier')
-          ->as('supplier.')
-          ->group(/* same set as above */);
+               Route::controller(SupplierReturnController::class)
+               ->prefix('supplier')
+               ->name('supplier.')
+               ->group(function(){
+                    Route::get('/',             'index')->name('index');
+                    Route::get('datatable',     'datatable')->name('datatable');
+                    Route::post('/',            'store')->name('store');
+                    Route::get('{return}',      'edit')->name('edit');
+                    Route::put('{return}',      'update')->name('update');
+                    Route::post('{return}/approve','approve')->name('approve');
+                    Route::post('{return}/post',   'post')->name('post');
+               });
           });
 
 
@@ -894,6 +930,13 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
               });
 
                /* Entry lines */
+               // Route::get ('/export', [StockController::class,'stockEntryLinesDatatable'])->name('export');
+
+               Route::get(
+                    '/export',
+                    [StockController::class, 'export']
+                )->name('export');
+                
                Route::get ('{entry}/lines/datatable', [StockController::class,'stockEntryLinesDatatable'])->name('line.datatable');
 
                Route::get('/{stock_entry}/lines', [StockController::class,'stockEntryLinesIndex'])->name('lines.fetch');

@@ -4,22 +4,15 @@ namespace Modules\Production\Models;
 use Illuminate\Database\Eloquent\Model;
 use Modules\Production\Models\BillOfMaterial;
 use Modules\Production\Models\RawMaterial;      
+use Modules\Inventory\Models\Product\ProductVariant;
 
-class BOMItem extends Model
+class BomItem extends Model
 {
-    protected $fillable = [
-        'bill_of_material_id', 'raw_material_id', 'quantity'
-    ];
+    protected $fillable = ['bom_header_id','product_variant_id','qty_per_parent'];
 
-    protected $table = 'bom_items';
-    public function bom()
+    public function product_variant()
     {
-        return $this->belongsTo(BillOfMaterial::class, 'bill_of_material_id');
-    }
-
-    public function raw_material()
-    {
-        return $this->belongsTo(RawMaterial::class);
+        return $this->belongsTo(ProductVariant::class,'product_variant_id');
     }
 
 }

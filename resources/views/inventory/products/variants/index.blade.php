@@ -27,6 +27,7 @@
                             <th><input type="checkbox" id="selectAllVariants"></th>
                             <th>SKU</th>
                             <th>Product</th>
+                            <th>Type</th>
                             <th>Attributes</th>
                             <th class="text-end">Price</th>
                             <th class="text-end">Stock</th>
@@ -66,6 +67,18 @@
                 <div class="col-md-6">
                     <label class="form-label">SKU *</label>
                     <input id="sku" name="sku" type="text" class="form-control" required>
+                </div>
+
+                <div class="col-md-12">
+                    <label class="form-label">Product *</label>
+                    <select id="item_type" name="item_type" class="form-control" required>
+                        <option value="">-- Select Item Type --</option>
+                        <option value="raw">Raw Material</option>
+                        <option value="wip">Work In Progress</option>
+                        <option value="fg">Finished Goods</option>
+                        <option value="tool">Tools</option>
+                        <option value="service">Service</option>
+                    </select>
                 </div>
 
                 <div class="col-md-6">
@@ -187,6 +200,7 @@ $(function () {
             {data:'checkbox', orderable:false, searchable:false},
             {data:'sku'},
             {data:'product_name'},
+            {data:'type'},
             {data:'attributes'},  
             {data:'price', className:'text-end'},
             {data:'stock_quantity', className:'text-end'},

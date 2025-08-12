@@ -2,5 +2,6 @@
     "Inventory": true,
     "HRM": true,
     "CRM": true,
-    "Production": true
+    "Production": true,
+    "Sales": true
 }
