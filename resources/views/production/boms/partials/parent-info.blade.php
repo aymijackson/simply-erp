@@ -20,17 +20,13 @@
         </div>
 
         {{-- Meta data ------------------------------------------------------ --}}
-        <div class="col-md-3">
-            <small class="text-muted">Version / Revision</small><br>
-            {{ $bom->version ?? '–' }}
-        </div>
 
-        <div class="col-md-3">
+        <div class="col-md-4">
             <small class="text-muted">Yield Qty</small><br>
             {{ rtrim(rtrim(number_format($bom->yield_qty,4,'.',''),'0'),'.') }}
         </div>
 
-        <div class="col-md-3 text-white">
+        <div class="col-md-4 text-white">
             <small class="text-muted">Status</small><br>
             @if($bom->status === 'draft')
                 <span class="badge bg-secondary">Draft</span>
@@ -39,7 +35,7 @@
             @endif
         </div>
 
-        <div class="col-md-3">
+        <div class="col-md-4">
             <small class="text-muted">Created</small><br>
             {{ $bom->created_at->format('Y-m-d') }}
         </div>

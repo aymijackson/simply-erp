@@ -1,0 +1,477 @@
+@extends('layouts.master')
+@section('title', 'Work Order · #'.$wo->id)
+
+@push('styles')
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"/>
+@endpush
+
+@section('content')
+<div class="container-fluid">
+
+  {{-- Header --------------------------------------------------------------- --}}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 text-primary mb-0">
+      Work Order <small class="text-muted">#{{ $wo->id }}</small>
+    </h1>
+    <div class="d-print-none d-flex gap-2">
+      {{-- Lifecycle buttons (toggle by status) --}}
+      @php $status = $wo->status; @endphp
+      <button id="btnRelease"  class="btn btn-outline-secondary {{ $status!=='draft'?'d-none':'' }}">Release</button>
+      <button id="btnStart"    class="btn btn-outline-primary   {{ !in_array($status,['released','paused'])?'d-none':'' }}">Start</button>
+      <button id="btnComplete" class="btn btn-outline-success   {{ $status!=='in_progress'?'d-none':'' }}">Complete</button>
+      <button id="btnClose"    class="btn btn-outline-dark      {{ $status!=='completed'?'d-none':'' }}">Close</button>
+      <a href="{{ route('admin.production.work-orders.index') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left me-1"></i> Back
+      </a>
+    </div>
+  </div>
+
+  {{-- Overview card --------------------------------------------------------- --}}
+  <div class="card shadow-sm mb-3">
+    <div class="card-body row g-3">
+      <div class="col-md-3">
+        <div class="text-muted small">Status</div>
+        <div id="woStatusBadge">
+          @php
+            $map = ['draft'=>'secondary','released'=>'info','in_progress'=>'warning','completed'=>'success','closed'=>'dark'];
+            $c   = $map[$wo->status] ?? 'secondary';
+          @endphp
+          <span class="badge bg-{{ $c }} text-white">{{ ucfirst($wo->status) }}</span>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="text-muted small">Product Variant</div>
+        <div>{{ $wo->variant_sku ?: '—' }}</div>
+      </div>
+      <div class="col-md-3">
+        <div class="text-muted small">Product</div>
+        <div>{{ $wo->product_name ?: '—' }}</div>
+      </div>
+      <div class="col-md-3">
+        <div class="text-muted small">Qty to Produce</div>
+        <div>{{ number_format((float)$wo->quantity_to_produce, 4) }}</div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="text-muted small">BOM</div>
+        <div>{{ $wo->bom_code ? '#'.$wo->bom_code : '—' }}</div>
+      </div>
+      <div class="col-md-3">
+        <div class="text-muted small">Routing</div>
+        <div>{{ $wo->routing_name ?: '—' }}</div>
+      </div>
+      <div class="col-md-3">
+        <div class="text-muted small">Start</div>
+        <div>{{ $wo->start_date ? \Carbon\Carbon::parse($wo->start_date)->format('d M Y H:i') : '—' }}</div>
+      </div>
+      <div class="col-md-3">
+        <div class="text-muted small">End</div>
+        <div>{{ $wo->end_date ? \Carbon\Carbon::parse($wo->end_date)->format('d M Y H:i') : '—' }}</div>
+      </div>
+    </div>
+  </div>
+
+  {{-- Tabs --------------------------------------------------------------- --}}
+  <ul class="nav nav-tabs" id="woTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="materials-tab" data-bs-toggle="tab" data-bs-target="#materials" type="button" role="tab">Materials</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="steps-tab" data-bs-toggle="tab" data-bs-target="#steps" type="button" role="tab">Steps</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="costs-tab" data-bs-toggle="tab" data-bs-target="#costs" type="button" role="tab">Costs</button>
+    </li>
+  </ul>
+
+  <div class="tab-content pt-3">
+    {{-- Materials ---------------------------------------------------------- --}}
+    <div class="tab-pane fade show active" id="materials" role="tabpanel">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="table-responsive">
+            <table id="matTbl" class="table table-bordered w-100">
+              <thead class="table-light">
+                <tr>
+                  <th>SKU</th>
+                  <th>Product</th>
+                  <th class="text-end">Planned</th>
+                  <th class="text-end">Issued</th>
+                  <th class="text-end">Returned</th>
+                  <th class="text-end">Remaining</th>
+                  <th>Notes</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {{-- Steps -------------------------------------------------------------- --}}
+    <div class="tab-pane fade" id="steps" role="tabpanel">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="table-responsive">
+            <table id="stepTbl" class="table table-bordered w-100">
+              <thead class="table-light">
+                <tr>
+                  <th>#</th>
+                  <th>Name</th>
+                  <th>Sequence</th>
+                  <th>Routing Steps</th>
+                  <th>Instructions</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {{-- Costs -------------------------------------------------------------- --}}
+    <div class="tab-pane fade" id="costs" role="tabpanel">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="mb-0">Extra Costs (Labour / Logistics / Fuel / Other)</h6>
+        <button id="addCostBtn" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i> Add Cost</button>
+      </div>
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="table-responsive">
+            <table id="costTbl" class="table table-bordered w-100">
+              <thead class="table-light">
+                <tr>
+                  <th>Type</th>
+                  <th>Category</th>
+                  <th class="text-end">Qty</th>
+                  <th>Unit</th>
+                  <th class="text-end">Rate</th>
+                  <th class="text-end">Amount</th>
+                  <th>Note</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tfoot>
+                <tr>
+                  <th colspan="5" class="text-end">Total:</th>
+                  <th class="text-end" id="costTotalCell">0.00</th>
+                  <th colspan="2"></th>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{{-- Add/Edit Cost Modal ---------------------------------------------------- --}}
+<div class="modal fade" id="costModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="costForm" class="modal-content">
+      @csrf
+      <input type="hidden" id="cost_id">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">Add Cost</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Cost Type *</label>
+          <select id="cost_type_id" name="work_order_cost_type_id" class="form-select" required></select>
+        </div>
+        <div class="row g-2">
+          <div class="col-md-4">
+            <label class="form-label">Qty *</label>
+            <input type="number" step="0.000001" min="0.000001" id="cost_qty" name="qty" class="form-control" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Unit</label>
+            <select id="cost_unit_id" name="unit_id" class="form-select"></select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Rate *</label>
+            <input type="number" step="0.0001" min="0" id="cost_rate" name="rate" class="form-control" required>
+          </div>
+        </div>
+        <div class="mt-3">
+          <label class="form-label">Note</label>
+          <textarea id="cost_note" name="note" class="form-control" rows="3"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-success" id="saveCostBtn">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+@endsection
+
+@push('scripts')
+{{-- DataTables & Buttons --}}
+<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.bootstrap5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+{{-- Select2 --}}
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+const WO_ID = {{ (int)$wo->id }};
+const CSRF  = @json(csrf_token());
+
+// Endpoints
+const URLS = {
+  materialsDT: @json(route('admin.production.work-orders.materials.datatable', $wo->id)),
+  stepsDT:     @json(route('admin.production.work-orders.routings.steps.datatable', ['work_order' => $wo->id])),
+  costsDT:     @json(route('admin.production.work-orders.costs.datatable', $wo->id)),
+  costStore:   @json(route('admin.production.work-orders.costs.store', $wo->id)),
+  costUpdate:  id => @json(route('admin.production.work-orders.costs.update', 0)).replace('/0','/'+id),
+  costDelete:  id => @json(route('admin.production.work-orders.costs.destroy', 0)).replace('/0','/'+id),
+
+  release:     @json(route('admin.production.work-orders.release', $wo->id)),
+  start:       @json(route('admin.production.work-orders.start', $wo->id)),
+  complete:    @json(route('admin.production.work-orders.complete', $wo->id)),
+  close:       @json(route('admin.production.work-orders.close', $wo->id)),
+
+  // Select2 sources — adjust to your real routes if different
+  costTypes:   "{{ url('admin/production/work-orders/cost-types/select2') }}",
+  units:       "{{ url('admin/common/units/select2') }}",
+};
+
+// ---------- Materials table ----------
+const matTbl = $('#matTbl').DataTable({
+  serverSide:true, responsive:true,
+  ajax: { url: URLS.materialsDT },
+  columns: [
+    {data:'sku'},
+    {data:'name'},
+    {data:'qty_planned', className:'text-end'},
+    {data:'qty_issued',  className:'text-end'},
+    {data:'qty_returned',className:'text-end'},
+    {data:'remaining',   className:'text-end'},
+    {data:'notes'},
+    {data:'actions', orderable:false, searchable:false, className:'text-end'}
+  ],
+  dom:'Blfrtip',
+  buttons:[
+    {extend:'excelHtml5', className:'btn btn-sm btn-success', text:'<i class="fas fa-file-excel me-1"></i> Excel'},
+    {extend:'pdfHtml5',   className:'btn btn-sm btn-danger',  text:'<i class="fas fa-file-pdf me-1"></i> PDF', orientation:'landscape', pageSize:'A4'},
+  ],
+  createdRow: row => row.classList.add('align-middle')
+});
+
+// Hook Issue/Return buttons (delegate => works in responsive child)
+$(document).on('click', '.issue-mat', function(){
+  const id = $(this).data('id');
+  // TODO: open your Stock Issue modal/page with WO context
+  console.log('Issue material line', id, '(wire to your Stock Issue UI)');
+});
+$(document).on('click', '.return-mat', function(){
+  const id = $(this).data('id');
+  // TODO: open your Return flow
+  console.log('Return material line', id, '(wire to your Stock Return UI)');
+});
+
+// ---------- Steps table ----------
+const stepTbl = $('#stepTbl').DataTable({
+  serverSide:true, responsive:true,
+  ajax: { url: URLS.stepsDT },
+  columns: [
+    {data:'DT_RowIndex', orderable:false, searchable:false},
+    {data:'step_name'},
+    {data:'sequence'},
+    {data:'step_name'},
+    {data:'instructions'},
+    {data:'actions', orderable:false, searchable:false, className:'text-end'}
+  ],
+  order:[[1,'asc']],
+  dom:'Blfrtip',
+  buttons:[
+    {extend:'excelHtml5', className:'btn btn-sm btn-success', text:'<i class="fas fa-file-excel me-1"></i> Excel'},
+    {extend:'pdfHtml5',   className:'btn btn-sm btn-danger',  text:'<i class="fas fa-file-pdf me-1"></i> PDF', orientation:'landscape', pageSize:'A4'},
+  ],
+  createdRow: row => row.classList.add('align-middle')
+});
+
+// Start / Finish a step
+$(document).on('click', '.step-start', function(){
+  const id = $(this).data('id');
+  $.post(@json(route('admin.production.work-orders.steps.start', 0)).replace('/0','/'+id), {_token:CSRF})
+    .done(()=> stepTbl.ajax.reload(null,false))
+    .fail(x=> Swal.fire('Error', x.responseJSON?.message||'Failed', 'error'));
+});
+$(document).on('click', '.step-finish', function(){
+  const id = $(this).data('id');
+  $.post(@json(route('admin.production.work-orders.steps.finish', 0)).replace('/0','/'+id), {_token:CSRF})
+    .done(()=> stepTbl.ajax.reload(null,false))
+    .fail(x=> Swal.fire('Error', x.responseJSON?.message||'Failed', 'error'));
+});
+
+// ---------- Costs table ----------
+const costTbl = $('#costTbl').DataTable({
+  serverSide:true, responsive:true,
+  ajax: { url: URLS.costsDT },
+  columns: [
+    {data:'type_name'},
+    {data:'category'},
+    {data:'qty_fmt',   className:'text-end'},
+    {data:'unit_name'},
+    {data:'rate_fmt',  className:'text-end'},
+    {data:'amount_fmt',className:'text-end'},
+    {data:'note'},
+    {data:'actions', orderable:false, searchable:false, className:'text-end'}
+  ],
+  dom:'Blfrtip',
+  buttons:[
+    {extend:'excelHtml5', className:'btn btn-sm btn-success', text:'<i class="fas fa-file-excel me-1"></i> Excel'},
+    {extend:'pdfHtml5',   className:'btn btn-sm btn-danger',  text:'<i class="fas fa-file-pdf me-1"></i> PDF', orientation:'landscape', pageSize:'A4'},
+  ],
+  drawCallback: function(settings){
+    const json = settings.json || {};
+    if (json.totals && json.totals.amount != null) {
+      $('#costTotalCell').text(Number(json.totals.amount).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2}));
+    }
+  },
+  createdRow: row => row.classList.add('align-middle')
+});
+
+// ---------- Add/Edit Cost Modal ----------
+const costModal = new bootstrap.Modal('#costModal');
+const $costId   = $('#cost_id');
+const $ctype    = $('#cost_type_id');
+const $cunit    = $('#cost_unit_id');
+const $cqty     = $('#cost_qty');
+const $crate    = $('#cost_rate');
+const $cnote    = $('#cost_note');
+
+// Select2 sources (adjust endpoints if yours differ)
+$ctype.select2({
+  ajax: { url: URLS.costTypes, dataType:'json', delay:250, data: p=>({q:p.term}), processResults:d=>({results:d}) },
+  dropdownParent: $('#costModal'), width:'100%', placeholder:'-- select type --', minimumInputLength:0
+});
+$cunit.select2({
+  ajax: { url: URLS.units, dataType:'json', delay:250, data: p=>({q:p.term}), processResults:d=>({results:d}) },
+  dropdownParent: $('#costModal'), width:'100%', placeholder:'-- optional unit --', minimumInputLength:0, allowClear:true
+});
+
+$('#addCostBtn').on('click', ()=>{
+  $('#costForm')[0].reset();
+  $ctype.val(null).trigger('change');
+  $cunit.val(null).trigger('change');
+  $costId.val('');
+  $('.modal-title').text('Add Cost');
+  costModal.show();
+});
+
+// Edit cost (delegated, works in responsive child rows)
+$(document).on('click', '.edit-cost', function(){
+  const r = $(this).data('record'); // provided by controller
+  $('#costForm')[0].reset();
+  $costId.val(r.id);
+
+  // preselect type name
+  if (r.type_name) {
+    const opt = new Option(r.type_name, r.work_order_cost_type_id || '', true, true);
+    $ctype.append(opt).trigger('change');
+  } else { $ctype.val(null).trigger('change'); }
+
+  // preselect unit name
+  if (r.unit_name && r.unit_id) {
+    const opt2 = new Option(r.unit_name, r.unit_id, true, true);
+    $cunit.append(opt2).trigger('change');
+  } else { $cunit.val(null).trigger('change'); }
+
+  $cqty.val(r.qty ?? '');
+  $crate.val(r.rate ?? '');
+  $cnote.val(r.note ?? '');
+
+  $('.modal-title').text('Edit Cost');
+  costModal.show();
+});
+
+// Save cost (create/update)
+$('#saveCostBtn').on('click', function(e){
+  e.preventDefault();
+
+  const id  = $costId.val();
+  const url = id ? URLS.costUpdate(id) : URLS.costStore;
+  const method = id ? 'PUT' : 'POST';
+
+  const payload = {
+    _token: CSRF,
+    work_order_cost_type_id: $ctype.val(),
+    unit_id: $cunit.val(),
+    qty: $cqty.val(),
+    rate: $crate.val(),
+    note: $cnote.val()
+  };
+
+  $.ajax({url, type: method, data: payload})
+    .done(res => { costModal.hide(); costTbl.ajax.reload(null,false); Swal.fire('Saved', res.message||'Cost saved','success'); })
+    .fail(x  => {
+      const msg = x.responseJSON?.message || 'Save failed';
+      const errs= x.responseJSON?.errors;
+      Swal.fire('Error', errs? Object.values(errs).flat().join('<br>') : msg, 'error');
+    });
+});
+
+// Delete cost
+$(document).on('click', '.del-cost', function(){
+  const id = $(this).data('id');
+  Swal.fire({title:'Delete cost line?', icon:'warning', showCancelButton:true})
+    .then(r=>{
+      if(!r.isConfirmed) return;
+      $.ajax({url: URLS.costDelete(id), type:'DELETE', data:{_token:CSRF}})
+        .done(res => { costTbl.ajax.reload(null,false); Swal.fire('Deleted', res.message||'Removed','success'); })
+        .fail(x  => { Swal.fire('Error', x.responseJSON?.message||'Failed','error'); });
+    });
+});
+
+// ---------- Lifecycle buttons ----------
+function updateStatusBadge(newStatus){
+  const map = {draft:'secondary', released:'info', in_progress:'warning', completed:'success', closed:'dark'};
+  $('#woStatusBadge').html(`<span class="badge bg-${map[newStatus]||'secondary'} text-white">${newStatus.charAt(0).toUpperCase()+newStatus.slice(1)}</span>`);
+  // Toggle buttons
+  $('#btnRelease').toggleClass('d-none', newStatus!=='draft');
+  $('#btnStart').toggleClass('d-none', !(newStatus==='released' || newStatus==='paused'));
+  $('#btnComplete').toggleClass('d-none', newStatus!=='in_progress');
+  $('#btnClose').toggleClass('d-none', newStatus!=='completed');
+}
+
+$('#btnRelease').on('click', ()=>{
+  $.post(URLS.release, {_token:CSRF})
+    .done(()=>{ updateStatusBadge('released'); matTbl.ajax.reload(null,false); stepTbl.ajax.reload(null,false); })
+    .fail(x=> Swal.fire('Error', x.responseJSON?.message || 'Failed', 'error'));
+});
+$('#btnStart').on('click', ()=>{
+  $.post(URLS.start, {_token:CSRF})
+    .done(()=>{ updateStatusBadge('in_progress'); stepTbl.ajax.reload(null,false); })
+    .fail(x=> Swal.fire('Error', x.responseJSON?.message || 'Failed', 'error'));
+});
+$('#btnComplete').on('click', ()=>{
+  $.post(URLS.complete, {_token:CSRF})
+    .done(res=>{
+      updateStatusBadge('completed');
+      Swal.fire('Completed', `Total Cost: ${Number(res.summary.total_cost).toLocaleString()} (Unit: ${Number(res.summary.unit_cost).toLocaleString(undefined,{minimumFractionDigits:4})})`, 'success');
+    })
+    .fail(x=> Swal.fire('Error', x.responseJSON?.message || 'Failed', 'error'));
+});
+$('#btnClose').on('click', ()=>{
+  $.post(URLS.close, {_token:CSRF})
+    .done(()=>{ updateStatusBadge('closed'); })
+    .fail(x=> Swal.fire('Error', x.responseJSON?.message || 'Failed', 'error'));
+});
+</script>
+@endpush

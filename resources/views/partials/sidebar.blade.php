@@ -217,6 +217,19 @@
     <!-- Manufacturing -->
     <div class="sidebar-heading">Manufacturing</div>
     <li class="nav-item">
+        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseManufacturingParameters">
+            <i class="fas fa-industry"></i>
+            <span>Production Parameters</span>
+        </a>
+        <div id="collapseManufacturingParameters" class="collapse">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <a class="collapse-item" href="{{ route('admin.production.work-orders.cost_types.index') }}">WO Cost Types</a>
+                <a class="collapse-item" href="{{ route('admin.production.routings.index') }}">Routings</a>
+                <a class="collapse-item" href="{{ route('admin.production.routings.steps.index') }}">Routing Steps</a>
+            </div>
+        </div>
+    </li>
+    <li class="nav-item">
         <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseManufacturing">
             <i class="fas fa-industry"></i>
             <span>Production</span>
@@ -224,10 +237,10 @@
         <div id="collapseManufacturing" class="collapse">
             <div class="bg-white py-2 collapse-inner rounded">
                 <a class="collapse-item" href="{{ route('admin.production.raw-materials.index') }}">Raw Materials</a>
-                <a class="collapse-item" href="{{ route('admin.production.boms.index') }}">Bill of Materials</a>
-                <a class="collapse-item" href="{{ route('admin.production.boms.items.index') }}">Bill of Material Items</a>
-                <a class="collapse-item" href="{{ route('admin.production.routings.index') }}">Routings</a>
-                <a class="collapse-item" href="{{ route('admin.production.routings.steps.index') }}">Routing Steps</a>
+                <a class="collapse-item" href="{{ route('admin.production.boms.index') }}">Bill of Materials (BOM)</a>
+                <a class="collapse-item" href="{{ route('admin.production.boms.items.index') }}">BOM Items</a>
+                <a class="collapse-item" href="{{ route('admin.production.boms.deficits.index') }}">BOM Deficits</a>
+                <a class="collapse-item" href="{{ route('admin.production.boms.deficits.transactions.index') }}">BOM Deficit Txns</a>
                 <a class="collapse-item" href="{{ route('admin.production.work-orders.index') }}">Work Orders</a>
                 <a class="collapse-item" href="{{ route('admin.production.work-orders.materials.index') }}">Work Order Materials</a>
                 <a class="collapse-item" href="{{ route('admin.production.work-orders.steps.index') }}">Work Order Steps</a>

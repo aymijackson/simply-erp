@@ -38,13 +38,21 @@ use Modules\Inventory\Http\Controllers\StockTransferController;
 use Modules\Inventory\Http\Controllers\UnitController;
 
 use Modules\Production\Http\Controllers\BomController;
+use Modules\Production\Http\Controllers\BomDeficitController;
+use Modules\Production\Http\Controllers\BomDeficitTransferController;
 use Modules\Production\Http\Controllers\BOMItemController;
 use Modules\Production\Http\Controllers\WorkOrderController;     
 use Modules\Production\Http\Controllers\RawMaterialController;
 use Modules\Production\Http\Controllers\RoutingController;
+use Modules\Production\Http\Controllers\RoutingStepController;
 use Modules\Production\Http\Controllers\WorkOrderMaterialController;
 use Modules\Production\Http\Controllers\WorkOrderStepController;
-;
+use Modules\Production\Http\Controllers\WorkOrderCostTypeController;
+use Modules\Production\Http\Controllers\WorkOrderCostLineController;
+use Modules\Production\Http\Controllers\WorkOrderMaterialsController;
+use Modules\Production\Http\Controllers\WorkOrderTaskDependenciesController;
+use Modules\Production\Http\Controllers\WorkOrderTaskController;
+use Modules\Production\Http\Controllers\WorkOrderTaskTimeLogsController;
 
 use Modules\Sales\Http\Controllers\SalesController;
 ;
@@ -422,6 +430,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
 
                Route::get('/', [EmployeeController::class, 'index'])->name('index');
                Route::post('/', [EmployeeController::class, 'store'])->name('store');
+               Route::get('/select2', [EmployeeController::class, 'select2'])->name('datatable');
                Route::get('/list', [EmployeeController::class, 'datatable'])->name('datatable');
                Route::get('/{employee}/edit', [EmployeeController::class, 'edit'])->name('edit');
                Route::put('/{employee}', [EmployeeController::class, 'update'])->name('update');
@@ -467,11 +476,32 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
 
      /** Production */
      Route::prefix('production')->name('production.')->group(function () {
+          
           Route::prefix('boms')->name('boms.')->group(function () {
 
                Route::prefix('headers')->name('headers.')->group(function () {
                     Route::get('/select2', [BomController::class, 'select2'])->name('select2');
                });
+
+               Route::get('/{bom}/items/datatable', [BomController::class, 'bom_items_datatable'])->name('items_datatable');
+
+               // Select2: variants on THIS BOM (with “available on BOM” in the label)
+               Route::get('/{bom}/select2', [BomController::class, 'otherSelect2'])
+               ->name('other-select2');
+
+               // Select2: variants on THIS BOM (with “available on BOM” in the label)
+               Route::get('/{bom}/items/select2', [BomDeficitTransferController::class, 'itemsSelect2'])
+               ->name('items.select2');
+
+               // Return { qty_available: ... } for current BOM + variant
+               Route::get('/{bom}/available', [BomDeficitTransferController::class, 'available'])
+                    ->name('available');
+
+               // Perform the transfer (create deficit “borrow” rows)
+               Route::post('{bom}/transfer', [BomDeficitTransferController::class, 'transfer'])
+                    ->name('transfer');
+
+               
 
 
                Route::prefix('items')->name('items.')->group(function () {
@@ -484,6 +514,26 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
                     Route::delete('/bulk-delete', [BOMItemController::class, 'bulkDelete'])->name('bulk-delete');
                     Route::delete('/{id}', [BOMItemController::class, 'destroy'])->name('destroy');     
                });
+
+               Route::prefix('deficits')->name('deficits.')->group(function () {
+                    Route::prefix('transactions')->name('transactions.')->group(function () {
+                         
+                         // Transactions log
+                         Route::get('/',            [BomDeficitController::class,'txnsIndex'])->name('index');
+                         Route::get('/datatable',  [BomDeficitController::class,'txnsDatatable'])->name('datatable');
+                    
+                         // Create a transaction (repay / writeoff / adjust)
+                         Route::post('/',           [BomDeficitController::class,'storeTxn'])->name('store');
+                    
+                         // Delete a transaction (restricted to last txn for that (bom,variant))
+                         Route::delete('/{txn}',   [BomDeficitController::class,'destroyTxn'])->name('destroy');
+                    });
+
+                    // Deficits list
+                    Route::get('/',                [BomDeficitController::class,'index'])->name('index');
+                    Route::get('/datatable',       [BomDeficitController::class,'datatable'])->name('datatable');
+                
+                });
 
                Route::get('/', [BomController::class, 'index'])->name('index');
                Route::post('/', [BomController::class, 'store'])->name('store');
@@ -510,28 +560,52 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
 
           Route::prefix('routings')->name('routings.')->group(function () {
 
+               Route::get('select2', [RoutingController::class, 'select2'])
+               ->name('select2');
+
                Route::prefix('steps')->name('steps.')->group(function () {
-                    Route::get('/', [RoutingStepController::class, 'index'])->name('index');
-                    Route::post('/', [RoutingStepController::class, 'store'])->name('store');
-                    Route::get('/datatable', [RoutingStepController::class, 'datatable'])->name('datatable');
-                    Route::get('/{id}/edit', [RoutingStepController::class, 'edit'])->name('edit');
-                    Route::put('/{id}', [RoutingStepController::class, 'update'])->name('update');
-                    Route::delete('/bulk-delete', [RoutingStepController::class, 'bulkDelete'])->name('bulk-delete');
-                    Route::delete('/{id}', [RoutingStepController::class, 'destroy'])->name('destroy');     
+                    Route::get('/', [RoutingStepController::class, 'index'])
+                         ->name('index');
+
+                    Route::get('datatable', [RoutingStepController::class, 'datatable'])
+                         ->name('datatable');
+
+                    Route::post('steps', [RoutingStepController::class, 'store'])
+                         ->name('store');
+
+                    Route::put('{step}', [RoutingStepController::class, 'update'])
+                         ->name('update');
+
+                    Route::delete('{step}', [RoutingStepController::class, 'destroy'])
+                         ->name('destroy');
+
+                    // Optional: bulk reorder by [{id, sequence},...]
+                    Route::post('reorder', [RoutingStepController::class, 'reorder'])
+                         ->name('reorder');     
                });
 
-               Route::get('/', [RoutingMaterialController::class, 'index'])->name('index');
-               Route::post('/', [RoutingMaterialController::class, 'store'])->name('store');
-               Route::get('/datatable', [RoutingMaterialController::class, 'datatable'])->name('datatable');
-               Route::get('/{id}/edit', [RoutingMaterialController::class, 'edit'])->name('edit');
-               Route::put('/{id}', [RoutingMaterialController::class, 'update'])->name('update');
-               Route::delete('/bulk-delete', [RoutingMaterialController::class, 'bulkDelete'])->name('bulk-delete');
-               Route::delete('/{id}', [RoutingMaterialController::class, 'destroy'])->name('destroy');   
                
+               Route::get('/', [RoutingController::class, 'index'])->name('index');
+               Route::post('/', [RoutingController::class, 'store'])->name('store');
+               Route::get('/datatable', [RoutingController::class, 'datatable'])->name('datatable');
+               Route::put('/{id}', [RoutingController::class, 'update'])->name('update');
+               Route::delete('/bulk-delete', [RoutingController::class, 'bulkDelete'])->name('bulk-delete');
+               Route::delete('/{routing}', [RoutingController::class, 'destroy'])->name('destroy');   
+               
+               Route::get('/{routing}/edit', [RoutingController::class, 'edit'])->name('edit');
+               Route::post('/{routing}/steps', [RoutingController::class, 'storeStep'])->name('store.steps');
+               Route::get('/{routing}', [RoutingController::class, 'show'])->name('show');
+               Route::get('/{routing}/steps/datatable', [RoutingController::class, 'stepsDatatable'])->name('steps.datatable');
                
           });
 
           Route::prefix('work-orders')->name('work-orders.')->group(function () {
+               
+               Route::get('tasks/{work_order}/select2',  [WorkOrderTaskController::class, 'workOrderTasksSelect2'])
+               ->name('tasks.select2');
+               
+               
+               Route::get('{work_order}/boms/items', [WorkOrderMaterialController::class, 'bomItemsDatatable'])->name('boms.items.datatable');
 
                Route::prefix('materials')->name('materials.')->group(function () {
                     Route::get('/', [WorkOrderMaterialController::class, 'index'])->name('index');
@@ -543,27 +617,136 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
                     Route::delete('/{id}', [WorkOrderMaterialController::class, 'destroy'])->name('destroy');     
                });
 
+                // datatable (you already have this)
+               Route::get('{workOrder}/materials/datatable', [WorkOrderMaterialsController::class, 'datatable'])
+               ->name('materials.datatable');
+
+               // CRUD
+               Route::post('{workOrder}/materials',  [WorkOrderMaterialsController::class, 'store'])->name('materials.store');
+               Route::put('materials/{material}',    [WorkOrderMaterialsController::class, 'update'])->name('materials.update');
+               Route::delete('materials/{material}', [WorkOrderMaterialsController::class, 'destroy'])->name('materials.destroy');
+
+               // Select2 for product variants
+               Route::get('{workOrder}/materials/variants/select2', [WorkOrderMaterialsController::class, 'variantsSelect2'])
+               ->name('materials.variants.select2');
+
+               // Lifecycle (already wired, keep)
+               Route::post('materials/{material}/issue',  [WorkOrderMaterialsLifecycleController::class, 'issue'])->name('materials.issue');
+               Route::post('materials/{material}/return', [WorkOrderMaterialsLifecycleController::class, 'return'])->name('materials.return');
+
+               Route::prefix('routings')->name('routings.')->group(function () {
+                    Route::prefix('steps')->name('steps.')->group(function () {
+                         Route::get('datatable/{work_order}', [WorkOrderController::class, 'routingStepsDatatable'])->name('datatable');
+                    });
+               });
+
                Route::prefix('steps')->name('steps.')->group(function () {
                     Route::get('/', [WorkOrderStepController::class, 'index'])->name('index');
                     Route::post('/', [WorkOrderStepController::class, 'store'])->name('store');
                     Route::get('/datatable', [WorkOrderStepController::class, 'datatable'])->name('datatable');
                     Route::get('/{id}/edit', [WorkOrderStepController::class, 'edit'])->name('edit');
-                    Route::put('/{id}', [WorkOrderStepController::class, 'update'])->name('update');
+                    Route::put('/{step}', [WorkOrderStepController::class, 'update'])->name('update');
                     Route::delete('/bulk-delete', [WorkOrderStepController::class, 'bulkDelete'])->name('bulk-delete');
                     Route::delete('/{id}', [WorkOrderStepController::class, 'destroy'])->name('destroy');     
                });
 
-               Route::get('/', [WorkOrderController::class, 'index'])->name('index');
-               Route::post('/', [WorkOrderController::class, 'store'])->name('store');
-               Route::get('/datatable', [WorkOrderController::class, 'datatable'])->name('datatable');
-               Route::get('/{id}/edit', [WorkOrderController::class, 'edit'])->name('edit');
-               Route::put('/{id}', [WorkOrderController::class, 'update'])->name('update');
-               Route::delete('/bulk-delete', [WorkOrderController::class, 'bulkDelete'])->name('bulk-delete');
-               Route::delete('/{id}', [WorkOrderController::class, 'destroy'])->name('destroy');                  
+               // --- Task Dependencies ---
                
-          });
+               
+               Route::get('tasks/{task}/dependencies/datatable',  [WorkOrderTaskDependenciesController::class, 'datatable'])
+               ->name('tasks.dependencies.datatable');
+               Route::post('tasks/{task}/dependencies',           [WorkOrderTaskDependenciesController::class, 'store'])
+               ->name('tasks.dependencies.store');
+               Route::delete('dependencies/{dependency}',         [WorkOrderTaskDependenciesController::class, 'destroy'])
+               ->name('tasks.dependencies.destroy');
 
-     });
+               // --- Task Time Logs ---
+               Route::get('tasks/{task}/time-logs/datatable',     [WorkOrderTaskTimeLogsController::class, 'datatable'])
+               ->name('tasks.timelogs.datatable');
+               Route::post('tasks/{task}/time-logs',              [WorkOrderTaskTimeLogsController::class, 'store'])
+               ->name('tasks.timelogs.store');
+               Route::put('time-logs/{log}',                      [WorkOrderTaskTimeLogsController::class, 'update'])
+               ->name('tasks.timelogs.update');
+               Route::delete('time-logs/{log}',                   [WorkOrderTaskTimeLogsController::class, 'destroy'])
+               ->name('tasks.timelogs.destroy');
+
+               // --- Materials lifecycle (Issue / Return) ---
+               Route::post('materials/{material}/issue',          [WorkOrderMaterialsLifecycleController::class, 'issue'])
+               ->name('materials.issue');
+               Route::post('materials/{material}/return',         [WorkOrderMaterialsLifecycleController::class, 'return'])
+               ->name('materials.return');
+               // -----------------------------------------------      
+               Route::prefix('cost-types')
+               ->name('cost_types.')
+               ->group(function () {
+                    // For a type picker (Select2)
+                    Route::get('/select2', [WorkOrderCostTypeController::class,'select2'])->name('select2');
+                    Route::get('/',                [WorkOrderCostTypeController::class, 'index'])->name('index');
+                    Route::get('/datatable',       [WorkOrderCostTypeController::class, 'datatable'])->name('datatable');
+                    Route::post('/',               [WorkOrderCostTypeController::class, 'store'])->name('store');
+                    Route::put('/{type}',          [WorkOrderCostTypeController::class, 'update'])->name('update');
+                    Route::delete('/{type}',       [WorkOrderCostTypeController::class, 'destroy'])->name('destroy');
+                    Route::get('/select2',         [WorkOrderCostTypeController::class, 'select2'])->name('select2'); // for pickers
+               });
+
+               // Tasks datatable + create under a specific work order
+               Route::get('{workOrder}/tasks/datatable', [WorkOrderTaskController::class, 'datatable'])
+               ->name('tasks.datatable');
+               Route::post('{workOrder}/tasks', [WorkOrderTaskController::class, 'store'])
+               ->name('tasks.store');
+
+               // Per-task update/destroy/actions (task id only)
+               Route::put   ('tasks/{task}',          [WorkOrderTaskController::class, 'update'])   ->name('tasks.update');
+               Route::delete('tasks/{task}',          [WorkOrderTaskController::class, 'destroy'])  ->name('tasks.destroy');
+               Route::post  ('tasks/{task}/start',    [WorkOrderTaskController::class, 'start'])    ->name('tasks.start');
+               Route::post  ('tasks/{task}/stop',     [WorkOrderTaskController::class, 'stop'])     ->name('tasks.stop');
+               Route::post  ('tasks/{task}/complete', [WorkOrderTaskController::class, 'complete']) ->name('tasks.complete');
+
+               // routes/web.php
+               Route::prefix('/{workOrder}/cost-lines')->name('cost_lines.')->group(function () {
+                    Route::get('/datatable', [WorkOrderCostLineController::class,'datatable'])->name('datatable');
+                    Route::post('/',           [WorkOrderCostLineController::class,'store'])->name('store');
+                    Route::put('/{line}',     [WorkOrderCostLineController::class,'update'])->name('update');
+                    Route::delete('/{line}',  [WorkOrderCostLineController::class,'destroy'])->name('destroy');
+               });
+               
+               
+
+               // Header
+               Route::get('/',              [\Modules\Production\Http\Controllers\WorkOrderController::class, 'index'])->name('index');
+               Route::get('/datatable',     [\Modules\Production\Http\Controllers\WorkOrderController::class, 'datatable'])->name('datatable');
+               Route::get('/create',        [\Modules\Production\Http\Controllers\WorkOrderController::class, 'create'])->name('create');
+               Route::post('/',             [\Modules\Production\Http\Controllers\WorkOrderController::class, 'store'])->name('store');
+               Route::get('/{wo}',          [\Modules\Production\Http\Controllers\WorkOrderController::class, 'show'])->name('show');
+               Route::put('/{line}',     [WorkOrderCostLineController::class,'update'])->name('update');
+                    Route::delete('/{line}',  [WorkOrderCostLineController::class,'destroy'])->name('destroy');
+
+               // Lifecycle
+               Route::post('/{wo}/release',  [\Modules\Production\Http\Controllers\WorkOrderController::class, 'release'])->name('release');
+               Route::post('/{wo}/start',    [\Modules\Production\Http\Controllers\WorkOrderController::class, 'start'])->name('start');
+               Route::post('/{wo}/complete', [\Modules\Production\Http\Controllers\WorkOrderController::class, 'complete'])->name('complete');
+               Route::post('/{wo}/close',    [\Modules\Production\Http\Controllers\WorkOrderController::class, 'close'])->name('close');
+
+               // Materials
+               Route::get('/{wo}/materials/datatable', [\Modules\Production\Http\Controllers\WorkOrderMaterialController::class, 'datatable'])
+                    ->name('materials.datatable');
+
+               // Steps
+               Route::get('/{wo}/routings/steps/datatable', [\Modules\Production\Http\Controllers\WorkOrderStepController::class, 'datatable'])
+                    ->name('routes.steps.datatable');
+               Route::post('/steps/{step}/start',   [\Modules\Production\Http\Controllers\WorkOrderStepController::class, 'start'])->name('steps.start');
+               Route::post('/steps/{step}/finish',  [\Modules\Production\Http\Controllers\WorkOrderStepController::class, 'finish'])->name('steps.finish');
+
+               // Extra Costs (labour/logistics/fuel/etc.)
+               Route::get('/{wo}/costs/datatable', [\Modules\Production\Http\Controllers\WorkOrderCostLineController::class, 'datatable'])
+                    ->name('costs.datatable');
+               Route::post('/{wo}/costs',          [\Modules\Production\Http\Controllers\WorkOrderCostLineController::class, 'store'])->name('costs.store');
+               Route::put('/costs/{line}',         [\Modules\Production\Http\Controllers\WorkOrderCostLineController::class, 'update'])->name('costs.update');
+               Route::delete('/costs/{line}',      [\Modules\Production\Http\Controllers\WorkOrderCostLineController::class, 'destroy'])->name('costs.destroy');                  
+                              
+                         });
+
+          });
 
      /** Projects & Assets */
      Route::resource('projects', ProjectController::class);

@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class WorkOrder extends Model
 {
     protected $fillable = [
-        'product_id', 'bill_of_material_id', 'quantity', 'status', 'start_date', 'end_date', 'notes'
+        'work_order_number', 'product_variant_id', 'bill_of_material_id', 'quantity_to_produce', 'routing_id', 'status', 'start_date', 'end_date', 'notes'
     ];
 
     public function bom()

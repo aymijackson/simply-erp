@@ -49,4 +49,9 @@ class ProductVariant extends Model
         return $this->qty_on_hand <= $this->reorder_point;
     }
 
+    public function routings()
+    {
+        return $this->hasMany(\Modules\Production\Models\Routing::class, 'product_variant_id');
+    }
+
 }

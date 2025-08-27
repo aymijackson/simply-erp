@@ -5,7 +5,7 @@ namespace Modules\Production\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Modules\Production\Models\BOMItem;
-use Modules\Production\Models\BillOfMaterial;
+use Modules\Production\Models\BomHeader;
 use Modules\Production\Models\RawMaterial;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -16,7 +16,7 @@ class BOMItemController extends Controller
      */
     public function index()
     {
-        $boms = BillOfMaterial::all();          // for dropdown
+        $boms = BomHeader::all();          // for dropdown
         $rawMaterials = RawMaterial::all();     // for dropdown
         return view('production.boms.items.index', compact('boms', 'rawMaterials'));
     }
@@ -26,7 +26,8 @@ class BOMItemController extends Controller
      */
     public function datatable()
     {
-        $query = BOMItem::with(['bom', 'raw_material']);
+        $query = BomItem::with(['bom', 'product_variant'])
+            ->select('bom_items.*');
         
         return DataTables::of($query)
             ->addIndexColumn()               // <<< add this
@@ -34,10 +35,19 @@ class BOMItemController extends Controller
                 '<input type="checkbox" class="row‑checkbox" value="'.$item->id.'">'
             )
             ->addColumn('bom_code', fn($item) =>
-                $item->bom->code ?? '-'
+                $item->bom->bom_code ?? '-'
             )
-            ->addColumn('raw_material', fn($item) =>
-                $item->raw_material->name ?? '-'
+            ->addColumn('product_variant', fn($item) =>
+                $item->product_variant->product->product_name ?? '-'
+            )
+            ->addColumn('variant_sku', fn($item) =>
+                $item->product_variant->sku ?? '-'
+            )
+            ->addColumn('product_name', fn($item) =>
+                $item->product_variant->product->product_name ?? '-'
+            )
+            ->addColumn('qty_per_parent', fn($item) =>
+                number_format($item->qty_per_parent, 2) ?? '-'
             )
             ->addColumn('actions', function ($row) {
                 $data = htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8');

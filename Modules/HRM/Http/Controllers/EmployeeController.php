@@ -11,10 +11,83 @@ use App\Models\Company;
 use App\Models\Department;
 use Yajra\DataTables\DataTables;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 
 class EmployeeController extends Controller
 {
+    public function select2(Request $request)
+    {
+        // If specific IDs requested (for preselected values), return those only (no pagination)
+        if ($request->filled('ids')) {
+            $ids = array_filter((array) $request->input('ids'));
+            $items = Employee::query()
+                ->select('id','first_name','last_name','email','employee_code','is_active')
+                ->whereIn('id', $ids)
+                ->orderBy('last_name')
+                ->get();
+
+            return response()->json([
+                'results' => $items->map(fn($e) => $this->toSelect2($e))->values(),
+                'pagination' => ['more' => false],
+            ]);
+        }
+
+        $term     = trim((string) $request->input('q', ''));
+        $page     = max(1, (int) $request->input('page', 1));
+        $perPage  = max(1, min(100, (int) $request->input('per_page', 20)));
+        $offset   = ($page - 1) * $perPage;
+        $onlyActive = filter_var($request->input('only_active', true), FILTER_VALIDATE_BOOL);
+        $except   = array_filter((array) $request->input('except'));
+
+        $q = Employee::query()
+            ->select('id','first_name','last_name','email','employee_code','is_active');
+
+        if ($onlyActive) {
+            // Adjust column name if your model uses a different one for active flag
+            $q->where('is_active', true);
+        }
+
+        if (!empty($except)) {
+            $q->whereNotIn('id', $except);
+        }
+
+        if ($term !== '') {
+            $safe = str_replace(['%','_'], ['\\%','\\_'], $term);
+            $q->where(function($qq) use ($safe) {
+                $qq->where('first_name', 'like', "%{$safe}%")
+                   ->orWhere('last_name',  'like', "%{$safe}%")
+                   ->orWhere('email',      'like', "%{$safe}%")
+                   ->orWhere('employee_code', 'like', "%{$safe}%")
+                   // Optional full-name match (works on MySQL)
+                   ->orWhere(DB::raw("CONCAT(first_name,' ',last_name)"), 'like', "%{$safe}%");
+            });
+        }
+
+        $total = (clone $q)->count();
+        $items = $q->orderBy('last_name')->orderBy('first_name')
+            ->skip($offset)->take($perPage)->get();
+
+        return response()->json([
+            'results' => $items->map(fn($e) => $this->toSelect2($e))->values(),
+            'pagination' => ['more' => ($offset + $items->count()) < $total],
+        ]);
+    }
+
+    private function toSelect2(Employee $e): array
+    {
+        $name = trim($e->first_name.' '.$e->last_name);
+        $code = $e->employee_code ? " ({$e->employee_code})" : '';
+        // You can append email if helpful:  $email = $e->email ? " · {$e->email}" : '';
+        return [
+            'id'   => $e->id,
+            'text' => $name.$code,
+            // Select2 supports arbitrary extra fields if you want to use custom templates:
+            // 'email' => $e->email,
+            // 'active' => (bool)$e->is_active,
+        ];
+    }
+
     public function index()
     {
         return view('hrm.employees.index', [

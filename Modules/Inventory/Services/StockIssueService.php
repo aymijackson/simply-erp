@@ -109,6 +109,19 @@ class StockIssueService
         $hasDelLineFk = Schema::hasColumn($linesTable, 'sales_delivery_line_id');
 
         foreach ($hdr->lines as $ln) {
+            // If this issue is to a BOM, auto-repay deficits for that BOM/variant
+            if ((int)$hdr->bom_header_id > 0) {
+                app(BomDeficitService::class)->repayIfOutstanding(
+                    bomId:     (int)$hdr->bom_header_id,
+                    variantId: (int)$ln->product_variant_id,
+                    qty:       (float)$ln->qty,
+                    unitCost:  (float)$ln->cost,
+                    refType:   \Modules\Inventory\Models\StockIssue::class, // or 'stock_issue'
+                    refId:     (int)$hdr->id,
+                    note:      'Auto-repay via Stock Issue #'.$hdr->issue_no
+                );
+            }
+
             // --- BOM linking & update recipe qty (increment) ---
             if ($isBom) {
                 $item = BomItem::firstOrCreate(

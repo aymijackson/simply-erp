@@ -51,7 +51,8 @@ class StockIssueController extends Controller
     public function datatable()
     {
         $q = StockIssue::with('fromStore')
-              ->select(['id','issue_no','from_store_id','status','created_at']);
+                ->orderBy('id', 'DESC')
+                ->select(['id','issue_no','from_store_id','status','created_at']);
         return datatables()->eloquent($q)
             ->addColumn('posted_at', fn($r)=>$r->created_at->format('d-m-Y h:i a'))
             ->addColumn('store', fn($r)=>$r->fromStore->name)
