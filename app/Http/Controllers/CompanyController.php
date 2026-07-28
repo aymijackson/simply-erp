@@ -5,10 +5,46 @@ namespace App\Http\Controllers;
 use App\Models\Company;
 use App\Models\Department;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use DataTables;
 
 class CompanyController extends Controller
 {
+    /**
+     * Central audit helper (same style as your inventory controller)
+     */
+    private function audit(
+        string $module,
+        string $action,
+        ?string $description = null,
+        $subject = null,
+        array $meta = []
+    ): void {
+        auth()->user()?->audit(
+            module: $module,
+            action: $action,
+            description: $description,
+            subject: $subject,
+            meta: $meta
+        );
+    }
+
+    public function select2(Request $r)
+    {
+        $q = trim($r->input('q', ''));
+    
+        $rows = Company::query()
+            ->when($q !== '', fn($qq) => $qq->where('name', 'like', "%{$q}%"))
+            ->orderBy('name')
+            ->limit(20)
+            ->get(['id', 'name']);
+    
+        // select2 wants: [{id,text}]
+        return response()->json(
+            $rows->map(fn($c) => ['id' => $c->id, 'text' => $c->name])
+        );
+    }
+
     /**
      * Display the list of companies or return JSON for DataTables.
      */
@@ -18,15 +54,12 @@ class CompanyController extends Controller
             $companies = Company::select('id', 'name', 'email', 'website', 'address');
 
             return Datatables::of($companies)
-                ->addColumn('checkbox', function ($company) {
-                    return '<input type="checkbox" name="ids[]" value="' . $company->id . '">';
-                })
-                ->addColumn('actions', function ($company) {
-                    return '
+                ->addColumn('checkbox', fn($company) =>
+                    '<input type="checkbox" name="ids[]" value="' . $company->id . '">')
+                ->addColumn('actions', fn($company) => '
                         <button class="btn btn-sm btn-warning edit-company" data-id="' . $company->id . '">Edit</button>
                         <button class="btn btn-sm btn-danger delete-company" data-id="' . $company->id . '">Delete</button>
-                    ';
-                })
+                    ')
                 ->rawColumns(['checkbox', 'actions'])
                 ->make(true);
         }
@@ -39,17 +72,28 @@ class CompanyController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'website' => 'nullable|url|max:255',
-            'address' => 'nullable|string|max:255',
+        $validated = $request->validate([
+            'name'    => ['required','string','max:255'],
+            'email'   => ['nullable','email','max:255'],
+            'website' => ['nullable','url','max:255'],
+            'address' => ['nullable','string','max:255'],
         ]);
 
-        Company::create($request->only('name', 'email', 'website', 'address'));
-        
-        // log the creation activity here
-        // activity()->log('Company created: ' . $request->name);
+        $company = Company::create($validated);
+
+        $this->audit(
+            module: 'crm.companies',
+            action: 'created',
+            description: 'Created company ' . ($company->name ?: '#'.$company->id),
+            subject: $company,
+            meta: [
+                'company_id' => $company->id,
+                'name'       => $company->name,
+                'email'      => $company->email,
+                'website'    => $company->website,
+                'address'    => $company->address,
+            ]
+        );
 
         return response()->json(['message' => 'Company created successfully!']);
     }
@@ -60,7 +104,6 @@ class CompanyController extends Controller
     public function edit($id)
     {
         $company = Company::findOrFail($id);
-
         return response()->json(['company' => $company]);
     }
 
@@ -69,17 +112,31 @@ class CompanyController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'website' => 'nullable|url|max:255',
-            'address' => 'nullable|string|max:255',
+        $validated = $request->validate([
+            'name'    => ['required','string','max:255'],
+            'email'   => ['nullable','email','max:255'],
+            'website' => ['nullable','url','max:255'],
+            'address' => ['nullable','string','max:255'],
         ]);
 
         $company = Company::findOrFail($id);
-        $company->update($request->only('name', 'email', 'website', 'address'));
-        // log the update activity here
-        // activity()->log('Company updated: ' . $request->name);
+
+        $before = $company->only(['id','name','email','website','address']);
+
+        $company->update($validated);
+
+        $after = $company->fresh()->only(['id','name','email','website','address']);
+
+        $this->audit(
+            module: 'crm.companies',
+            action: 'updated',
+            description: 'Updated company ' . ($company->name ?: '#'.$company->id),
+            subject: $company,
+            meta: [
+                'before' => $before,
+                'after'  => $after,
+            ]
+        );
 
         return response()->json(['message' => 'Company updated successfully!']);
     }
@@ -90,7 +147,18 @@ class CompanyController extends Controller
     public function destroy($id)
     {
         $company = Company::findOrFail($id);
+
+        $meta = $company->only(['id','name','email','website','address']);
+
         $company->delete();
+
+        $this->audit(
+            module: 'crm.companies',
+            action: 'deleted',
+            description: 'Deleted company ' . ($meta['name'] ?: '#'.$meta['id']),
+            subject: null,
+            meta: $meta
+        );
 
         return response()->json(['message' => 'Company deleted successfully!']);
     }
@@ -100,12 +168,27 @@ class CompanyController extends Controller
      */
     public function bulkDelete(Request $request)
     {
-        $ids = $request->ids;
-        if (!is_array($ids) || empty($ids)) {
-            return response()->json(['message' => 'No companies selected.'], 422);
-        }
+        $data = $request->validate([
+            'ids'   => ['required','array','min:1'],
+            'ids.*' => ['integer', Rule::exists('companies','id')],
+        ]);
 
-        Company::whereIn('id', $ids)->delete();
+        $companies = Company::whereIn('id', $data['ids'])
+            ->get(['id','name','email','website','address']);
+
+        Company::whereIn('id', $data['ids'])->delete();
+
+        $this->audit(
+            module: 'crm.companies',
+            action: 'bulk_deleted',
+            description: 'Bulk deleted companies (count: '.count($data['ids']).')',
+            subject: null,
+            meta: [
+                'count' => count($data['ids']),
+                'ids'   => $data['ids'],
+                'items' => $companies->map(fn($c) => $c->only(['id','name','email','website','address']))->values(),
+            ]
+        );
 
         return response()->json(['message' => 'Selected companies deleted successfully!']);
     }
@@ -116,17 +199,31 @@ class CompanyController extends Controller
         return view('companies.departments.index', compact('departments'));
     }
 
-
     public function storeDepartment(Request $request)
     {
-        $request->validate([
-            'company_id' => 'required|exists:companies,id',
-            'name' => 'required|string|max:255',
-            'code' => 'nullable|string|max:50',
-            'description' => 'nullable|string',
+        $validated = $request->validate([
+            'company_id'   => ['required','exists:companies,id'],
+            'name'         => ['required','string','max:255'],
+            'code'         => ['nullable','string','max:50'],
+            'description'  => ['nullable','string'],
         ]);
 
-        Department::create($request->all());
+        $department = Department::create($validated)->fresh(['company:id,name']);
+
+        $this->audit(
+            module: 'crm.departments',
+            action: 'created',
+            description: 'Created department ' . ($department->name ?: '#'.$department->id),
+            subject: $department,
+            meta: [
+                'department_id' => $department->id,
+                'company_id'    => $department->company_id,
+                'company'       => $department->company?->name,
+                'name'          => $department->name,
+                'code'          => $department->code,
+                'description'   => $department->description,
+            ]
+        );
 
         return response()->json(['message' => 'Department created successfully!']);
     }
@@ -138,7 +235,8 @@ class CompanyController extends Controller
 
             return DataTables::of($products)
                 ->addIndexColumn()
-                ->addColumn('checkbox', fn($row) => '<input type="checkbox" class="row-checkbox" value="'.$row->id.'">')
+                ->addColumn('checkbox', fn($row) =>
+                    '<input type="checkbox" class="row-checkbox" value="'.$row->id.'">')
                 ->addColumn('name', fn($row) => $row->name ?? '')
                 ->addColumn('code', fn($row) => $row->code ?? '')
                 ->addColumn('company_name', fn($row) => $row->company->name ?? '')
@@ -150,7 +248,7 @@ class CompanyController extends Controller
                             data-company_id="'.$row->company_id.'"
                             data-description="'.e($row->description).'"
                         >
-                            Edit</i>
+                            Edit
                         </button>
                             <button type="button" class="btn btn-sm btn-danger delete-department" data-id="'.$row->id.'">Delete</button>';
                 })
@@ -167,34 +265,117 @@ class CompanyController extends Controller
 
     public function updateDepartment(Request $request)
     {
-        $request->validate([
-            'company_id' => 'required|exists:companies,id',
-            'name' => 'required|string|max:255',
-            'code' => 'nullable|string|max:50',
-            'description' => 'nullable|string',
+        $validated = $request->validate([
+            'id'          => ['required','exists:departments,id'],
+            'company_id'  => ['required','exists:companies,id'],
+            'name'        => ['required','string','max:255'],
+            'code'        => ['nullable','string','max:50'],
+            'description' => ['nullable','string'],
         ]);
 
-        $department = Department::findOrFail($request->id); // <-- important
+        $department = Department::with('company:id,name')->findOrFail($validated['id']);
 
-        $department->update($request->only(['company_id', 'name', 'code', 'description']));
+        $before = [
+            'department_id' => $department->id,
+            'company_id'    => $department->company_id,
+            'company'       => $department->company?->name,
+            'name'          => $department->name,
+            'code'          => $department->code,
+            'description'   => $department->description,
+        ];
+
+        $department->update([
+            'company_id'  => $validated['company_id'],
+            'name'        => $validated['name'],
+            'code'        => $validated['code'] ?? null,
+            'description' => $validated['description'] ?? null,
+        ]);
+
+        $department->load('company:id,name');
+
+        $after = [
+            'department_id' => $department->id,
+            'company_id'    => $department->company_id,
+            'company'       => $department->company?->name,
+            'name'          => $department->name,
+            'code'          => $department->code,
+            'description'   => $department->description,
+        ];
+
+        $this->audit(
+            module: 'crm.departments',
+            action: 'updated',
+            description: 'Updated department ' . ($department->name ?: '#'.$department->id),
+            subject: $department,
+            meta: [
+                'before' => $before,
+                'after'  => $after,
+            ]
+        );
 
         return response()->json(['message' => 'Department updated successfully!']);
     }
 
     public function destroyDepartment(Department $department)
-    { 
+    {
+        $department->load('company:id,name');
+
+        $meta = [
+            'department_id' => $department->id,
+            'company_id'    => $department->company_id,
+            'company'       => $department->company?->name,
+            'name'          => $department->name,
+            'code'          => $department->code,
+            'description'   => $department->description,
+        ];
+
         $department->delete();
+
+        $this->audit(
+            module: 'crm.departments',
+            action: 'deleted',
+            description: 'Deleted department ' . ($meta['name'] ?: '#'.$meta['department_id']),
+            subject: null,
+            meta: $meta
+        );
+
         return response()->json(['message' => 'Department deleted successfully!']);
     }
 
     public function bulkDeleteDepartment(Request $request)
     {
-        $request->validate([
-            'ids' => 'required|array',
-            'ids.*' => 'exists:departments,id',
+        $data = $request->validate([
+            'ids'   => ['required','array','min:1'],
+            'ids.*' => ['integer', Rule::exists('departments','id')],
         ]);
 
-        Department::whereIn('id', $request->ids)->delete();
+        $items = Department::with('company:id,name')
+            ->whereIn('id', $data['ids'])
+            ->get()
+            ->map(function ($d) {
+                return [
+                    'department_id' => $d->id,
+                    'company_id'    => $d->company_id,
+                    'company'       => $d->company?->name,
+                    'name'          => $d->name,
+                    'code'          => $d->code,
+                    'description'   => $d->description,
+                ];
+            })->values();
+
+        Department::whereIn('id', $data['ids'])->delete();
+
+        $this->audit(
+            module: 'crm.departments',
+            action: 'bulk_deleted',
+            description: 'Bulk deleted departments (count: '.count($data['ids']).')',
+            subject: null,
+            meta: [
+                'count' => count($data['ids']),
+                'ids'   => $data['ids'],
+                'items' => $items,
+            ]
+        );
 
         return response()->json(['message' => 'Selected departments deleted successfully!']);
     }

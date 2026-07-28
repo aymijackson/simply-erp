@@ -4,7 +4,9 @@
 
 @section('content')
 <div class="container-fluid">
+
     <h1 class="h3 mb-4 text-gray-800">Location Types</h1>
+
     <button class="btn btn-primary mb-3" id="addType">Add Type</button>
     <button class="btn btn-danger mb-3" id="bulkDeleteTypes">Delete Selected</button>
 
@@ -26,6 +28,7 @@
     </div>
 
     @include('locations.types.modal')
+
 </div>
 @endsection
 
@@ -36,6 +39,10 @@
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         }
     });
+
+    // ------------------------------------
+    // DataTable
+    // ------------------------------------
     const table = $('#locationTypesTable').DataTable({
         processing: true,
         serverSide: true,
@@ -48,6 +55,9 @@
         ]
     });
 
+    // ------------------------------------
+    // Add Type
+    // ------------------------------------
     $('#addType').click(() => {
         $('#typeForm')[0].reset();
         $('#type_id').val('');
@@ -55,14 +65,19 @@
         $('#typeModal').modal('show');
     });
 
+    // ------------------------------------
+    // Save Type (Create/Update)
+    // ------------------------------------
     $('#typeForm').on('submit', function (e) {
         e.preventDefault();
+
         const id = $('#type_id').val();
         const url = id ? `/admin/location_types/${id}` : '{{ route('admin.location_types.store') }}';
         const method = id ? 'PUT' : 'POST';
 
         $.ajax({
-            url, method,
+            url,
+            method,
             data: $(this).serialize(),
             success: res => {
                 $('#typeModal').modal('hide');
@@ -75,44 +90,65 @@
         });
     });
 
+    // ------------------------------------
+    // Edit Type
+    // ------------------------------------
     $('body').on('click', '.edit-location_type', function () {
-        $.get(`/admin/location_types/${$(this).data('id')}/edit`, res => {
+        const id = $(this).data('id');
+
+        $.get(`/admin/location_types/${id}/edit`, res => {
             $('#type_id').val(res.type.id);
             $('#type_name').val(res.type.name);
             $('#type_description').val(res.type.description);
+
             $('#typeModalLabel').text('Edit Location Type');
             $('#typeModal').modal('show');
         });
     });
 
+    // ------------------------------------
+    // Delete Single Type
+    // ------------------------------------
     $('body').on('click', '.delete-location_type', function () {
         const id = $(this).data('id');
+
         Swal.fire({
             title: 'Delete this type?',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonText: 'Delete'
-        }).then(res => {
-            if (res.isConfirmed) {
+        }).then(result => {
+            if (result.isConfirmed) {
                 $.ajax({
                     url: `/admin/location_types/${id}`,
                     method: 'DELETE',
-                    success: r => {
+                    success: res => {
                         table.ajax.reload();
-                        Swal.fire('Deleted!', r.message, 'success');
+                        Swal.fire('Deleted!', res.message, 'success');
                     }
                 });
             }
         });
     });
 
+    // ------------------------------------
+    // Select All
+    // ------------------------------------
     $('#selectAll').on('click', function () {
         $('input[name="type_checkbox[]"]').prop('checked', this.checked);
     });
 
+    // ------------------------------------
+    // Bulk Delete
+    // ------------------------------------
     $('#bulkDeleteTypes').on('click', function () {
-        const ids = $('input[name="type_checkbox[]"]:checked').map(function () { return this.value }).get();
-        if (!ids.length) return Swal.fire('Select at least one!', '', 'info');
+        const ids = $('input[name="type_checkbox[]"]:checked')
+            .map(function () { return this.value })
+            .get();
+
+        if (!ids.length) {
+            return Swal.fire('Select at least one!', '', 'info');
+        }
 
         Swal.fire({
             title: 'Delete selected?',
@@ -125,10 +161,14 @@
                     url: '{{ route('admin.location_types.bulk-delete') }}',
                     method: 'POST',
                     data: { ids, _token: '{{ csrf_token() }}' },
-                    success: res => { table.ajax.reload(); Swal.fire('Deleted', res.message, 'success'); }
+                    success: res => {
+                        table.ajax.reload();
+                        Swal.fire('Deleted', res.message, 'success');
+                    }
                 });
             }
         });
     });
+
 </script>
 @endpush

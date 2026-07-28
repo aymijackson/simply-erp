@@ -13,24 +13,89 @@ class RoleController extends Controller
     public function index()
     {
         if (request()->ajax()) {
+    
             $roles = Role::with('permissions')->select('roles.*');
+    
             return datatables()->of($roles)
-                ->addColumn('permissions', function($role) {
-                    return implode(', ', $role->permissions->pluck('name')->toArray());
+                ->addColumn('permissions', function ($role) {
+    
+                    $names = $role->permissions->pluck('name')->toArray();
+    
+                    if (empty($names)) {
+                        return "<span class='text-muted'>—</span>";
+                    }
+    
+                    // Group by prefix before first dot (core, inventory, crm, hrm, etc.)
+                    $grouped = collect($names)->groupBy(function ($p) {
+                        return explode('.', $p)[0] ?? 'other';
+                    })->map(fn ($items) => $items->values()->all());
+    
+                    // Chips (CORE 18, CRM 7, ...)
+                    $chips = $grouped->map(function ($items, $group) {
+                        $label = strtoupper($group);
+                        $count = count($items);
+                        return "<span class='perm-badge-chip'>{$label}<span class='perm-badge-count'>{$count}</span></span>";
+                    })->values()->all();
+    
+                    // Optional: limit chips shown to keep table tidy
+                    $maxChips = 4;
+                    $shown = array_slice($chips, 0, $maxChips);
+                    $remaining = count($chips) - count($shown);
+    
+                    $chipsHtml = implode(' ', $shown);
+                    if ($remaining > 0) {
+                        $chipsHtml .= " <span class='perm-badge-chip'>+{$remaining} more</span>";
+                    }
+    
+                    // Details HTML for modal (escaped into data-details in actions)
+                    $detailsHtml = $grouped->map(function ($items, $group) {
+                        $label = strtoupper($group);
+                        $lis = collect($items)->sort()->map(fn ($p) => "<li class='mb-1'><code>{$p}</code></li>")->implode('');
+                        return "<div class='mb-3'><div class='fw-bold mb-1'>{$label}</div><ul class='mb-0 ps-3'>{$lis}</ul></div>";
+                    })->implode('');
+    
+                    // Store details on a button so you can pop a modal from the table
+                    $safeDetails = e($detailsHtml);
+                    $safeName = e($role->name);
+    
+                    return "
+                        <div class='d-flex flex-wrap gap-1 align-items-center'>
+                            {$chipsHtml}
+                            <button type='button'
+                                    class='btn btn-sm btn-outline-primary ms-1 perm-view-btn'
+                                    data-name='{$safeName}'
+                                    data-details='{$safeDetails}'>
+                                View
+                            </button>
+                        </div>
+                    ";
                 })
-                ->addColumn('actions', function($role) {
+                ->addColumn('actions', function ($role) {
                     return '
                         <button class="btn btn-warning btn-sm edit-role" data-id="'.$role->id.'">Edit</button>
                         <button class="btn btn-danger btn-sm delete-role" data-id="'.$role->id.'">Delete</button>
                     ';
                 })
-                ->rawColumns(['actions'])
+                ->rawColumns(['permissions','actions'])
                 ->make(true);
         }
-
-        $permissions = Permission::all();
+    
+        /**
+         * IMPORTANT:
+         * Your blade currently expects $permissions grouped by module:
+         * @foreach($permissions as $module => $perms)
+         * So we must pass grouped permissions, not Permission::all().
+         */
+        $permissions = Permission::query()
+            ->orderBy('name')
+            ->get()
+            ->groupBy(function ($p) {
+                return explode('.', $p->name)[0] ?? 'other';
+            });
+    
         return view('roles.index', compact('permissions'));
     }
+
 
     public function store(Request $request)
     {

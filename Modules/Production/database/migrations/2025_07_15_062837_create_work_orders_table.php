@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('work_orders', function (Blueprint $table) {
             $table->id();
             $table->string('work_order_number')->unique();
-            $table->foreignId('product_id')->constrained()->onDelete('cascade');
-            $table->foreignId('bill_of_material_id')->constrained('bills_of_materials')->onDelete('cascade');
+            $table->foreignId('product_variant_id')->constrained()->onDelete('cascade');
+            $table->unsignedBigInteger('bom_header_id')->nullable();
             $table->foreignId('routing_id')->constrained()->onDelete('cascade');
             $table->decimal('quantity_to_produce', 15, 4);
             $table->enum('status', ['pending', 'in_progress', 'completed', 'cancelled'])->default('pending');
@@ -23,7 +23,7 @@ return new class extends Migration
             $table->timestamp('end_date')->nullable();
             $table->timestamps();
         });
-        
+
     }
 
     /**

@@ -1,50 +1,56 @@
 <?php
-// Modules/Sales/Models/SalesInvoiceLine.php
 
 namespace Modules\Sales\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasOne};
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+use Modules\Sales\Models\SalesInvoice;
+use Modules\Sales\Models\SalesOrderLine;
+use Modules\Inventory\Models\Product\ProductVariant;
 
 class SalesInvoiceLine extends Model
 {
-    use HasFactory;
-
     protected $table = 'sales_invoice_lines';
 
+    // SalesInvoiceLine.php
     protected $fillable = [
-        'sales_invoice_id',
-        'product_variant_id',
-        'description',
-        'qty',
-        'unit_price',
-        'tax_rate',
-        'line_total',           // qty × unit_price (+tax)
-        'delivery_line_id',     // optional back-link to fulfilment
+      'sales_invoice_id',
+      'sales_order_line_id',
+      'product_variant_id',
+      'line_type',
+      'charge_code',
+      'description',
+      'qty_to_invoice',
+      'unit_price',
+      'line_total',
+      'is_taxable',
+      'tax_rate',
+      'tax_amount',
     ];
-
+    
     protected $casts = [
-        'qty'         => 'float',
-        'unit_price'  => 'float',
-        'tax_rate'    => 'float',
-        'line_total'  => 'float',
+      'qty_to_invoice' => 'decimal:4',
+      'unit_price'     => 'decimal:4',
+      'line_total'     => 'decimal:4',
+      'tax_rate'       => 'decimal:4',
+      'tax_amount'     => 'decimal:4',
+      'is_taxable'     => 'boolean',
     ];
 
-    /* ─────────────── Relationships ─────────────── */
 
     public function invoice(): BelongsTo
     {
         return $this->belongsTo(SalesInvoice::class, 'sales_invoice_id');
     }
 
-    public function variant(): BelongsTo
+    public function orderLine(): BelongsTo
     {
-        return $this->belongsTo(\Modules\Inventory\Models\Product\ProductVariant::class, 'product_variant_id');
+        return $this->belongsTo(SalesOrderLine::class, 'sales_order_line_id');
     }
 
-    public function deliveryLine(): BelongsTo
+    public function variant(): BelongsTo
     {
-        return $this->belongsTo(SalesDeliveryLine::class, 'delivery_line_id');
+        return $this->belongsTo(ProductVariant::class, 'product_variant_id');
     }
 }

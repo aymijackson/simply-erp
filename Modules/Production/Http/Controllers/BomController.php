@@ -170,11 +170,11 @@ class BomController extends Controller
      */
     public function store(Request $r)
     {
-        $linesJson = $request->input('lines');
+        $linesJson = $r->input('lines');
         if (is_string($linesJson)) {
             $decoded = json_decode($linesJson, true);
             if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                $request->merge(['lines' => $decoded]);
+                $r->merge(['lines' => $decoded]);
             }
         }
 
@@ -233,14 +233,14 @@ class BomController extends Controller
         if ($request->name !== $bom->name) {
             $rules['name'] = [
                 'required', 'string', 'max:150',
-                Rule::unique('boms', 'name'),
+                Rule::unique('bom_headers', 'name'),
             ];
         }
 
         if ($request->bom_code !== $bom->bom_code) {
             $rules['bom_code'] = [
                 'required', 'string', 'max:60',
-                Rule::unique('boms', 'bom_code'),
+                Rule::unique('bom_headers', 'bom_code'),
             ];
         }
 

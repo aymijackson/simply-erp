@@ -3,35 +3,45 @@
 namespace Modules\CRM\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Modules\HRM\Models\Employee;
 
 class SupportTicketComment extends Model
 {
+    protected $table = 'support_ticket_comments';
 
     protected $fillable = [
-        'subject',
-        'description',
-        'priority',
-        'status',
-        'customer_id',
-        'assigned_to',
-        'resolved_at'
+        'support_ticket_id',
+        'user_id',
+        'message',
+        'is_internal',
     ];
 
+    protected $casts = [
+        'is_internal' => 'boolean',
+    ];
 
-    /**
-     * Get the customer that raised the ticket.
-     */
-    public function customer(): BelongsTo
+    public function ticket()
     {
-        return $this->belongsTo(\Modules\CRM\Models\Customer::class);
+        return $this->belongsTo(SupportTicket::class, 'support_ticket_id');
     }
 
-    /**
-     * Get the employee assigned to this ticket.
-     */
-    public function employee(): BelongsTo
+    public function author()
     {
-        return $this->belongsTo(\Modules\HRM\Models\Employee::class, 'assigned_to');
+        // support_ticket_comments.user_id (users.id) -> employees.user_id
+        return $this->belongsTo(Employee::class, 'user_id', 'user_id');
+    }
+
+    public function attachments()
+    {
+        return $this->hasMany(SupportTicketAttachment::class, 'comment_id');
+    }
+
+    protected static function booted()
+    {
+        static::creating(function ($m) {
+            if (empty($m->user_id) && auth()->check()) {
+                $m->user_id = auth()->id();
+            }
+        });
     }
 }

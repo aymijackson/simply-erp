@@ -44,6 +44,16 @@ class InventoryController extends Controller
      * List all brands.
      */
     
+    public function logout(Request $request)
+    {
+        auth()->logout();
+    
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+    
+        return redirect()->route('login');
+    }
+    
      public function brands()
      {
         $data['manufacturers'] = BrandManufacturer::all();

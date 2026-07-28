@@ -244,7 +244,6 @@
   </div>
 </div>
 
-{{-- Add/Edit Material Modal ---------------------------------------------------- --}}
 {{-- Add/Edit Material Modal ----------------------------------------------- --}}
 <div class="modal fade" id="matModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
@@ -499,8 +498,9 @@ const CSRF  = @json(csrf_token());
 // Endpoints
 const URLS = {
   // Existing tables
-  matVariants:  @json(route('admin.inventory.product-variants.select2')),
   materialsDT: @json(route('admin.production.work-orders.materials.datatable', $wo->id)),
+  matStore: @json(route('admin.production.work-orders.materials.store', $wo->id)),
+  matUpdate: @json(route('admin.production.work-orders.materials.update', $wo->id)),
   stepsDT:     @json(route('admin.production.work-orders.routings.steps.datatable', ['work_order' => $wo->id])),
   costsDT:     @json(route('admin.production.work-orders.costs.datatable', $wo->id)),
   costStore:   @json(route('admin.production.work-orders.costs.store', $wo->id)),
@@ -568,9 +568,9 @@ const matTbl = $('#matTbl').DataTable({
   columns: [
     {data:'sku'},
     {data:'name'},
-    {data:'qty_planned', className:'text-end'},
-    {data:'qty_issued',  className:'text-end'},
-    {data:'qty_returned',className:'text-end'},
+    {data:'planned_qty', className:'text-end'},
+    {data:'issued_qty',  className:'text-end'},
+    {data:'returned_qty',className:'text-end'},
     {data:'remaining',   className:'text-end'},
     {data:'notes'},
     {data:'actions', orderable:false, searchable:false, className:'text-end'}
@@ -1181,8 +1181,21 @@ const $mQty    = $('#mat_qty');
 const $mNote   = $('#mat_note');
 
 $mVar.select2({
-  ajax: { url: URLS.matVariants, dataType:'json', delay:250, data:p=>({q:p.term}), processResults:d=>({results:d}) },
-  dropdownParent: $('#matModal'), width:'100%', placeholder:'-- select variant --', minimumInputLength:0
+  ajax: {
+    url: "{{ route('admin.production.work-orders.materials.variants.available', $wo->id) }}",
+    dataType: 'json',
+    delay: 250,
+    data: params => ({
+      q: params.term || '',
+      page: params.page || 1,
+      // except: '12,34', // optional: exclude ids
+    }),
+    processResults: d => ({ results: d.results, pagination: d.pagination })
+  },
+  dropdownParent: $('#matModal'),
+  width: '100%',
+  placeholder: '-- select variant (with remaining) --',
+  minimumInputLength: 0
 });
 
 $('#addMatBtn').on('click', ()=>{

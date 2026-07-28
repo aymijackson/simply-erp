@@ -2,20 +2,19 @@
 
 namespace Modules\HRM\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Modules\Inventory\Models\Company;
-use Modules\Inventory\Models\Department;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Spatie\Permission\Traits\HasRoles;
+use Modules\Document\Traits\HasDocuments;
 
 class Employee extends Authenticatable
 {
-    use HasFactory, HasRoles;
+    use HasDocuments, HasFactory, HasRoles;
 
     protected $table = 'employees';
 
     protected $fillable = [
+        'user_id',
         'company_id',
         'department_id',
         'employee_code',
@@ -27,12 +26,18 @@ class Employee extends Authenticatable
         'date_of_birth',
         'date_hired',
         'password',
-        'address',
+        'is_active',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
+    ];
+
+    protected $casts = [
+        'date_of_birth' => 'date',
+        'date_hired'    => 'date',
+        'is_active'     => 'boolean',
     ];
 
     public function company()
@@ -45,8 +50,40 @@ class Employee extends Authenticatable
         return $this->belongsTo(\App\Models\Department::class);
     }
 
-    public function getFullNameAttribute()
+    public function user()
     {
-        return "{$this->first_name} {$this->last_name}";
+        return $this->belongsTo(\App\Models\User::class);
+    }
+
+    public function getFullNameAttribute(): string
+    {
+        return trim(($this->first_name ?? '') . ' ' . ($this->last_name ?? ''));
+    }
+    
+    public function contracts()
+    {
+        return $this->hasMany(\Modules\HRM\Models\HrContract::class, 'employee_id');
+    }
+     
+    public function activeContract()
+    {
+        return $this->hasOne(\Modules\HRM\Models\HrContract::class, 'employee_id')
+            ->where('status', 'active')
+            ->latestOfMany('start_date');
+    }
+     
+    public function rosters()
+    {
+        return $this->hasMany(\Modules\HRM\Models\HrRoster::class, 'employee_id');
+    }
+     
+    public function leaveBalances()
+    {
+        return $this->hasMany(\Modules\HRM\Models\HrLeaveBalance::class, 'employee_id');
+    }
+     
+    public function payslips()
+    {
+        return $this->hasMany(\Modules\HRM\Models\HrPayslip::class, 'employee_id');
     }
 }

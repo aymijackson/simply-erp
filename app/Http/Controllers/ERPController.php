@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Models\City;
 use App\Models\Company;
@@ -19,11 +20,239 @@ use App\Models\StoreShelf;
 use DataTables;
 use Illuminate\Routing\Controller;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class ERPController extends Controller
 {
     //
     public function index()
+    {
+        $now = Carbon::now();
+        $startOfMonth = $now->copy()->startOfMonth();
+
+        /**
+         * =========================
+         * GOVERNANCE / ACCESS
+         * =========================
+         */
+        $totalUsers = DB::table('users')->count();
+        $adminUsers = DB::table('users')->where('can_access_admin', 1)->count();
+        $erpUsers   = DB::table('users')->where('can_access_erp', 1)->count();
+        $verifiedUsers = DB::table('users')->whereNotNull('email_verified_at')->count();
+
+        $rolesCount = DB::table('roles')->count();
+        $permissionsCount = DB::table('permissions')->count();
+        $modulesCount = DB::table('modules')->count();
+
+        $usersWithoutRoles = DB::table('users as u')
+            ->leftJoin('model_has_roles as mhr', function ($join) {
+                $join->on('mhr.model_id', '=', 'u.id')
+                     ->where('mhr.model_type', '=', 'App\\Models\\User');
+            })
+            ->whereNull('mhr.role_id')
+            ->count();
+
+        $rolesWithoutPermissions = DB::table('roles as r')
+            ->leftJoin('role_has_permissions as rhp', 'rhp.role_id', '=', 'r.id')
+            ->whereNull('rhp.permission_id')
+            ->count();
+
+        $moduleAssignments = DB::table('module_user')->count(); // entitlements
+
+        /**
+         * =========================
+         * BACKLOG / APPROVALS
+         * =========================
+         */
+        $pendingActivities = DB::table('activities')->where('status', 'pending')->count();
+        $overdueActivities = DB::table('activities')->where('status', 'overdue')->count();
+
+        $pendingSalesOrders = DB::table('sales_orders')
+            ->whereIn('status', ['draft', 'pending', 'submitted'])
+            ->count();
+
+        $pendingPurchaseOrders = DB::table('proc_purchase_orders')
+            ->whereIn('status', ['draft', 'pending', 'submitted'])
+            ->count();
+
+        /**
+         * =========================
+         * INVENTORY HEALTH (views)
+         * =========================
+         * v_stock_levels: product_variant_id, location_store_id, qty_on_hand, value_on_hand
+         * v_stock_age: product_variant_id, location_store_id, age_days, age_bucket, qty, value
+         */
+        $stockValue = (float) DB::table('v_stock_levels')->sum('value_on_hand');
+
+        $lowStockCount = DB::table('v_stock_levels as v')
+            ->join('product_variants as pv', 'pv.id', '=', 'v.product_variant_id')
+            ->whereNotNull('pv.reorder_point')
+            ->whereColumn('v.qty_on_hand', '<=', 'pv.reorder_point')
+            ->count();
+
+        $lowStockTop = DB::table('v_stock_levels as v')
+            ->join('product_variants as pv', 'pv.id', '=', 'v.product_variant_id')
+            ->join('products as p', 'p.id', '=', 'pv.product_id')
+            ->select('p.product_name', 'pv.sku', 'v.qty_on_hand', 'pv.reorder_point')
+            ->whereNotNull('pv.reorder_point')
+            ->whereColumn('v.qty_on_hand', '<=', 'pv.reorder_point')
+            ->orderBy('v.qty_on_hand')
+            ->limit(8)
+            ->get();
+
+        $stockAgeBuckets = DB::table('v_stock_age')
+            ->select('age_bucket', DB::raw('SUM(value) as total_value'))
+            ->groupBy('age_bucket')
+            ->orderBy('age_bucket')
+            ->pluck('total_value', 'age_bucket');
+
+        /**
+         * =========================
+         * SALES (for trend chart)
+         * =========================
+         */
+        $salesLast6MonthsLabels = [];
+        $salesLast6MonthsValues = [];
+
+        for ($i = 5; $i >= 0; $i--) {
+            $d = $now->copy()->subMonths($i);
+            $salesLast6MonthsLabels[] = $d->format('M Y');
+
+            $salesLast6MonthsValues[] = (float) DB::table('sales_invoices')
+                ->whereNotNull('posted_at')
+                ->whereBetween('posted_at', [$d->copy()->startOfMonth(), $d->copy()->endOfMonth()])
+                ->sum('grand_total');
+        }
+
+        $salesThisMonth = (float) DB::table('sales_invoices')
+            ->whereNotNull('posted_at')
+            ->where('posted_at', '>=', $startOfMonth)
+            ->sum('grand_total');
+
+        /**
+         * =========================
+         * PRODUCTION
+         * =========================
+         */
+        $openWorkOrders = DB::table('work_orders')
+            ->whereIn('status', ['pending', 'in_progress', 'open'])
+            ->count();
+
+        $workOrderCostTotals = DB::table('v_work_order_costs')
+            ->selectRaw('
+                COALESCE(SUM(total_cost),0) as total_cost,
+                COALESCE(SUM(labour_cost),0) as labour_cost,
+                COALESCE(SUM(machine_cost),0) as machine_cost,
+                COALESCE(SUM(logistics_cost),0) as logistics_cost,
+                COALESCE(SUM(fuel_cost),0) as fuel_cost,
+                COALESCE(SUM(service_cost),0) as service_cost,
+                COALESCE(SUM(overhead_cost),0) as overhead_cost
+            ')
+            ->first();
+
+        /**
+         * =========================
+         * HR / PAYROLL
+         * =========================
+         */
+        $activeEmployees = DB::table('employees')->where('is_active', 1)->count();
+
+        $todayAttendance = DB::table('attendances')
+            ->whereDate('date', $now->toDateString())
+            ->count();
+
+        $pendingLeaves = DB::table('leaves')
+            ->whereIn('status', ['pending', 'requested'])
+            ->count();
+
+        $pendingPayrolls = DB::table('payrolls')
+            ->whereIn('status', ['pending', 'draft'])
+            ->count();
+
+        /**
+         * =========================
+         * CRM / SUPPORT
+         * =========================
+         */
+        $openTickets = DB::table('support_tickets')
+            ->whereIn('status', ['open', 'pending'])
+            ->count();
+
+        $highPriorityTickets = DB::table('support_tickets')
+            ->whereIn('priority', ['high', 'urgent'])
+            ->whereIn('status', ['open', 'pending'])
+            ->count();
+
+        $leadsNew = DB::table('leads')
+            ->whereIn('status', ['new', 'open'])
+            ->count();
+
+        $opportunitiesOpen = DB::table('opportunities')
+            ->whereIn('stage', ['prospecting', 'proposal', 'negotiation'])
+            ->count();
+
+        /**
+         * =========================
+         * SYSTEM HEALTH
+         * =========================
+         */
+        $failedJobs = DB::table('failed_jobs')->count();
+        $queuedJobs = DB::table('jobs')->count();
+
+        $activeSessions = DB::table('sessions')
+            ->where('last_activity', '>=', $now->copy()->subMinutes(30)->timestamp)
+            ->count();
+
+        /**
+         * A few “recent” lists for admin visibility
+         */
+        $recentTickets = DB::table('support_tickets')
+            ->select('id', 'subject', 'priority', 'status', 'created_at')
+            ->orderByDesc('created_at')
+            ->limit(5)
+            ->get();
+
+        $recentActivities = DB::table('activities')
+            ->select('id', 'activity_type', 'status', 'due_date', 'created_at')
+            ->orderByDesc('created_at')
+            ->limit(6)
+            ->get();
+
+        return view('dashboard', compact(
+            // Big headline KPIs (cards)
+            'totalUsers', 'adminUsers', 'activeSessions', 'failedJobs',
+
+            // Governance extras
+            'erpUsers', 'verifiedUsers', 'rolesCount', 'permissionsCount', 'modulesCount',
+            'usersWithoutRoles', 'rolesWithoutPermissions', 'moduleAssignments',
+
+            // Backlog
+            'pendingActivities', 'overdueActivities', 'pendingSalesOrders', 'pendingPurchaseOrders',
+
+            // Inventory
+            'stockValue', 'lowStockCount', 'lowStockTop', 'stockAgeBuckets',
+
+            // Sales trend
+            'salesThisMonth', 'salesLast6MonthsLabels', 'salesLast6MonthsValues',
+
+            // Production
+            'openWorkOrders', 'workOrderCostTotals',
+
+            // HR
+            'activeEmployees', 'todayAttendance', 'pendingLeaves', 'pendingPayrolls',
+
+            // CRM/Support
+            'openTickets', 'highPriorityTickets', 'leadsNew', 'opportunitiesOpen',
+
+            // System
+            'queuedJobs',
+
+            // Recent lists
+            'recentTickets', 'recentActivities'
+        ));
+    }
+    
+    public function index_old()
     {
         return view('dashboard', [
             'title' => 'Dashboard',
@@ -83,8 +312,8 @@ class ERPController extends Controller
         ->addColumn('subregion', fn($country) => $country->subregion ? $country->subregion->name : '-')
         ->addColumn('actions', function($country) {
             return '
-                <button class="btn btn-sm btn-info edit-country" data-id="'.$country->id.'">Edit</button>
-                <button class="btn btn-sm btn-danger delete-country" data-id="'.$country->id.'">Delete</button>
+                <button class="btn btn-sm btn-primary edit-country" data-id="'.$country->id.'"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-sm btn-danger delete-country" data-id="'.$country->id.'"><i class="fas fa-trash"></i></button>
             ';
         })
         ->rawColumns(['actions'])
@@ -111,6 +340,24 @@ class ERPController extends Controller
     {
         $country = Country::findOrFail($id);
         return response()->json(['country' => $country]);
+    }
+
+    public function updateCountry(Request $request)
+    {
+        $validated = $request->validate([
+            'name'         => 'required|string|max:255',
+            'iso2'         => 'nullable|string|max:2',
+            'iso3'         => 'nullable|string|max:3',
+            'region_id'    => 'nullable|integer|exists:regions,id',
+            'subregion_id' => 'nullable|integer|exists:subregions,id',
+        ]);
+    
+        Country::updateOrCreate(
+            ['id' => $request->id],
+            $validated
+        );
+    
+        return response()->json(['message' => 'Country saved successfully.']);
     }
 
     public function destroyCountry($id)
@@ -173,6 +420,24 @@ class ERPController extends Controller
     {
         $country = City::findOrFail($id);
         return response()->json(['country' => $country]);
+    }
+
+    public function updateCity(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'name'       => 'required|string|max:255',
+            'country_id' => 'required|exists:countries,id',
+            'state_id'   => 'required|exists:states,id',
+        ]);
+    
+        $city = City::findOrFail($id);
+    
+        $city->update($validated);
+    
+        return response()->json([
+            'message' => 'City updated successfully',
+            'city'    => $city
+        ]);
     }
 
     public function destroyCity($id)
@@ -328,8 +593,11 @@ class ERPController extends Controller
     {
         return view('locations.index', [
             'locationTypes' => LocationType::all(),
-            'companies' => Company::all(),
-            'cities' => City::all(),
+            'companies'     => Company::all(),
+            'countries'     => Country::with(['region', 'subregion'])
+                                    ->select('id', 'name', 'region_id', 'subregion_id')
+                                    ->get(),   // <-- REQUIRED
+            'cities'        => [],
         ]);
     }
 
@@ -342,7 +610,7 @@ class ERPController extends Controller
             ->addColumn('name', fn($location) => '<a href="'. '/admin/locations/'.$location->id.'">'. $location->name .'</a>' ?? '')
             ->addColumn('location_type', fn($location) => '<a href="'. '/admin/location_types/'.$location->id.'">'. $location->type->name .'</a>' ?? '')
             ->addColumn('city', fn($location) => $location->city->name ?? '')
-            ->addColumn('company', fn($location) => $loc->company->name ?? '') // new column
+            ->addColumn('company', fn($location) => $location->company->name ?? '') // new column
             ->addColumn('coordinates', fn($location) => "{$location->latitude}, {$location->longitude}") // merged column
             ->addColumn('checkbox', fn($location) => '<input type="checkbox" name="location_checkbox[]" value="' . $location->id . '">')
             ->addColumn('actions', fn($location) => view('locations.actions', compact('location'))->render())
@@ -371,15 +639,47 @@ class ERPController extends Controller
 
     public function showLocation($id)
     {
-        $location = Location::with(['type', 'city', 'company'])->findOrFail($id);
-        return view('locations.show', compact('location'));
+        $location = Location::with([
+            'company',
+            'type',
+            'city.state',
+            'city.state.country',
+        ])->findOrFail($id);
+    
+        $locationTypes = LocationType::orderBy('name')->get();
+        return view('locations.show', compact('location', 'locationTypes'));
     }
+
 
     public function editLocation($id)
     {
-        $location = Location::findOrFail($id);
-        return response()->json(['location' => $location]);
+        $location = Location::with(['city.state.country'])->findOrFail($id);
+    
+        $city = $location->city;
+        $state = $city ? $city->state : null;
+        $country = $state ? $state->country : null;
+        
+        return response()->json([
+            'location' => [
+                'id' => $location->id,
+                'name' => $location->name,
+                'company_id' => $location->company_id,
+                'location_type_id' => $location->location_type_id,
+                'city_id' => $city?->id,
+                'city_name' => $city?->name,
+                'state_id' => $state?->id,
+                'state_name' => $state?->name,
+                'country_id' => $country?->id,
+                'country_name' => $country?->name,
+                'address' => $location->address,
+                'longitude' => $location->longitude,
+                'latitude' => $location->latitude,
+                'description' => $location->description,
+            ]
+        ]);
     }
+
+
 
     public function updateLocation(Request $request, $id)
     {
@@ -414,60 +714,171 @@ class ERPController extends Controller
 
     public function locationBlocks(Request $request, $locationId)
     {
-        $blocks = LocationBlock::where('location_id', $locationId);
-
+        $blocks = LocationBlock::query()
+            ->where('location_id', $locationId)
+            ->select(['id', 'name', 'created_at']);
+    
         return DataTables::of($blocks)
-            ->addColumn('created_at', fn($block) => $block->created_at->format('Y-m-d H:i'))
+            ->addColumn('created_at', function ($block) {
+                return $block->created_at ? $block->created_at->format('Y-m-d H:i') : '-';
+            })
+            ->addColumn('actions', function ($block) {
+                return '
+                    <button type="button"
+                        class="btn btn-sm btn-outline-primary edit-child"
+                        data-entity="blocks"
+                        data-id="' . $block->id . '"
+                        data-value="' . e($block->name ?? '') . '">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                ';
+            })
+            ->rawColumns(['actions'])
             ->make(true);
     }
-
+    
     public function locationFloors(Request $request, $locationId)
     {
-        $floors = LocationBlockFloor::with('block')
-            ->whereHas('block', fn($q) => $q->where('location_id', $locationId));
-
+        $floors = LocationBlockFloor::query()
+            ->with('block:id,name')
+            ->whereHas('block', function ($q) use ($locationId) {
+                $q->where('location_id', $locationId);
+            })
+            ->select(['id', 'location_block_id', 'name']);
+    
         return DataTables::of($floors)
-            ->addColumn('block_name', fn($floor) => $floor->block->name ?? '-')
-            ->addColumn('name', fn($floor) => $floor->name)
+            ->addColumn('name', function ($floor) {
+                return $floor->name ?? '-';
+            })
+            ->addColumn('block_name', function ($floor) {
+                return optional($floor->block)->name ?? '-';
+            })
+            ->addColumn('actions', function ($floor) {
+                return '
+                    <button type="button"
+                        class="btn btn-sm btn-outline-primary edit-child"
+                        data-entity="floors"
+                        data-id="' . $floor->id . '"
+                        data-value="' . e($floor->name ?? '') . '"
+                        data-block-id="' . ($floor->location_block_id ?? '') . '"
+                        data-block-name="' . e(optional($floor->block)->name ?? '') . '">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                ';
+            })
+            ->rawColumns(['actions'])
             ->make(true);
     }
-
+    
     public function locationRooms(Request $request, $locationId)
     {
-        $rooms = LocationBlockFloorRoom::with('floor.block')
-            ->whereHas('floor.block', fn($q) => $q->where('location_id', $locationId));
-
+        $rooms = LocationBlockFloorRoom::query()
+            ->with('floor:id,name')
+            ->whereHas('floor.block', function ($q) use ($locationId) {
+                $q->where('location_id', $locationId);
+            })
+            ->select(['id', 'location_block_floor_id', 'name']);
+    
         return DataTables::of($rooms)
-            ->addColumn('floor_name', fn($room) => $room->floor->name ?? '-')
-            ->addColumn('name', fn($room) => $room->name)
+            ->addColumn('name', function ($room) {
+                return $room->name ?? '-';
+            })
+            ->addColumn('floor_name', function ($room) {
+                return optional($room->floor)->name ?? '-';
+            })
+            ->addColumn('actions', function ($room) {
+                return '
+                    <button type="button"
+                        class="btn btn-sm btn-outline-primary edit-child"
+                        data-entity="rooms"
+                        data-id="' . $room->id . '"
+                        data-value="' . e($room->name ?? '') . '"
+                        data-floor-id="' . ($room->location_block_floor_id ?? '') . '"
+                        data-floor-name="' . e(optional($room->floor)->name ?? $room->floor_name ?? '') . '">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                ';
+            })
+            ->rawColumns(['actions'])
             ->make(true);
     }
-
+    
     public function locationStores(Request $request, $locationId)
     {
-        $stores = LocationStore::with('room.floor.block.location', 'location')
+        $stores = LocationStore::query()
+            ->with([
+                'room:id,name',
+                'location:id,name'
+            ])
             ->where(function ($query) use ($locationId) {
-                $query->whereHas('room.floor.block', fn($q) => $q->where('location_id', $locationId))
-                      ->orWhere('location_id', $locationId);
-            });
-
+                $query->whereHas('room.floor.block', function ($q) use ($locationId) {
+                    $q->where('location_id', $locationId);
+                })->orWhere('location_id', $locationId);
+            })
+            ->select(['id', 'name', 'location_block_floor_room_id', 'location_id']);
+    
         return DataTables::of($stores)
-            ->addColumn('name', fn($store) => $store->name)
-            ->addColumn('room_name', fn($store) => $store->room->name ?? '-')
+            ->addColumn('name', function ($store) {
+                return $store->name ?? '-';
+            })
+            ->addColumn('room_name', function ($store) {
+                if ($store->room) {
+                    return $store->room->name;
+                }
+    
+                return optional($store->location)->name ? '[Direct] '.optional($store->location)->name : '-';
+            })
+            ->addColumn('actions', function ($store) {
+                return '
+                    <button type="button"
+                        class="btn btn-sm btn-outline-primary edit-child"
+                        data-entity="stores"
+                        data-id="' . $store->id . '"
+                        data-value="' . e($store->name ?? '') . '"
+                        data-room-id="' . ($store->location_block_floor_room_id ?? '') . '"
+                        data-room-name="' . e(optional($store->room)->name ?? $store->room_name ?? '') . '">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                ';
+            })
+            ->rawColumns(['actions'])
             ->make(true);
     }
-
+    
     public function locationShelves(Request $request, $locationId)
     {
-        $shelves = StoreShelf::with('store.room.floor.block.location', 'store.location')
+        $shelves = StoreShelf::query()
+            ->with('store:id,name')
             ->whereHas('store', function ($q) use ($locationId) {
-                $q->whereHas('room.floor.block', fn($q) => $q->where('location_id', $locationId))
-                  ->orWhere('location_id', $locationId);
-            });
-
+                $q->where(function ($sub) use ($locationId) {
+                    $sub->whereHas('room.floor.block', function ($x) use ($locationId) {
+                        $x->where('location_id', $locationId);
+                    })->orWhere('location_id', $locationId);
+                });
+            })
+            ->select(['id', 'store_id', 'code']);
+    
         return DataTables::of($shelves)
-            ->addColumn('code', fn($shelf) => $shelf->code)
-            ->addColumn('store_name', fn($shelf) => $shelf->store->name ?? '-')
+            ->addColumn('code', function ($shelf) {
+                return $shelf->code ?? '-';
+            })
+            ->addColumn('store_name', function ($shelf) {
+                return optional($shelf->store)->name ?? '-';
+            })
+            ->addColumn('actions', function ($shelf) {
+                return '
+                    <button type="button"
+                        class="btn btn-sm btn-outline-primary edit-child"
+                        data-entity="shelves"
+                        data-id="' . $shelf->id . '"
+                        data-value="' . e($shelf->code ?? '') . '"
+                        data-store-id="' . ($shelf->store_id ?? '') . '"
+                        data-store-name="' . e(optional($shelf->store)->name ?? $shelf->store_name ?? '') . '">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                ';
+            })
+            ->rawColumns(['actions'])
             ->make(true);
     }
 
@@ -486,10 +897,43 @@ class ERPController extends Controller
             ->addColumn('name', fn($block) => $block->name ?? '')
             ->addColumn('location', fn($block) => $block->location->name ?? '')
             ->addColumn('checkbox', fn($block) => '<input type="checkbox" name="location_checkbox[]" value="' . $block->id . '">')
-            ->addColumn('actions', fn($block) => view('locations.blocks.actions', compact('block'))->render())
+            ->addColumn('actions', function ($block) {
+                return '<button type="button" class="btn btn-sm btn-outline-primary edit-child"
+                    data-entity="blocks"
+                    data-id="'.$block->id.'"
+                    data-value="'.e($block->name ?? '').'">
+                    <i class="fas fa-edit"></i>
+                </button>';
+            })
             ->rawColumns(['checkbox', 'actions'])
             ->make(true);
         }
+    }
+    
+    #   for the general page
+    public function locationBlocksDatatable(Request $request)
+    {
+        if (! $request->ajax()) {
+            abort(404);
+        }
+    
+        $blocks = LocationBlock::with('location')->select('location_blocks.*');
+    
+        return DataTables::of($blocks)
+            ->addColumn('checkbox', function ($block) {
+                return '<input type="checkbox" class="row-checkbox" name="location_block_checkbox[]" value="' . $block->id . '">';
+            })
+            ->addColumn('name', function ($block) {
+                return e($block->name ?? '');
+            })
+            ->addColumn('location', function ($block) {
+                return e(optional($block->location)->name ?? '');
+            })
+            ->addColumn('actions', function ($block) {
+                return view('locations.blocks.actions', compact('block'))->render();
+            })
+            ->rawColumns(['checkbox', 'actions'])
+            ->make(true);
     }
 
     public function storeLocationBlock(Request $request)
@@ -582,7 +1026,7 @@ class ERPController extends Controller
     }
 
     public function editLocationBlockFloor($id)
-    {
+    { 
         $loc = LocationBlockFloor::findOrFail($id);
         return response()->json(['location_block_floor' => $block]);
     }
@@ -623,16 +1067,24 @@ class ERPController extends Controller
     public function locationBlockFloorRoomsList(Request $request)
     {
         if ($request->ajax()) {
-            $rooms = LocationBlockFloorRoom::with(['floor']);
+    
+            $rooms = LocationBlockFloorRoom::with([
+                'floor.block.location' // FIXED
+            ]);
+    
             return DataTables::of($rooms)
-            ->addColumn('name', fn($room) => $room->name ?? '')
-            ->addColumn('location', fn($room) => $room->floor->block->location->name ?? '')
-            ->addColumn('block', fn($room) => $room->floor->block->name ?? '')
-            ->addColumn('floor', fn($room) => $room->floor->name ?? '')
-            ->addColumn('checkbox', fn($room) => '<input type="checkbox" name="floor_checkbox[]" value="' . $room->id . '">')
-            ->addColumn('actions', fn($room) => view('locations.blocks.floors.rooms.actions', compact('room'))->render())
-            ->rawColumns(['checkbox', 'actions'])
-            ->make(true);
+                ->addColumn('name', fn($room) => $room->name ?? '')
+                ->addColumn('location', fn($room) => $room->floor->block->location->name ?? '')
+                ->addColumn('block', fn($room) => $room->floor->block->name ?? '')
+                ->addColumn('floor', fn($room) => $room->floor->name ?? '')
+                ->addColumn('checkbox', fn($room) =>
+                    '<input type="checkbox" name="room_checkbox[]" value="' . $room->id . '">' // FIXED
+                )
+                ->addColumn('actions', fn($room) =>
+                    view('locations.blocks.floors.rooms.actions', compact('room'))->render()
+                )
+                ->rawColumns(['checkbox', 'actions'])
+                ->make(true);
         }
     }
 
@@ -665,15 +1117,18 @@ class ERPController extends Controller
     public function updateLocationBlockFloorRoom(Request $request, $id)
     {
         $request->validate([
-            'name' => 'required',
-            'location_block_id' => 'required|exists:location_blocks,id',
             'name' => 'required|string|max:255',
+            'location_block_floor_id' => 'required|exists:location_block_floors,id',
         ]);
-
-        $room = Location::findOrFail($id);
-        $room->update($request->all());
-
-        return response()->json(['message' => 'Floor updated successfully.']);
+    
+        $room = LocationBlockFloorRoom::findOrFail($id);
+    
+        $room->update([
+            'name' => $request->name,
+            'location_block_floor_id' => $request->location_block_floor_id,
+        ]);
+    
+        return response()->json(['message' => 'Room updated successfully.']);
     }
 
     public function destroyLocationBlockFloorRoom($id)
@@ -732,9 +1187,7 @@ class ERPController extends Controller
                 ->addColumn('name', fn($store) => $store->name ?? '')
         
                 ->addColumn('location', function ($store) {
-                    return $store->room 
-                        ? ($store->room->floor->block->location->name ?? '')
-                        : ($store->location->name ?? '');
+                    return $store->location->name ?? '';
                 })
         
                 ->addColumn('block', function ($store) {
@@ -768,27 +1221,50 @@ class ERPController extends Controller
 
     // PUT /stores/{id}
     public function updateStore(Request $request, $id)
-    {
-        $store = LocationStore::findOrFail($id);
+{
+    $store = LocationStore::findOrFail($id);
 
-        $request->validate([
-            'name' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('location_stores')->ignore($store->id)->where(function ($query) use ($request) {
-                    return $query->where('location_block_floor_room_id  ', $request->location_block_floor_room_id);
+    $request->validate([
+        'name' => [
+            'required',
+            'string',
+            'max:255',
+            Rule::unique('location_stores')
+                ->ignore($store->id)
+                ->where(function ($query) use ($request) {
+                    // Handle NULL room safely
+                    if ($request->location_block_floor_room_id) {
+                        return $query->where('location_block_floor_room_id', $request->location_block_floor_room_id);
+                    }
+                    return $query->whereNull('location_block_floor_room_id');
                 }),
-            ],
-            'location_id' => 'required|exists:locations,id',
-            'location_block_floor_room_id' => 'required|exists:location_block_floor_rooms,id',
-            'description' => 'nullable|string',
-        ]);
+        ],
+        'location_id' => 'required|exists:locations,id',
+        'location_block_floor_room_id' => 'nullable|exists:location_block_floor_rooms,id',
+        'description' => 'nullable|string',
+    ]);
 
-        $store->update($request->only(['name', 'location_room_id', 'description']));
+    // Validate that the room belongs to the same location
+    if ($request->location_block_floor_room_id) {
+        $room = LocationBlockFloorRoom::find($request->location_block_floor_room_id);
 
-        return response()->json(['message' => 'Store updated successfully.']);
+        if ($room->location_id !== (int) $request->location_id) {
+            return response()->json([
+                'message' => 'Selected room does not belong to the chosen location.'
+            ], 422);
+        }
     }
+
+    // Corrected update fields
+    $store->update([
+        'name' => $request->name,
+        'location_id' => $request->location_id,
+        'location_block_floor_room_id' => $request->location_block_floor_room_id,
+        'description' => $request->description,
+    ]);
+
+    return response()->json(['message' => 'Store details updated successfully.']);
+}
 
     // POST /stores/bulk-delete
     public function bulkDeleteStores(Request $request)
@@ -827,8 +1303,8 @@ class ERPController extends Controller
             })
             ->addColumn('actions', function ($regions) {
                 return '
-                    <button class="btn btn-sm btn-warning edit-region" data-id="' . $regions->id . '">Edit</button>
-                    <button class="btn btn-sm btn-danger delete-region" data-id="' . $regions->id . '">Delete</button>
+                    <button class="btn btn-sm btn-primary edit-region" data-id="' . $regions->id . '"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-danger delete-region" data-id="' . $regions->id . '"><i class="fas fa-trash"></i></button>
                 ';
             })
             ->rawColumns(['checkbox', 'actions'])
@@ -1075,7 +1551,7 @@ class ERPController extends Controller
             return DataTables::of($subregions)
                 ->addColumn('checkbox', fn($subregion) => '<input type="checkbox" name="ids[]" value="'.$subregion->id.'">')
                 ->addColumn('region', fn($subregion) => $subregion->region?->name)
-                ->addColumn('actions', fn($subregion) => '<button class="btn btn-sm btn-warning edit-subregion" data-id="'.$subregion->id.'">Edit</button><button class="btn btn-sm btn-danger delete-subregion" data-id="'.$subregion->id.'">Delete</button>')
+                ->addColumn('actions', fn($subregion) => '<button class="btn btn-sm btn-primary edit-subregion" data-id="'.$subregion->id.'"><i class="fas fa-edit"></i></button><button class="btn btn-sm btn-danger delete-subregion" data-id="'.$subregion->id.'"><i class="fas fa-trash"></i></button>')
                 ->rawColumns(['actions', 'checkbox'])
                 ->make(true);
         }

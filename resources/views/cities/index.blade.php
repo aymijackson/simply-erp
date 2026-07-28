@@ -4,21 +4,34 @@
 
 @section('content')
 <div class="container-fluid">
-    <h1 class="h3 mb-4 text-gray-800">Cities</h1>
-    <button id="addCity" class="btn btn-primary mb-3">Add City</button>
-    <button id="bulkDeleteCities" class="btn btn-danger mb-3">Delete Selected</button>
 
-    <div class="card shadow mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 text-gray-800">Cities</h1>
+
+        <div>
+            <button id="addCity" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add City
+            </button>
+
+            <button id="bulkDeleteCities" class="btn btn-danger">
+                <i class="fas fa-trash"></i> Delete Selected
+            </button>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-bordered" id="citiesTable" width="100%" cellspacing="0">
-                    <thead>
+                <table class="table table-hover" id="citiesTable" width="100%">
+                    <thead class="thead-light">
                         <tr>
-                            <th><input type="checkbox" id="selectAll"></th>
+                            <th width="5%">
+                                <input type="checkbox" id="selectAll">
+                            </th>
                             <th>Name</th>
                             <th>State</th>
                             <th>Country</th>
-                            <th>Actions</th>
+                            <th width="15%">Actions</th>
                         </tr>
                     </thead>
                 </table>
@@ -26,172 +39,219 @@
         </div>
     </div>
 
-    <!-- City Modal -->
-    <div class="modal fade" id="cityModal" tabindex="-1" role="dialog" aria-labelledby="cityModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <form id="cityForm" class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="cityModalLabel">Add City</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span>&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" name="id" id="city_id">
-                    <div class="form-group">
-                        <label for="city_name">Name</label>
-                        <input type="text" class="form-control" id="city_name" name="name" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="state_id">State</label>
-                        <select name="state_id" id="state_id" class="form-control" required>
-                            <option value="">Select State</option>
-                            @foreach(\App\Models\State::all() as $state)
-                                <option value="{{ $state->id }}">{{ $state->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="country_id">Country</label>
-                        <select name="country_id" id="country_id" class="form-control" required>
-                            <option value="">Select Country</option>
-                            @foreach(\App\Models\Country::all() as $country)
-                                <option value="{{ $country->id }}">{{ $country->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+@include('cities.modal')
 @endsection
 
 @push('scripts')
 <script>
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        timer: 2000,
+        showConfirmButton: false,
+        timerProgressBar: true
+    });
+
     $.ajaxSetup({
         headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
         }
     });
+
+    // ------------------------------------
+    // Load States by Country
+    // ------------------------------------
+    function loadStates(countryId, selectedStateId = null) {
+        $('#state_id').html('<option value="">Loading...</option>');
+    
+        $.get(`/states/by-country/${countryId}`, function (data) {
+            let options = '<option value="">Select State</option>';
+    
+            data.forEach(state => {
+                options += `<option value="${state.id}">${state.name}</option>`;
+            });
+    
+            $('#state_id').html(options);
+    
+            if (selectedStateId) {
+                $('#state_id').val(selectedStateId);
+            }
+        });
+    }
+
     $(function () {
+
+        // ------------------------------------
+        // DataTable
+        // ------------------------------------
         const table = $('#citiesTable').DataTable({
             processing: true,
             serverSide: true,
             ajax: '{{ route("admin.cities.list") }}',
+            pageLength: 10,
+            order: [[1, 'asc']],
             columns: [
                 { data: 'checkbox', orderable: false, searchable: false },
                 { data: 'name' },
-                { data: 'state', name: 'state', orderable: false, searchable: true },
-                { data: 'country', name: 'country', orderable: false, searchable: true },
+                { data: 'state' },
+                { data: 'country' },
                 { data: 'actions', orderable: false, searchable: false }
             ]
         });
 
-        $('#addCity').on('click', function () {
+        // ------------------------------------
+        // Add City
+        // ------------------------------------
+        $('#addCity').on('click', () => {
             $('#cityForm')[0].reset();
             $('#city_id').val('');
+            $('#state_id').html('<option value="">Select State</option>');
             $('#cityModalLabel').text('Add City');
             $('#cityModal').modal('show');
         });
 
+        // ------------------------------------
+        // Country Change → Load States
+        // ------------------------------------
+        $('#country_id').on('change', function () {
+            const countryId = $(this).val();
+
+            if (!countryId) {
+                $('#state_id').html('<option value="">Select State</option>');
+                return;
+            }
+
+            loadStates(countryId);
+        });
+
+        // ------------------------------------
+        // Save City
+        // ------------------------------------
         $('#cityForm').on('submit', function (e) {
             e.preventDefault();
+
             const id = $('#city_id').val();
             const url = id ? `/admin/cities/${id}` : '{{ route("admin.cities.store") }}';
-            const type = id ? 'PUT' : 'POST';
+            const method = id ? 'PUT' : 'POST';
 
             $.ajax({
-                url: url,
-                method: type,
+                url,
+                method,
                 data: $(this).serialize(),
-                success: function (response) {
+                success: res => {
                     $('#cityModal').modal('hide');
-                    table.ajax.reload();
-                    Swal.fire({
+                    table.ajax.reload(null, false);
+
+                    Toast.fire({
                         icon: 'success',
-                        title: 'Success',
-                        text: response.message,
-                        timer: 2000,
-                        showConfirmButton: false
+                        title: res.message
                     });
-                    $('#cityForm')[0].reset();
                 },
-                error: function (xhr) {
-                    Swal.fire('Error', xhr.responseJSON.message || 'An error occurred', 'error');
+                error: xhr => {
+                    Toast.fire({
+                        icon: 'error',
+                        title: xhr.responseJSON?.message || 'An error occurred'
+                    });
                 }
             });
         });
 
+        // ------------------------------------
+        // Edit City
+        // ------------------------------------
         $('body').on('click', '.edit-city', function () {
             const id = $(this).data('id');
+
             $.get(`/admin/cities/${id}/edit`, function (res) {
-                const c = res.city;
+
+                const c = res.country; // your payload
+
                 $('#city_id').val(c.id);
                 $('#city_name').val(c.name);
-                $('#state_id').val(c.state_id);
+
+                // Set country first
                 $('#country_id').val(c.country_id);
+
+                // Load states for that country, then select the correct one
+                loadStates(c.country_id, c.state_id);
+
                 $('#cityModalLabel').text('Edit City');
                 $('#cityModal').modal('show');
             });
         });
 
+        // ------------------------------------
+        // Delete Single City
+        // ------------------------------------
         $('body').on('click', '.delete-city', function () {
             const id = $(this).data('id');
+
             Swal.fire({
-                title: 'Are you sure?',
-                text: "You won't be able to revert this!",
+                title: 'Delete City?',
+                text: 'This action cannot be undone.',
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonText: 'Yes, delete it!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $.ajax({
-                        url: `/admin/cities/${id}`,
-                        method: 'DELETE',
-                        success: function (res) {
-                            table.ajax.reload();
-                            Swal.fire('Deleted!', res.message, 'success');
-                        },
-                        error: function () {
-                            Swal.fire('Error', 'Failed to delete city.', 'error');
-                        }
-                    });
-                }
+                confirmButtonText: 'Delete'
+            }).then(result => {
+                if (!result.isConfirmed) return;
+
+                $.ajax({
+                    url: `/admin/cities/${id}`,
+                    method: 'DELETE',
+                    success: res => {
+                        table.ajax.reload(null, false);
+                        Toast.fire({ icon: 'success', title: res.message });
+                    },
+                    error: () => {
+                        Toast.fire({ icon: 'error', title: 'Failed to delete city' });
+                    }
+                });
             });
         });
 
-        $('#selectAll').on('click', function () {
+        // ------------------------------------
+        // Select All Checkbox
+        // ------------------------------------
+        $('#selectAll').on('change', function () {
             $('input[name="city_checkbox[]"]').prop('checked', this.checked);
         });
 
+        // ------------------------------------
+        // Bulk Delete
+        // ------------------------------------
         $('#bulkDeleteCities').on('click', function () {
-            const ids = $('input[name="city_checkbox[]"]:checked').map(function() { return this.value }).get();
+            const ids = $('input[name="city_checkbox[]"]:checked').map(function () {
+                return this.value;
+            }).get();
+
             if (ids.length === 0) {
-                return Swal.fire('Select at least one!', '', 'info');
+                return Toast.fire({ icon: 'info', title: 'Select at least one city' });
             }
+
             Swal.fire({
-                title: 'Are you sure?',
-                text: 'This will delete selected cities.',
+                title: 'Delete Selected Cities?',
+                text: 'This action cannot be undone.',
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonText: 'Yes, delete',
+                confirmButtonText: 'Delete'
             }).then(result => {
-                if (result.isConfirmed) {
-                    $.ajax({
-                        url: '{{ route("admin.cities.bulk-delete") }}',
-                        method: 'DELETE',
-                        data: { ids, _token: '{{ csrf_token() }}' },
-                        success: res => { table.ajax.reload(); Swal.fire('Deleted', res.message, 'success'); },
-                        error: () => Swal.fire('Error', 'Failed to delete.', 'error')
-                    });
-                }
+                if (!result.isConfirmed) return;
+
+                $.ajax({
+                    url: '{{ route("admin.cities.bulk-delete") }}',
+                    method: 'DELETE',
+                    data: { ids },
+                    success: res => {
+                        table.ajax.reload(null, false);
+                        Toast.fire({ icon: 'success', title: res.message });
+                    },
+                    error: () => {
+                        Toast.fire({ icon: 'error', title: 'Bulk delete failed' });
+                    }
+                });
             });
         });
+
     });
 </script>
 @endpush

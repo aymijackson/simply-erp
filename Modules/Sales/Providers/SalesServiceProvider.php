@@ -12,9 +12,9 @@ class SalesServiceProvider extends ServiceProvider
 {
     use PathNamespace;
 
-    protected string $name = 'Inventory';
+    protected string $name = 'Sales';
 
-    protected string $nameLower = 'inventory';
+    protected string $nameLower = 'sales';
 
     /**
      * Boot the application events.
@@ -30,9 +30,9 @@ class SalesServiceProvider extends ServiceProvider
 
         // Publish module assets
         $this->publishes([
-            __DIR__.'/../Resources/assets' => public_path('modules/inventory'),
-        ], 'inventory-assets');
-        
+            __DIR__.'/../Resources/assets' => public_path('modules/sales'),
+        ], 'sales-assets');
+
     }
 
     /**

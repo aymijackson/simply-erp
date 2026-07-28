@@ -42,7 +42,7 @@ class RawMaterialController extends Controller
     {
         $data = $request->validate([
             'name'        => 'required|string|max:255',
-            'code'        => 'required|string|max:50|unique:raw_materials,code',
+            'code'        => 'required|string|max:50|unique:production_raw_materials,code',
             'unit_id'     => 'required|exists:units,id',
             'cost'=> 'nullable|numeric|min:0',
             'stock_quantity'=> 'nullable|numeric|min:0',
@@ -58,7 +58,7 @@ class RawMaterialController extends Controller
     {
         $data = $request->validate([
             'name'        => 'required|string|max:255',
-            'code'        => 'required|string|max:50|unique:raw_materials,code,' .$raw_material->id,
+            'code'        => 'required|string|max:50|unique:production_raw_materials,code,' .$raw_material->id,
             'unit_id'     => 'required|exists:units,id',
             'cost'=> 'nullable|numeric|min:0',
             'restock_level'=> 'nullable|numeric|min:0',

@@ -22,6 +22,7 @@ class Location extends Model
         'latitude',
         'longitude',
         'company_id',
+        'description',
     ];
 
     /**
@@ -31,6 +32,10 @@ class Location extends Model
     {
         return $this->belongsTo(City::class);
     }
+    public function country()
+    {
+        return $this->belongsTo(Country::class);
+    }
 
     /**
      * Get the location type that owns the location.
@@ -38,6 +43,11 @@ class Location extends Model
     public function type()  
     {
         return $this->belongsTo(LocationType::class, 'location_type_id');
+    }
+    
+    public function state()  
+    {
+        return $this->belongsTo(State::class, 'state_id');
     }
     /**
      * Get the company that owns the location.

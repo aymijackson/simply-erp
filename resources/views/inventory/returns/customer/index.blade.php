@@ -15,8 +15,12 @@
        <table id="retTbl" class="table table-bordered w-100">
           <thead class="table-light">
             <tr>
-              <th>No</th><th>Store</th><th>Customer</th>
-              <th>Status</th><th>Posted at</th><th class="text-end">Actions</th>
+              <th>No</th>
+              <th>Store</th>
+              <th>Customer</th>
+              <th>Status</th>
+              <th>Posted at</th>
+              <th class="text-end">Actions</th>
             </tr>
           </thead>
        </table>
@@ -24,211 +28,93 @@
   </div>
 </div>
 
-{{-- include modal --}}
-@include('inventory.returns.customer.partials.modal', ['stores'=>$stores])
-
+@include('inventory.returns.customer.partials.modal')
 @endsection
 
 @push('scripts')
-{{-- DT + Select2 already loaded in master --}}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 $.ajaxSetup({headers:{'X-CSRF-TOKEN':$('meta[name="csrf-token"]').attr('content')}});
 
-/* -------------- DataTable -------------- */
-const tbl = $('#retTbl').DataTable({
-   serverSide:true, responsive:true,
+const BASE_URL = `{{ url('admin/inventory/returns/customer') }}`;
+
+window.customerReturnsTable = $('#retTbl').DataTable({
+   serverSide:true,
+   responsive:true,
+   processing:true,
    ajax:"{{ route('admin.inventory.returns.customer.datatable') }}",
    columns:[
-     {data:'id'},
-     {data:'store.name',  defaultContent:'-'},
-     {data:'customer',    defaultContent:'-'},
+     {data:'id'}, // or return_no if you output it from datatable
+     {data:'location_store', defaultContent:'—'},
+     {data:'customer_name', defaultContent:'—'},
      {data:'status_badge', orderable:false, searchable:false},
-     {data:'posted_at',   defaultContent:'-'},
-     {data:'actions',     orderable:false, searchable:false, className:'text-end'}
-   ],
-   drawCallback(){
-      $('#retTbl tbody').off('click','.edit-btn').on('click','.edit-btn', function(){
-          openModal( $(this).data('json') );
-      });
-      $('#retTbl tbody').off('click','.approve-btn').on('click','.approve-btn', doApprove);
-      $('#retTbl tbody').off('click','.post-btn').on('click','.post-btn',    doPost);
-   }
+     {data:'posted_info', defaultContent:'Not Posted/ Info. not available'},
+     {data:'actions', orderable:false, searchable:false, className:'text-end'},
+   ]
 });
 
-/* ---------------------------------------------------------- *
- *  Shared helpers                                             *
- * ---------------------------------------------------------- */
-const modal      = $('#returnModal');
-const linesBody  = $('#linesBody');
-const variantUrl = "{{ route('admin.inventory.stock_issues.fetch_variants') }}";
+window.resetAndReloadCustomerReturnsTable = function(){
+  if(!window.customerReturnsTable) return;
 
-/* Build one <tr> row, wire-up Select2, then (optionally) pre-fill -------- */
-function newLine(selected = {}) {
+  // reset search + go to page 1
+  window.customerReturnsTable.search('');
+  window.customerReturnsTable.page('first');
 
-    const idx = Date.now();                 // unique key for array-style inputs
+  // reload
+  window.customerReturnsTable.ajax.reload(null, true);
+};
 
-    const $tr = $(`
-        <tr data-key="${idx}">
-            <td>
-                <select name="lines[${idx}][product_variant_id]"
-                        class="form-select variant-select" required></select>
-            </td>
-            <td>
-                <input type="number" name="lines[${idx}][qty]"
-                       class="form-control text-end" min="0.001" step="0.001" required>
-            </td>
-            <td>
-                <input type="number" name="lines[${idx}][unit_cost]"
-                       class="form-control text-end" min="0" step="0.01">
-            </td>
-            <td class="text-center">
-                <button type="button" class="btn btn-sm btn-link text-danger remLineBtn">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </td>
-        </tr>`);
+$('#addBtn').on('click', function(){
+  window.openCustomerReturnModal(null);
+});
 
-    linesBody.append($tr);
+/**
+ * ✅ FIX: Edit must fetch JSON from server (do NOT use data-json)
+ * We call: GET /admin/inventory/returns/customer/{id}/json
+ */
+$(document).on('click','.edit-btn', function(){
+  const id = $(this).data('id');
+  if(!id) return;
 
-    /* Select2 remote search */
-    $tr.find('.variant-select').select2({
-        dropdownParent : modal,
-        ajax           : {
-            url      : variantUrl,
-            dataType : 'json',
-            delay    : 250,
-            data     : params => ({ q : params.term }),
-            processResults : data => ({ results : data })
-        },
-        placeholder        : '-- choose variant --',
-        minimumInputLength : 2,
-        width              : '100%'
+  $.get(`${BASE_URL}/${id}/json`)
+    .done(payload => window.openCustomerReturnModal(payload))
+    .fail(x => Swal.fire('Error', x.responseJSON?.message || 'Failed to load record', 'error'));
+});
+
+$(document).on('click','.approve-btn', function(){
+  const id = $(this).data('id');
+  Swal.fire({title:'Approve?',icon:'question',showCancelButton:true})
+    .then(r=>{
+      if(!r.isConfirmed) return;
+      $.post(`${BASE_URL}/${id}/approve`)
+        .done(()=>{ resetAndReloadCustomerReturnsTable(); Swal.fire('Approved','','success'); })
+        .fail(x=> Swal.fire('Error', x.responseJSON?.message || 'Failed', 'error'));
     });
-
-    /* Pre-fill when editing --------------------------------------------- */
-    if (selected.variant_id) {
-        const opt = new Option(selected.text, selected.variant_id, true, true);
-        $tr.find('.variant-select').append(opt).trigger('change');
-        $tr.find('[name$="[qty]"]').val(selected.qty);
-        $tr.find('[name$="[unit_cost]"]').val(selected.unit_cost ?? '');
-    }
-}
-
-/* remove line */
-linesBody.on('click', '.remLineBtn', function(){
-   $(this).closest('tr').remove();
 });
 
-/* ---------------------------------------------------------- *
- *  Modal open / reset                                         *
- * ---------------------------------------------------------- */
-function resetForm() {
-    $('#returnForm')[0].reset();
-    $('#returnId').val('');
-    $('#customer_id').val(null).trigger('change');
-    linesBody.empty();
-}
+$(document).on('click','.post-btn', function(){
+  const id = $(this).data('id');
+  Swal.fire({title:'Post?',icon:'question',showCancelButton:true})
+    .then(r=>{
+      if(!r.isConfirmed) return;
+      $.post(`${BASE_URL}/${id}/post`)
+        .done(()=>{ resetAndReloadCustomerReturnsTable(); Swal.fire('Posted','','success'); })
+        .fail(x=> Swal.fire('Error', x.responseJSON?.message || 'Failed', 'error'));
+    });
+});
 
-function openModal(ret = null) {
-
-    resetForm();                      // always start fresh
-
-    if (ret) {                        // -------- EDIT ----------
-        $('#returnModalLabel').text('Edit Customer Return');
-        $('#returnId').val(ret.id);
-
-        $('#entry_date').val(ret.entry_date);
-        $('#store_id')  .val(ret.from_store_id);
-        $('#reference') .val(ret.reference ?? '');
-        $('#reason')    .val(ret.reason ?? '');
-
-        /* customer pre-select */
-        if (ret.customer) {
-            const opt = new Option(ret.customer.customer_name,
-                                    ret.customer_id, true, true);
-            $('#customer_id').append(opt).trigger('change');
-        }
-
-        /* lines */
-        ret.lines.forEach(l => newLine({
-            variant_id  : l.product_variant_id,
-            text        : l.product_variant.sku,      // what will be shown in the box
-            qty         : l.qty,
-            unit_cost   : l.unit_cost
-        }));
-
-    } else {                          // -------- NEW ----------
-        $('#returnModalLabel').text('New Customer Return');
-        $('#entry_date').val(new Date().toISOString().slice(0,10));
-        newLine();                    // at least one blank line
-    }
-
-    modal.modal('show');
-}
-
-/* open from “New Return” toolbar btn */
-$('#addBtn').on('click', () => openModal());
-
-/* ---------------------------------------------------------- *
- *  Form submit (create / update)                              *
- * ---------------------------------------------------------- */
-$('#returnForm').on('submit', function (e) {
-    e.preventDefault();
-
-    const id  = $('#returnId').val();
-    const url = id
-        ? `/admin/inventory/returns/${id}`          // PUT existing
-        : `{{ route('admin.inventory.returns.customer.store') }}`; // POST new
-
-    const payload = $(this).serialize() + (id ? '&_method=PUT' : '');
-
-    $.post(url, payload)
-      .done(res => {
-          modal.modal('hide');
-          tbl.ajax.reload(null, false);
-          Swal.fire('Success', res.message || 'Saved', 'success');
+$(document).on('click','.delete-btn', function(){
+  const id = $(this).data('id');
+  Swal.fire({title:'Delete draft?',icon:'warning',showCancelButton:true,confirmButtonText:'Delete'})
+    .then(r=>{
+      if(!r.isConfirmed) return;
+      $.ajax({
+        url: `${BASE_URL}/${id}`,
+        method:'DELETE'
       })
-      .fail(xhr => {
-          // extract first validation / error message
-          let msg = 'Save failed';
-          if (xhr.status === 422 && xhr.responseJSON?.errors) {
-              msg = Object.values(xhr.responseJSON.errors)[0][0];
-          } else if (xhr.responseJSON?.message) {
-              msg = xhr.responseJSON.message;
-          }
-          Swal.fire('Error', msg, 'error');
-      });
-});
-
-/* approve & post buttons */
-function doApprove(){
-   const id=$(this).data('id');
-   Swal.fire({title:'Approve?',icon:'question',showCancelButton:true})
-     .then(r=>{
-        if(r.isConfirmed){
-           $.post(`/admin/inventory/returns/${id}/approve`)
-            .done(()=>{tbl.ajax.reload(null,false); Swal.fire('Approved','','success');});
-        }
-     });
-}
-function doPost(){
-   const id=$(this).data('id');
-   Swal.fire({title:'Post?',icon:'question',showCancelButton:true})
-     .then(r=>{
-        if(r.isConfirmed){
-           $.post(`/admin/inventory/returns/${id}/post`)
-            .done(()=>{tbl.ajax.reload(null,false); Swal.fire('Posted','','success');});
-        }
-     });
-}
-
-/* ---------- Select2 helpers ---------- */
-$('#customer_id').select2({
-   ajax:{url:"{{ route('admin.crm.customers.select2') }}", dataType:'json',
-        delay:250, data:params=>({q:params.term}),
-        processResults:data=>({results:data})},
-   minimumInputLength:2, placeholder:'-- choose customer --',
-   dropdownParent:$('#returnModal'), width:'100%'
+      .done(()=>{ resetAndReloadCustomerReturnsTable(); Swal.fire('Deleted','','success'); })
+      .fail(x=> Swal.fire('Error', x.responseJSON?.message || 'Failed', 'error'));
+    });
 });
 </script>
 @endpush

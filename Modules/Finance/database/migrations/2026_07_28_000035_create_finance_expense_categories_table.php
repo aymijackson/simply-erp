@@ -1,0 +1,28 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration {
+    public function up(): void
+    {
+        if (Schema::hasTable('finance_expense_categories')) {
+            return;
+        }
+
+        Schema::create('finance_expense_categories', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');
+            $table->string('name');
+            $table->foreignId('gl_account_id')->nullable()->constrained('finance_accounts')->nullOnDelete();
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('finance_expense_categories');
+    }
+};

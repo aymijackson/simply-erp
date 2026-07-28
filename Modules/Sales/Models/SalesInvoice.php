@@ -1,59 +1,68 @@
 <?php
-// Modules/Sales/Models/SalesInvoice.php
 
 namespace Modules\Sales\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+use Modules\CRM\Models\Customer;
+use Modules\Sales\Models\SalesOrder;
 
 class SalesInvoice extends Model
 {
-    use HasFactory;
-
-    /** @var string */
     protected $table = 'sales_invoices';
 
-    /** @var array<int,string> */
     protected $fillable = [
         'invoice_no',
+        'sales_order_id',
         'customer_id',
         'invoice_date',
         'due_date',
-        'status',          // draft | posted | void
-        'currency',
+        'currency_code',
+        'reference',
         'remarks',
-        'total_before_tax',
-        'tax_amount',
-        'total_amount',
+        'subtotal',
+        'tax_total',
+        'grand_total',
+        'status',
         'posted_at',
         'posted_by',
+        'cancelled_at',
+        'cancelled_by',
     ];
 
-    /** @var array<string,string> */
     protected $casts = [
         'invoice_date' => 'date',
         'due_date'     => 'date',
         'posted_at'    => 'datetime',
-        'total_before_tax' => 'float',
-        'tax_amount'       => 'float',
-        'total_amount'     => 'float',
+        'cancelled_at' => 'datetime',
+        'subtotal'     => 'decimal:4',
+        'tax_total'    => 'decimal:4',
+        'grand_total'  => 'decimal:4',
     ];
 
-    /* ─────────────── Relationships ─────────────── */
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(SalesOrder::class, 'sales_order_id');
+    }
 
     public function customer(): BelongsTo
     {
-        return $this->belongsTo(\Modules\CRM\Models\Customer::class);
+        return $this->belongsTo(Customer::class, 'customer_id');
     }
 
     public function lines(): HasMany
     {
-        return $this->hasMany(SalesInvoiceLine::class);
+        return $this->hasMany(SalesInvoiceLine::class, 'sales_invoice_id');
     }
 
-    public function payments(): HasMany
+    public function getStatusBadgeAttribute(): string
     {
-        return $this->hasMany(\Modules\Finance\Models\Payment::class, 'invoice_id');
+        return match ($this->status) {
+            'posted'    => 'success',
+            'cancelled' => 'danger',
+            default     => 'secondary',
+        };
     }
 }

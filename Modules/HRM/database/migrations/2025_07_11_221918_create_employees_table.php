@@ -21,8 +21,6 @@ return new class extends Migration {
             $table->string('position')->nullable();
             $table->date('date_of_birth')->nullable();
             $table->date('date_hired')->nullable();
-            // make sure email is unique & long enough
-            $table->string('email')->unique()->change();
 
             // verify‑email feature (nullable = not verified yet)
             $table->timestamp('email_verified_at')->nullable()

@@ -48,6 +48,19 @@ class TrainingController extends Controller
         return response()->json(['message' => 'Training created successfully.', 'data' => $training]);
     }
 
+    public function edit(Training $training)
+    {
+        return response()->json(['data' => $training]);
+    }
+
+    public function bulkDelete(Request $request)
+    {
+        $request->validate(['ids' => 'required|array']);
+        Training::whereIn('id', $request->ids)->delete();
+
+        return response()->json(['message' => 'Selected trainings deleted successfully.']);
+    }
+
     public function update(Request $request, $id)
     {
         $training = Training::findOrFail($id);

@@ -3,8 +3,7 @@
 @section('title', 'Manage Permissions')
 
 @push('styles')
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.5/css/jquery.dataTables.min.css" />
-<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css" />
+
 @endpush
 
 @section('content')
@@ -42,49 +41,59 @@
 @endsection
 
 @push('scripts')
-<script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 
 <script>
-$(function() {
-  const table = $('#permissionsTable').DataTable({
-    processing: true,
-    serverSide: true,
-    ajax: '{{ route("admin.permissions.index") }}',
-    dom: 'Bfrtip',
-    buttons: ['excel','pdf','print'],
-    columns: [
-      { data: 'checkbox', orderable: false, searchable: false },
-      { data: 'name' },
-      { data: 'actions', orderable: false, searchable: false }
-    ]
-  });
+$(function () {
 
-  // Render checkboxes in the first column
-  table.on('xhr.dt', function() {
-    $('#permissionsTable tbody tr').each(function() {
-      const data = table.row(this).data();
-      $(this).find('td').eq(0).html(
-        `<input type="checkbox" name="ids[]" value="${data.id}">`
-      );
-    });
-  });
+  const table = $('#permissionsTable').DataTable({
+  processing: true,
+  serverSide: true,
+  ajax: '{{ route("admin.permissions.index") }}',
+  columns: [
+    {
+      data: 'id',
+      orderable: false,
+      searchable: false,
+      render: (id) => `<input type="checkbox" name="ids[]" value="${id}">`
+    },
+    { data: 'name' },
+    {
+      data: 'id',
+      orderable: false,
+      searchable: false,
+      render: function (id, type, row) {
+        return `
+          <button class="btn btn-sm btn-warning me-1 btn-edit-permission"
+                  data-id="${id}" data-name="${row.name}">
+            Edit
+          </button>
+
+          <button class="btn btn-sm btn-danger btn-delete-permission"
+                  data-id="${id}">
+            Delete
+          </button>
+        `;
+      }
+    }
+  ]
+});
+
 
   // Select / Deselect all
-  $(document).on('click', '#select-all-permissions', function() {
-    $('input[name="ids[]"]').prop('checked', this.checked);
+  $(document).on('change', '#select-all-permissions', function () {
+    $('.perm-check').prop('checked', this.checked);
+  });
+
+  // If any checkbox changes, update select-all state
+  $(document).on('change', '.perm-check', function () {
+    const all = $('.perm-check').length;
+    const checked = $('.perm-check:checked').length;
+    $('#select-all-permissions').prop('checked', all > 0 && all === checked);
   });
 
   // Bulk Delete
-  $('#bulkDeletePermissionBtn').click(function() {
-    const ids = $('input[name="ids[]"]:checked').map(function() {
-      return this.value;
-    }).get();
+  $(document).on('click', '#bulkDeletePermissionBtn', function () {
+    const ids = $('.perm-check:checked').map(function () { return this.value; }).get();
 
     if (!ids.length) {
       return Swal.fire('Warning', 'No permissions selected.', 'warning');
@@ -98,20 +107,113 @@ $(function() {
       confirmButtonText: 'Yes, delete!'
     }).then(({ isConfirmed }) => {
       if (!isConfirmed) return;
+
       $.ajax({
         url: '{{ route("admin.permissions.bulkDelete") }}',
         type: 'DELETE',
-        data: { _token: '{{ csrf_token() }}', ids },
+        data: { ids: ids }
       })
       .done(res => {
-        Swal.fire('Deleted', res.message, 'success');
+        Swal.fire('Deleted', res.message ?? 'Deleted successfully.', 'success');
+        $('#select-all-permissions').prop('checked', false);
         table.ajax.reload(null, false);
       })
-      .fail(() => Swal.fire('Error', 'Bulk delete failed.', 'error'));
+      .fail(xhr => {
+        Swal.fire('Error', xhr.responseJSON?.message ?? 'Bulk delete failed.', 'error');
+      });
     });
   });
 
-  // (Existing create/edit/delete single‐item code unchanged…)
+  // Single Delete
+  $(document).on('click', '.btn-delete-permission', function () {
+    const id = $(this).data('id');
+
+    Swal.fire({
+      title: 'Delete this permission?',
+      text: 'This cannot be undone.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete!'
+    }).then(({ isConfirmed }) => {
+      if (!isConfirmed) return;
+
+      $.ajax({
+        url: `{{ url('admin/permissions') }}/${id}`,
+        type: 'DELETE'
+      })
+      .done(res => {
+        Swal.fire('Deleted', res.message ?? 'Deleted successfully.', 'success');
+        table.ajax.reload(null, false);
+      })
+      .fail(xhr => {
+        Swal.fire('Error', xhr.responseJSON?.message ?? 'Delete failed.', 'error');
+      });
+    });
+  });
+
+  // Add new permission
+  $(document).on('submit', '#addPermissionForm', function (e) {
+    e.preventDefault();
+
+    const $form = $(this);
+    const url = $form.attr('action');
+
+    $.ajax({
+      url: url,
+      type: 'POST',
+      data: $form.serialize(),
+    })
+    .done(res => {
+      Swal.fire('Success', res.message ?? 'Permission created', 'success');
+
+      const modalEl = document.getElementById('addPermissionModal');
+      bootstrap.Modal.getInstance(modalEl)?.hide();
+
+      $form[0].reset();
+      table.ajax.reload(null, false);
+    })
+    .fail(xhr => {
+      let msg = xhr.responseJSON?.message ?? 'Create failed.';
+      if (xhr.responseJSON?.errors?.name?.[0]) msg = xhr.responseJSON.errors.name[0];
+      Swal.fire('Error', msg, 'error');
+    });
+  });
+  
+  // Edit permission
+  // populate the modal and open it
+  $(document).on('click', '.btn-edit-permission', function () {
+      const id = $(this).data('id');
+      const name = $(this).data('name');
+    
+      $('#edit-permission-id').val(id);
+      $('#edit-permission-name').val(name);
+    
+      const modal = new bootstrap.Modal(document.getElementById('editPermissionModal'));
+      modal.show();
+  });
+  
+  // submit the edit form via ajax
+  $(document).on('submit', '#editPermissionForm', function (e) {
+      e.preventDefault();
+    
+      const id = $('#edit-permission-id').val();
+      if (!id) return Swal.fire('Error', 'Permission ID missing (undefined).', 'error');
+    
+      $.ajax({
+        url: `{{ url('admin/permissions') }}/${id}`,
+        type: 'PUT',
+        data: { name: $('#edit-permission-name').val() }
+      })
+      .done(res => {
+        Swal.fire('Updated', res.message ?? 'Updated', 'success');
+        bootstrap.Modal.getInstance(document.getElementById('editPermissionModal'))?.hide();
+        table.ajax.reload(null, false);
+      })
+      .fail(xhr => Swal.fire('Error', xhr.responseJSON?.message ?? 'Update failed', 'error'));
+  });
+
+
+
 });
 </script>
 @endpush

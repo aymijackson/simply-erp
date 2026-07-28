@@ -3,5 +3,9 @@
     "HRM": true,
     "CRM": true,
     "Production": true,
-    "Sales": true
+    "Sales": true,
+    "Procurement": true,
+    "Document": true,
+    "Projects": true,
+    "Finance": true
 }

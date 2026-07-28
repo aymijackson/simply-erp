@@ -3,8 +3,7 @@
 namespace Modules\CRM\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Modules\HRM\Models\Employee;
 
 class Interaction extends Model
 {
@@ -22,13 +21,13 @@ class Interaction extends Model
         'interaction_date' => 'datetime',
     ];
 
-    public function employee(): BelongsTo
+    public function employee()
     {
-        return $this->belongsTo(\Modules\HRM\Models\Employee::class);
+        return $this->belongsTo(Employee::class, 'employee_id');
     }
 
-    public function interactable(): MorphTo
+    public function interactable()
     {
-        return $this->morphTo();
+        return $this->morphTo(__FUNCTION__, 'interactable_type', 'interactable_id');
     }
 }

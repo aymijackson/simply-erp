@@ -21,6 +21,10 @@ class LoginForm extends Form
     #[Validate('boolean')]
     public bool $remember = false;
 
+    // ✅ NEW: platform selector (erp | admin)
+    #[Validate('required|in:erp,admin')]
+    public string $platform = 'erp';
+
     /**
      * Attempt to authenticate the request's credentials.
      *
@@ -38,12 +42,31 @@ class LoginForm extends Form
             ]);
         }
 
+        // ✅ NEW: enforce access after successful login
+        $user = Auth::user();
+
+        // You will create these columns (can_access_erp, can_access_admin)
+        if ($this->platform === 'admin' && ! $user?->can_access_admin) {
+            Auth::logout();
+            RateLimiter::hit($this->throttleKey()); // optional: treat as failed attempt
+
+            throw ValidationException::withMessages([
+                'form.platform' => __('You do not have access to the Admin Platform.'),
+            ]);
+        }
+
+        if ($this->platform === 'erp' && ! $user?->can_access_erp) {
+            Auth::logout();
+            RateLimiter::hit($this->throttleKey());
+
+            throw ValidationException::withMessages([
+                'form.platform' => __('You do not have access to the ERP platform.'),
+            ]);
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 
-    /**
-     * Ensure the authentication request is not rate limited.
-     */
     protected function ensureIsNotRateLimited(): void
     {
         if (! RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
@@ -62,9 +85,6 @@ class LoginForm extends Form
         ]);
     }
 
-    /**
-     * Get the authentication rate limiting throttle key.
-     */
     protected function throttleKey(): string
     {
         return Str::transliterate(Str::lower($this->email).'|'.request()->ip());

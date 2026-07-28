@@ -1,51 +1,51 @@
 <?php
-// Modules/Sales/Models/SalesDeliveryLine.php
 
 namespace Modules\Sales\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+use Modules\Sales\Models\SalesDelivery;
+use Modules\Sales\Models\SalesOrderLine;
+use Modules\Inventory\Models\Product\ProductVariant;
+use App\Models\LocationStore; // adjust namespace
 
 class SalesDeliveryLine extends Model
 {
-    use HasFactory;
-
     protected $table = 'sales_delivery_lines';
 
     protected $fillable = [
         'sales_delivery_id',
+        'sales_order_line_id',
+        'location_store_id',
         'product_variant_id',
-        'qty',
-        'unit_cost',       // pulled from inventory layer for COGS
-        'invoice_line_id', // back-link after invoicing (nullable)
-        'stock_tx_id',     // ledger row created when posting ISSUE
+        'qty_to_deliver',
+        'qty_delivered_actual',
+        'unit_cost',
     ];
 
     protected $casts = [
-        'qty'       => 'float',
-        'unit_cost' => 'float',
+        'qty_to_deliver'        => 'float',
+        'qty_delivered_actual'  => 'float',
+        'unit_cost'             => 'float',
     ];
 
-    /* ─────────────── Relationships ─────────────── */
-
-    public function delivery(): BelongsTo
+    public function delivery()
     {
         return $this->belongsTo(SalesDelivery::class, 'sales_delivery_id');
     }
 
-    public function variant(): BelongsTo
+    public function orderLine()
     {
-        return $this->belongsTo(\Modules\Inventory\Models\Product\ProductVariant::class, 'product_variant_id');
+        return $this->belongsTo(SalesOrderLine::class, 'sales_order_line_id');
     }
 
-    public function invoiceLine(): BelongsTo
+    public function store()
     {
-        return $this->belongsTo(SalesInvoiceLine::class, 'invoice_line_id');
+        return $this->belongsTo(LocationStore::class, 'location_store_id');
     }
 
-    public function stockTx(): BelongsTo
+    public function variant()
     {
-        return $this->belongsTo(\Modules\Inventory\Models\StockTransaction::class, 'stock_tx_id');
+        return $this->belongsTo(ProductVariant::class, 'product_variant_id');
     }
 }

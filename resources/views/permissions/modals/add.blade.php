@@ -2,7 +2,7 @@
 
 <div class="modal fade" id="addPermissionModal" tabindex="-1" aria-labelledby="addPermissionModalLabel" aria-hidden="true">
   <div class="modal-dialog">
-    <form id="addPermissionForm">
+    <form id="addPermissionForm" method="POST" action="{{ route('admin.permissions.store') }}">
       @csrf
       <div class="modal-content">
         <div class="modal-header">

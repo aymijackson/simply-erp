@@ -100,37 +100,46 @@
     });
 
     // delegate EDIT click on the DataTable
-    $('#storesTable').on('click', '.edit-store', function(e) {
-        e.preventDefault();
-        const id = $(this).data('id');
-        if (!id) return Swal.fire('Error', 'No store ID found', 'error');
+    // delegate EDIT click on the DataTable
+$('#storesTable').on('click', '.edit-store', function(e) {
+    e.preventDefault();
+    const id = $(this).data('id');
+    if (!id) return Swal.fire('Error', 'No store ID found', 'error');
 
-        // reset & set modal title
-        $('#storeForm')[0].reset();
-        $('#store_id').val(id);
-        $('#storeModalLabel').text('Edit Store');
+    // reset & set modal title
+    $('#storeForm')[0].reset();
+    $('#store_id').val(id);
+    $('#storeModalLabel').text('Edit Store');
 
-        // fetch the store record
-        $.get(`/admin/location_stores/${id}/edit`)
-            .done(store => {
+    // fetch the store record
+    $.get(`/admin/location_stores/${id}/edit`)
+        .done(store => {
             console.log('EDIT response:', store);
-            // since your JSON is the model itself…
-            $('#name').val(store.name); 
+
+            $('#name').val(store.name);
             $('#location_id').val(store.location_id);
-            // clear & populate the room select with the single room from payload
-            const roomSelect = $('#location_block_floor_room_id')
-                .empty()
-                .append(`<option value="${store.room.id}">${store.room.name}</option>`);
-            // if you want it pre‑selected (it is already)
-            roomSelect.val(store.room.id);
+
+            const roomSelect = $('#location_block_floor_room_id').empty();
+
+            // ---- NULL‑SAFE ROOM HANDLING ----
+            if (store.room && store.room.id) {
+                roomSelect.append(
+                    `<option value="${store.room.id}">${store.room.name}</option>`
+                );
+                roomSelect.val(store.room.id);
+            } else {
+                // Provide a fallback option so Select2 doesn't break
+                roomSelect.append(`<option value="">No room assigned</option>`);
+                roomSelect.val('');
+            }
 
             // show the modal
             $('#storeModal').modal('show');
-            })
-            .fail(() => {
+        })
+        .fail(() => {
             Swal.fire('Error', 'Could not load store data', 'error');
         });
-    });
+});
 
 
     $('body').on('click', '.delete-store', function () {

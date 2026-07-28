@@ -30,4 +30,16 @@ class StockEntryLine extends Model
     {
         return $this->belongsTo(StockEntry::class, 'stock_entry_id');
     }
+    
+    #   nomenclature for procurement module
+    
+    public function stockEntry()
+    {
+        return $this->belongsTo(StockEntry::class, 'stock_entry_id');
+    }
+
+    public function productVariant()
+    {
+        return $this->belongsTo(ProductVariant::class, 'product_variant_id');
+    }
 }

@@ -5,49 +5,82 @@ namespace Modules\Inventory\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Modules\Inventory\Models\StockEntryLine;
-use Modules\Inventory\Models\Product\Product;   
-use Modules\Inventory\Models\Product\ProductVariant;   
-use App\Models\LocationStore;   
-
-// use Modules\Inventory\Database\Factories\StockFactory;
+use Modules\Inventory\Models\Product\ProductVariant;
+use App\Models\LocationStore;
+use App\Models\Supplier;
+use Modules\CRM\Models\Customer;
 
 class StockEntry extends Model
 {
     use HasFactory;
 
+    protected $table = 'stock_entries';
+
     protected $fillable = [
-        'product_variant_id', 'store_id', 'shelf_id', 'entry_type', 'reference', 'supplier_id', 'customer_id', 'status', 'entry_date'];
+        'reference',
+        'reference_type',
+        'reference_id',
+        'store_id',
+        'supplier_id',
+        'customer_id',
+        'purchase_order_id',
+        'purchase_requisition_id',
+        'status',
+        'entry_type',
+        'remarks',
+        'sales_delivery_line_id',
+        'sales_invoice_line_id',
+        'entry_date',
+        'approved_by',
+        'approved_at',
+        'posted_by',
+        'posted_at',
+
+        // from Inventory module version
+        'product_variant_id',
+        'shelf_id',
+    ];
+
+    protected $casts = [
+        'entry_date'  => 'date',
+        'approved_at' => 'datetime',
+        'posted_at'   => 'datetime',
+    ];
 
     public function lines()
     {
-        return $this->hasMany(StockEntryLine::class);
-    }
-
-    /* the product variants that appear on those lines */
-    public function product_variants()
-    {
-        return $this->belongsToMany(        // tables: stock_entries ← stock_entry_lines → product_variants
-            ProductVariant::class,          // related model
-            'stock_entry_lines',            // pivot table
-            'stock_entry_id',               // FK on pivot pointing to THIS model
-            'product_variant_id'            // FK on pivot pointing to VARIANT
-        )
-        ->withPivot(['qty', 'unit_cost'])    // keep the qty & cost columns handy
-        ->withTimestamps();                  // if you want created_at/updated_at on pivot
+        return $this->hasMany(StockEntryLine::class, 'stock_entry_id');
     }
 
     public function store()
     {
-        return $this->belongsTo(LocationStore::class);
+        return $this->belongsTo(LocationStore::class, 'store_id');
     }
 
     public function supplier()
     {
-        return $this->belongsTo(\App\Models\Supplier::class);
+        return $this->belongsTo(Supplier::class, 'supplier_id');
     }
 
     public function customer()
     {
-        return $this->belongsTo(\Modules\CRM\Models\Customer::class);
+        return $this->belongsTo(Customer::class, 'customer_id');
+    }
+
+    public function source()
+    {
+        return $this->morphTo(__FUNCTION__, 'reference_type', 'reference_id');
+    }
+
+    public function product_variants()
+    {
+        return $this->belongsToMany(
+            ProductVariant::class,
+            'stock_entry_lines',
+            'stock_entry_id',
+            'product_variant_id'
+        )
+        ->withPivot(['qty', 'unit_cost'])
+        ->withTimestamps();
     }
 }

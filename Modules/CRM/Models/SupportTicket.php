@@ -3,42 +3,64 @@
 namespace Modules\CRM\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Modules\HRM\Models\Employee;
 use Modules\CRM\Models\SupportTicketAttachment;
+use Modules\CRM\Models\SupportTicketComment;
 
 class SupportTicket extends Model
 {
-
     protected $fillable = [
+        'ticket_no',
         'subject',
         'description',
-        'priority',
-        'status',
+        'status',        // open, pending, resolved, closed
+        'priority',      // low, medium, high, urgent
+        'channel',       // web, email, phone, whatsapp, other
+        'category',      // billing, technical, account, other
         'customer_id',
-        'assigned_to',
-        'resolved_at'
+        'assigned_to',   // employee_id (nullable)
+        'created_by',    // employee_id
     ];
-
-    protected $dates = ['resolved_at'];
-
-    /**
-     * Get the customer that raised the ticket.
-     */
-    public function customer(): BelongsTo
+    
+    protected static function booted()
     {
-        return $this->belongsTo(\Modules\CRM\Models\Customer::class);
+        static::creating(function ($t) {
+            // leave empty here; we’ll set after we have ID if needed
+        });
+    
+        static::created(function ($t) {
+            if (!$t->ticket_no) {
+                $t->ticket_no = 'TCK-' . str_pad((string)$t->id, 6, '0', STR_PAD_LEFT);
+                $t->saveQuietly();
+            }
+        });
     }
 
-    /**
-     * Get the employee assigned to this ticket.
-     */
-    public function employee(): BelongsTo
+
+    public function customer()
     {
-        return $this->belongsTo(\Modules\HRM\Models\Employee::class, 'assigned_to');
+        return $this->belongsTo(\Modules\CRM\Models\Customer::class, 'customer_id');
+    }
+
+    public function assignee()
+    {
+        return $this->belongsTo(Employee::class, 'assigned_to');
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(Employee::class, 'created_by');
+    }
+
+    public function comments()
+    {
+        return $this->hasMany(SupportTicketComment::class, 'support_ticket_id')->latest();
     }
 
     public function attachments()
     {
-        return $this->hasMany(SupportTicketAttachment::class);
+        return $this->hasMany(SupportTicketAttachment::class, 'support_ticket_id')->latest();
     }
+    
+
 }

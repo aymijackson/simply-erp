@@ -49,4 +49,28 @@ class Note extends Model
     {
         return $this->belongsTo(\Modules\HRM\Models\Employee::class, 'author_id');
     }
+    
+    protected static function booted()
+    {
+        static::creating(function ($m) {
+            if (auth()->check()) {
+                $m->created_by ??= auth()->id();
+                $m->updated_by ??= auth()->id();
+            }
+        });
+    
+        static::updating(function ($m) {
+            if (auth()->check()) {
+                $m->updated_by = auth()->id();
+            }
+        });
+    
+        static::deleting(function ($m) {
+            if (auth()->check() && method_exists($m, 'setAttribute')) {
+                $m->deleted_by = auth()->id();
+                $m->saveQuietly(); // avoid recursion
+            }
+        });
+    }
+
 }

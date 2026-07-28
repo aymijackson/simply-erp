@@ -101,7 +101,7 @@
 
             </div>
             <div class="modal-footer">
-                <button type="button" id="cancelModalBtn" class="btn btn-secondary">Cancel</button>
+                <button type="button" id="cancelModalBtn" class="btn btn-secondary"  data-bs-dismiss="modal">Cancel</button>
                 <button type="submit" class="btn btn-success">Save Variant</button>
             </div>
         </form>
@@ -110,155 +110,198 @@
 @endsection
 
 @push('scripts')
-<link  href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 <script>
-/* ───── global CSRF header for jQuery Ajax ───── */
-$.ajaxSetup({ headers:{ 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') }});
+/**
+ * Build attribute selects and preselect values.
+ * @param {Number|String} productId
+ * @param {Object|Array}  selected  Preferred: map {typeId: valueId}; also supports array of valueIds
+ * @param {Object|Function} labelsOrDone  Either { valueId: "Label" } or the callback
+ * @param {Function} done
+ */
+function loadAttributeSelects(productId, selected = {}, labelsOrDone = {}, done = ()=>{}) {
+  if (typeof labelsOrDone === 'function') { done = labelsOrDone; labelsOrDone = {}; }
 
-/* ───── Attribute select builder ───── */
-function loadAttributeSelects(productId, selectedIds = [], callback = () => {}) {
-    if (!productId) {
-        $('#attributeContainer').empty();
-        return;
-    }
+  const valueLabels = labelsOrDone || {};
 
-    $('#attributeContainer').html('<p class="text-muted">Loading attributes…</p>');
+  if (!productId) { $('#attributeContainer').empty(); return; }
 
-    $.getJSON(`/admin/inventory/products/${productId}/attributes`, function (types) {
-        let html = '';
-        types.forEach(t => {
-            html += `
-                <div class="col-md-6">
-                    <label class="form-label">${t.type_name}</label>
-                    <select class="form-control attribute-select" name="attribute_values[${t.type_id}]" data-type-id="${t.type_id}">
-                        <option value="">-- Select ${t.type_name} --</option>`;
-            t.values.forEach(v => {
-                html += `<option value="${v.id}">${v.value}</option>`;
-            }); 
-            html += `</select></div>`;
-        });
+  $('#attributeContainer').html('<p class="text-muted">Loading attributes…</p>');
 
-        $('#attributeContainer').html(html);
-
-// Apply selected values
-selectedIds.forEach(id => { 
-    $(`#attributeContainer select option[value="${id}"]`).prop('selected', true);
-});
-
-// Initialize Select2 if used
-$('.attribute-select').select2({
-    width: '100%',
-    dropdownParent: $('#variantModal')
-});
-
-callback();
+  $.getJSON(`/admin/inventory/products/${productId}/attributes`, function(types){
+    let html = '';
+    types.forEach(t=>{
+        html += `
+  <div class="col-md-12 my-2">
+    <label class="form-label">${t.type_name}</label>
+    <select class="form-control attribute-select" name="attribute_values[${t.type_id}]" style="width:100%">
+      <option value="">-- Select ${t.type_name} --</option>
+      ${t.values.map(v=>`<option value="${v.id}">${v.value}</option>`).join('')}
+    </select>
+  </div>`;
     });
-}
+    $('#attributeContainer').html(html);
 
+    // Init Select2 BEFORE setting values
+    $('.attribute-select').select2({ width:'100%', dropdownParent: $('#variantModal') });
 
-/* ───── Reset modal form ───── */
-function resetForm(){
-    $('#variantForm')[0].reset();
-    $('#variantId').val('');
-    $('#attributeContainer').empty();
-}
-
-/* ───── Fill modal (edit) ───── */
-function fillModal(res){
-    const data = res.data ?? res;
-    resetForm();
-
-    $('#variantModalLabel').text('Edit Variant');
-    $('#variantId').val(data.id);
-    $('#product_id').val(data.product_id);
-    $('#sku').val(data.sku);
-    $('#price').val(data.price);
-    $('#stock_quantity').val(data.stock_quantity);
-    $('#reorder_point').val(data.reorder_point);
-
-    const selected = (data.attribute_values || []).map(v => String(v.id));
-    loadAttributeSelects(data.product_id, selected);
-
-    new bootstrap.Modal('#variantModal').show();
-}
-
-
-$(function () {
-
-    /* ───── DataTable ───── */
-    const table = $('#variantTable').DataTable({
-        responsive:true,
-        serverSide:true,
-        ajax : "{{ route('admin.inventory.products.variants.datatable') }}",
-        columns:[
-            {data:'checkbox', orderable:false, searchable:false},
-            {data:'sku'},
-            {data:'product_name'},
-            {data:'type'},
-            {data:'attributes'},  
-            {data:'price', className:'text-end'},
-            {data:'stock_quantity', className:'text-end'},
-            {data:'reorder_point', className:'text-end'},
-            {data:'action', orderable:false, searchable:false, className:'text-end'},
-        ],
-        drawCallback:function(){
-            $('.edit-btn').on('click', e=>{
-                $.getJSON(`/admin/inventory/products/variants/${$(e.currentTarget).data('id')}`, fillModal);
-            });
-            $('.delete-btn').on('click', deleteOne);
+    // Normalize "selected" to a map {typeId: valueId}
+    let map = {};
+    if (Array.isArray(selected)) {
+      // If array of valueIds: pick first match per select
+      const arr = selected.map(String);
+      $('#attributeContainer select').each(function(){
+        const opts = $(this).find('option').map((_,o)=>o.value).get();
+        const match = arr.find(v => opts.includes(v));
+        if (match) {
+          const typeId = this.name.match(/\[(\d+)\]/)?.[1];
+          if (typeId) map[typeId] = match;
         }
-    });
-
-    /* ───── Open modal: create ───── */
-    $('#addVariantBtn').click(()=>{
-        resetForm();
-        $('#variantModalLabel').text('Add Variant');
-        const currentProduct = $('#product_id').val();
-        if(currentProduct) loadAttributeSelects(currentProduct);
-        new bootstrap.Modal('#variantModal').show();
-    });
-
-    /* load attributes when product changes */
-    $('#product_id').on('change', function(){ loadAttributeSelects(this.value); });
-
-    $('#cancelModalBtn').click(()=>bootstrap.Modal.getInstance('#variantModal').hide());
-
-    /* ───── save (create / update) ───── */
-    $('#variantForm').submit(function(e){
-        e.preventDefault();
-        const id  = $('#variantId').val();
-        const url = id ? `/admin/inventory/products/variants/${id}` 
-                       : `{{ route('admin.inventory.products.variants.store') }}`;
-        const formData = $(this).serialize() + (id ? '&_method=PUT' : '');
-
-        $.post(url, formData)
-         .done(r=>{
-             bootstrap.Modal.getInstance('#variantModal').hide();
-             table.ajax.reload(null,false);
-             Swal.fire('Success', r.message,'success');
-         })
-         .fail(x=>Swal.fire('Error', x.responseJSON?.message || 'Save failed','error'));
-    });
-
-    /* ───── delete single ───── */
-    function deleteOne(){
-        const id = $(this).data('id');
-        Swal.fire({title:'Delete?', icon:'warning', showCancelButton:true})
-            .then(res=>{
-                if(res.isConfirmed){
-                    $.post(`/admin/inventory/products/variants/${id}`,
-                           {_method:'DELETE'})
-                     .done(()=>table.ajax.reload(null,false));
-                }
-            });
+      });
+    } else if (selected && typeof selected === 'object') {
+      Object.keys(selected).forEach(k => map[String(k)] = String(selected[k]));
     }
 
+    // Preselect (inject option if missing so Select2 shows it)
+    $('#attributeContainer select').each(function(){
+      const typeId = this.name.match(/\[(\d+)\]/)?.[1];
+      if (!typeId) return;
+      const valId = map[typeId];
+      if (!valId) return;
+
+      const $sel = $(this);
+      if ($sel.find(`option[value="${valId}"]`).length === 0) {
+        const label = valueLabels[valId] || '— current —';
+        $sel.append(new Option(label, valId, false, false));
+      }
+      $sel.val(valId).trigger('change');
+    });
+
+    done();
+  });
+}
+
+
+
+/** Reset modal form */
+function resetForm(){
+  $('#variantForm')[0].reset();
+  $('#variantId').val('');
+  $('#attributeContainer').empty();
+}
+
+/** Fill modal for EDIT */
+function fillModal(res){
+  const data = res.data ?? res;
+
+  // reset & header
+  $('#variantForm')[0].reset();
+  $('#variantId').val(data.id);
+  $('#variantModalLabel').text('Edit Variant');
+
+  // simple fields
+  $('#product_id').val(String(data.product_id || ''));
+  $('#sku').val(data.sku || '');
+  $('#price').val(data.price ?? '');
+  $('#stock_quantity').val(data.stock_quantity ?? '');
+  $('#reorder_point').val(data.reorder_point ?? '');
+  $('#item_type').val(data.item_type || data.type || '');
+
+  // Build selection maps from selected_attrs
+  const selectedAttrs = Array.isArray(data.selected_attrs) ? data.selected_attrs : [];
+  const selectedMap   = {};   // { type_id: value_id }
+  const labelsById    = {};   // { value_id: text } for nicer injected labels
+  selectedAttrs.forEach(a => {
+    if (a && a.type_id != null && a.value_id != null) {
+      selectedMap[String(a.type_id)] = String(a.value_id);
+      if (a.value) labelsById[String(a.value_id)] = a.value;
+    }
+  });
+
+  // Fallbacks (in case your API returns other shapes sometimes)
+  if (!Object.keys(selectedMap).length && Array.isArray(data.attribute_values)) {
+    data.attribute_values.forEach(v => {
+      const t = v.attribute_type_id ?? v.type_id ?? v.attribute_type?.id;
+      if (t && v.id) selectedMap[String(t)] = String(v.id);
+    });
+  }
+  if (!Object.keys(selectedMap).length && data.selected_attribute_value_ids) {
+    Object.entries(data.selected_attribute_value_ids).forEach(([k,v])=>{
+      selectedMap[String(k)] = String(v);
+    });
+  }
+
+  loadAttributeSelects(
+    data.product_id,
+    selectedMap,     // <- map of { typeId: valueId }
+    labelsById,      // <- valueId -> label (e.g. Grey)
+    () => {
+      // make sure Select2 UI reflects the selection
+      $('#attributeContainer select').each(function(){ $(this).trigger('change'); });
+    }
+  );
+
+  new bootstrap.Modal('#variantModal').show();
+}
+
+
+$(function(){
+  // DataTable
+  const table = $('#variantTable').DataTable({
+    serverSide:true, responsive:true,
+    ajax : "{{ route('admin.inventory.products.variants.datatable') }}",
+    columns:[
+      {data:'checkbox', orderable:false, searchable:false},
+      {data:'sku'},
+      {data:'product_name'},
+      {data:'type'},
+      {data:'attributes'},
+      {data:'price', className:'text-end'},
+      {data:'stock_quantity', className:'text-end'},
+      {data:'reorder_point', className:'text-end'},
+      {data:'action', orderable:false, searchable:false, className:'text-end'},
+    ],
+  });
+
+  // Delegated EDIT (works in responsive child rows)
+  $('#variantTable').on('click', '.edit-variant', function(){
+    const id = $(this).data('id');
+    if (!id) return;
+    $.getJSON(`/admin/inventory/products/variants/${id}`)
+      .done(fillModal)
+      .fail(()=> Swal.fire('Error','Failed to fetch variant','error'));
+  });
+
+  // CREATE
+  $('#addVariantBtn').on('click', ()=>{
+    resetForm();
+    $('#variantModalLabel').text('Add Variant');
+    const pid = $('#product_id').val();
+    if (pid) loadAttributeSelects(pid, {}, ()=> new bootstrap.Modal('#variantModal').show());
+    else     new bootstrap.Modal('#variantModal').show();
+  });
+
+  // Change product → reload attribute options
+  $('#product_id').on('change', function(){
+    loadAttributeSelects(this.value);
+  });
+
+  // Save (create/update)
+  $('#variantForm').on('submit', function(e){
+    e.preventDefault();
+    const id  = $('#variantId').val();
+    const url = id ? `/admin/inventory/products/variants/${id}`
+                   : `{{ route('admin.inventory.products.variants.store') }}`;
+    const data = $(this).serialize() + (id ? '&_method=PUT' : '');
+    $.post(url, data)
+      .done(r=>{
+        const inst = bootstrap.Modal.getInstance(document.getElementById('variantModal'));
+        if (inst) inst.hide();
+        table.ajax.reload(null,false);
+        Swal.fire('Success', r.message || 'Saved', 'success');
+      })
+      .fail(x=> Swal.fire('Error', x.responseJSON?.message || 'Save failed', 'error'));
+  });
 });
 </script>
+
 @endpush

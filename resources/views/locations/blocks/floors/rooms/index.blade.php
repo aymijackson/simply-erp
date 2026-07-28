@@ -56,37 +56,45 @@
 
     $('#addRoom').click(() => {
         $('#roomForm')[0].reset();
-        $('#location_id').val('');
+        $('#room_id').val('');
         $('#roomModalLabel').text('Add Room');
         $('#roomModal').modal('show');
     });
-
+    
     $('#roomForm').on('submit', function(e) {
         e.preventDefault();
-        const id = $('#location_id').val();
-        const url = id ? `/admin/location_rooms/${id}` : '{{ route('admin.location_rooms.store') }}';
+    
+        const id = $('#room_id').val(); // FIXED
+        const url = id 
+            ? `/admin/location_rooms/${id}` 
+            : '{{ route('admin.location_rooms.store') }}';
+    
         const method = id ? 'PUT' : 'POST';
-
+    
         $.ajax({
-            url, method,
+            url,
+            method,
             data: $(this).serialize(),
             success: res => {
-                $('#locationModal').modal('hide');
+                $('#roomModal').modal('hide'); // FIXED
                 table.ajax.reload();
                 Swal.fire('Success', res.message, 'success');
             },
             error: err => Swal.fire('Error', err.responseJSON.message || 'An error occurred', 'error')
         });
     });
-
-    $('body').on('click', '.edit-room', function () {
+    
+    $('body').on('click', '.edit-room', function () { // FIXED
         const id = $(this).data('id');
+    
         $.get(`/admin/location_rooms/${id}/edit`, res => {
-            const l = res.room;
+            const l = res.location_block_floor_room; // FIXED
+    
             $('#room_id').val(l.id);
             $('#name').val(l.name);
-            $('#locationModalLabel').text('Edit Room');
-            $('#locationModal').modal('show');
+    
+            $('#roomModalLabel').text('Edit Room'); // FIXED
+            $('#roomModal').modal('show');
         });
     });
 

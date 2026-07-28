@@ -2,7 +2,7 @@
 
 namespace Modules\CRM\Traits;
 
-use App\Models\Note;
+use Modules\CRM\Models\Note;
 
 trait HasNotes
 {
@@ -11,7 +11,7 @@ trait HasNotes
      */
     public function notes()
     {
-        return $this->morphMany(Note::class, 'noteable')->latest();
+        return $this->morphMany(Note::class, 'notable')->latest();
     }
 
     /**

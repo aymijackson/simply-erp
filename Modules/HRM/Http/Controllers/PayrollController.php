@@ -20,6 +20,51 @@ class PayrollController extends Controller
         return view('hrm.payrolls.index', compact('employees'));
     }
 
+    public function generateMonthly(Request $request)
+    {
+        $data = $request->validate([
+            'month' => 'required|date_format:Y-m',
+        ]);
+
+        $payDate = $data['month'] . '-01';
+        $created = 0;
+        $skipped = 0;
+
+        $employees = Employee::where('is_active', true)->get();
+
+        foreach ($employees as $employee) {
+            $exists = Payroll::where('employee_id', $employee->id)
+                ->where('pay_date', $payDate)
+                ->exists();
+
+            if ($exists) {
+                $skipped++;
+                continue;
+            }
+
+            $basicSalary = $employee->activeContract?->basic_salary ?? 0;
+
+            Payroll::create([
+                'employee_id' => $employee->id,
+                'pay_date' => $payDate,
+                'basic_salary' => $basicSalary,
+                'total_allowances' => 0,
+                'total_deductions' => 0,
+                'net_salary' => $basicSalary,
+                'status' => 'pending',
+                'is_paid' => false,
+            ]);
+
+            $created++;
+        }
+
+        return response()->json([
+            'message' => "Generated {$created} payroll record(s) for {$data['month']}." . ($skipped ? " Skipped {$skipped} (already exist)." : ''),
+            'created' => $created,
+            'skipped' => $skipped,
+        ]);
+    }
+
     public function store(Request $request)
     {
         $data = $request->validate([

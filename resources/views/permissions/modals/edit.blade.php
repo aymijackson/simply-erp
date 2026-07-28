@@ -5,7 +5,7 @@
     <form id="editPermissionForm">
       @csrf
       @method('PUT')
-      <input type="hidden" id="editPermissionId" name="permission_id">
+      <input type="hidden" id="edit-permission-id" name="id">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="editPermissionModalLabel">Edit Permission</h5>

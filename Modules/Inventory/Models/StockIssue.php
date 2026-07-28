@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class StockIssue extends Model
 {
-    protected $fillable = ['issue_no','from_store_id','bom_header_id', 'sales_delivery_id', 'reference','reason','status', 'issue_type', 'requested_by', 'posted_by','posted_at'];
+    protected $fillable = ['issue_no','from_store_id','bom_header_id', 'sales_delivery_id', 'reference','reason','status', 'issue_type', 'supplier_id', 'requested_by', 'posted_by','posted_at'];
     
     public function lines()      
     { 
@@ -29,5 +29,10 @@ class StockIssue extends Model
     public function salesDelivery() 
     { 
         return $this->belongsTo(\Modules\Sales\Models\SalesDelivery::class,'sales_delivery_id'); 
+    }
+    
+    public function supplier()  
+    { 
+        return $this->belongsTo(\App\Models\Supplier::class,'supplier_id');                           
     }
 }

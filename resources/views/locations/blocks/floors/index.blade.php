@@ -42,7 +42,7 @@
     const table = $('#floorsTable').DataTable({
         processing: true,
         serverSide: true,
-        ajax: '{{ route('admin.location_floors.list') }}',
+        ajax: '{{ route('admin.location_floors.datatable') }}',
         columns: [
             { data: 'checkbox', orderable: false, searchable: false },
             { data: 'name', title: 'Name' },
@@ -61,12 +61,17 @@
 
     $('#floorForm').on('submit', function(e) {
         e.preventDefault();
-        const id = $('#block_id').val();
-        const url = id ? `/admin/location_floors/${id}` : '{{ route('admin.location_floors.store') }}';
+    
+        const id = $('#floor_id').val(); // FIXED
+        const url = id 
+            ? `/admin/location_floors/${id}` 
+            : '{{ route('admin.location_floors.store') }}';
+    
         const method = id ? 'PUT' : 'POST';
-
+    
         $.ajax({
-            url, method,
+            url,
+            method,
             data: $(this).serialize(),
             success: res => {
                 $('#floorModal').modal('hide');
@@ -76,15 +81,18 @@
             error: err => Swal.fire('Error', err.responseJSON.message || 'An error occurred', 'error')
         });
     });
-
+    
     $('body').on('click', '.edit-floor', function () {
         const id = $(this).data('id');
-        $.get(`/admin/location_floors/${id}/edit`, res => {
-            const l = res.location;
+    
+        $.get(`/admin/location_floors/${id}/fetch`, res => {
+            const l = res.floor; // FIXED
+    
             $('#floor_id').val(l.id);
             $('#name').val(l.name);
-            $('#locationModalLabel').text('Edit Floor');
-            $('#locationModal').modal('show');
+    
+            $('#floorModalLabel').text('Edit Floor');
+            $('#floorModal').modal('show');
         });
     });
 

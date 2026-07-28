@@ -15,8 +15,10 @@
         "laravel/tinker": "^2.9",
         "livewire/livewire": "^3.4",
         "livewire/volt": "^1.0",
+        "maatwebsite/excel": "^3.1",
         "nwidart/laravel-modules": "^11.1",
         "phpoffice/phpexcel": "^1.8",
+        "simplesoftwareio/simple-qrcode": "^4.2",
         "spatie/laravel-permission": "^6.17",
         "yajra/laravel-datatables-oracle": "^11.1"
     },
@@ -36,7 +38,10 @@
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/",
             "Modules\\": "Modules/"
-        }
+        },
+        "files": [
+          "app/Support/helpers.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

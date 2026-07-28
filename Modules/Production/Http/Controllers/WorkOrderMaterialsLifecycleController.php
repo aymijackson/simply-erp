@@ -18,16 +18,16 @@ class WorkOrderMaterialsLifecycleController extends Controller
         ]);
 
         // Remaining that can be issued
-        $remaining = (float)$material->qty_planned - (float)$material->qty_issued + (float)$material->qty_returned;
+        $remaining = (float)$material->planned_qty - (float)$material->issued_qty + (float)$material->returned_qty;
         if ($data['qty'] > $remaining + 1e-9) {
             return response()->json(['success'=>false,'message'=>'Quantity exceeds remaining planned'], 422);
         }
 
         DB::transaction(function () use ($material, $data) {
-            $material->qty_issued  = (float)$material->qty_issued + (float)$data['qty'];
+            $material->issued_qty  = (float)$material->issued_qty + (float)$data['qty'];
             // optionally append note
             if (!empty($data['note'])) {
-                $material->note = trim(($material->note ? $material->note."\n" : '').'ISSUE: '.$data['note']);
+                $material->notes= trim(($material->notes? $material->note."\n" : '').'ISSUE: '.$data['note']);
             }
             $material->save();
 
@@ -46,15 +46,15 @@ class WorkOrderMaterialsLifecycleController extends Controller
         ]);
 
         // Maximum allowable return = issued - returned
-        $canReturn = (float)$material->qty_issued - (float)$material->qty_returned;
+        $canReturn = (float)$material->issued_qty - (float)$material->returned_qty;
         if ($data['qty'] > $canReturn + 1e-9) {
             return response()->json(['success'=>false,'message'=>'Quantity exceeds available to return'], 422);
         }
 
         DB::transaction(function () use ($material, $data) {
-            $material->qty_returned = (float)$material->qty_returned + (float)$data['qty'];
+            $material->returned_qty = (float)$material->returned_qty + (float)$data['qty'];
             if (!empty($data['note'])) {
-                $material->note = trim(($material->note ? $material->note."\n" : '').'RETURN: '.$data['note']);
+                $material->notes= trim(($material->notes ? $material->notes."\n" : '').'RETURN: '.$data['note']);
             }
             $material->save();
 

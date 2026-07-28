@@ -21,7 +21,6 @@ return new class extends Migration {
             $t->timestamps();
 
             $t->index(['bom_id','product_variant_id','created_at']);
-            $t->index(['ref_type','ref_id']);
         });
     }
     public function down(): void { Schema::dropIfExists('bom_deficit_transactions'); }

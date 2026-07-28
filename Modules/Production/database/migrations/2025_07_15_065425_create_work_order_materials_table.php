@@ -11,14 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('work_order_materials')) {
+            return;
+        }
+
         Schema::create('work_order_materials', function (Blueprint $table) {
             $table->id();
             $table->foreignId('work_order_id')->constrained()->onDelete('cascade');
-            $table->foreignId('raw_material_id')->constrained('raw_materials')->onDelete('restrict');
-            $table->decimal('quantity_required', 12, 2);
-            $table->decimal('quantity_issued', 12, 2)->nullable(); // can track how much was actually issued
-            $table->string('unit')->nullable(); // optional, depending on how you handle units
+            $table->foreignId('bom_item_id')->nullable()->constrained('bom_items')->onDelete('set null');
+            $table->foreignId('product_variant_id')->constrained('product_variants')->onDelete('restrict');
+            $table->decimal('planned_qty', 15, 4)->default(0);
+            $table->decimal('issued_qty', 15, 4)->default(0);
+            $table->decimal('returned_qty', 15, 4)->default(0);
+            $table->text('notes')->nullable();
             $table->timestamps();
+
+            $table->unique(['work_order_id', 'product_variant_id']);
         });
     }
 

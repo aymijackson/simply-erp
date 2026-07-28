@@ -13,132 +13,150 @@ class WorkOrderMaterialsController extends Controller
 {
     /**
      * Select2: BOM variants that still have remaining allocatable quantity
-     * GET /admin/production/work-orders/{workOrder}/materials/variants/available
+     * GET /admin/production/work-orders/{work_order}/materials/variants/available
      *
      * Query params:
      *   q      : search term (sku/product name)
      *   page   : page number (Select2 infinite scroll)
      *   except : optional variant id(s) to exclude (id or comma list)
      */
-    public function variantsAvailableSelect2(WorkOrder $workOrder, Request $r)
-    {
-        // Adjust these table/column names if yours differ
-        $tblBomItems   = 'bom_items';              // columns: bom_id, product_variant_id, qty_per_parent
-        $tblVariants   = 'product_variants';       // columns: id, sku, product_id
-        $tblProducts   = 'products';               // columns: id, product_name
-        $tblMaterials  = 'work_order_materials';   // columns: work_order_id, product_variant_id, qty_planned, qty_issued, qty_returned
+    public function variantsAvailableSelect2(WorkOrder $work_order, Request $r)
+{
+    $tblBomItems  = 'bom_items';            // bom_header_id, product_variant_id, qty_per_parent
+    $tblVariants  = 'product_variants';     // id, sku, product_id
+    $tblProducts  = 'products';             // id, product_name
+    $tblMaterials = 'work_order_materials'; // work_order_id, product_variant_id, planned_qty, issued_qty, returned_qty
 
-        $bomId = $workOrder->bill_of_material_id ?? $workOrder->bom_id ?? null;
-        if (!$bomId) {
-            return response()->json(['results' => [], 'pagination' => ['more' => false]]);
-        }
+    $bomId = $work_order->bom_header_id ?? $work_order->bom_id ?? null;
+    if (!$bomId) {
+        return response()->json(['results' => [], 'pagination' => ['more' => false]]);
+    }
 
-        $term    = trim((string) $r->input('q', ''));
-        $page    = max(1, (int) $r->input('page', 1));
-        $perPage = 25;
-        $offset  = ($page - 1) * $perPage;
+    $term    = trim((string) $r->input('q', ''));
+    $page    = max(1, (int) $r->input('page', 1));
+    $perPage = 25;
+    $offset  = ($page - 1) * $perPage;
 
-        // optional exclusion(s)
-        $except = $r->filled('except')
-            ? collect(explode(',', (string) $r->input('except')))->filter()->map(fn($x)=> (int)$x)->all()
-            : [];
+    $except = $r->filled('except')
+        ? collect(explode(',', (string) $r->input('except')))->filter()->map(fn($x)=>(int)$x)->all()
+        : [];
 
-        // Required quantity for this WO for each variant
-        $requiredExpr = 'SUM(bi.qty_per_parent) * ' . (float) $workOrder->quantity_to_produce;
+    // aggregate materials FOR THIS WO (by variant)
+    $womAggSql = sprintf(
+        "SELECT product_variant_id,
+                SUM(planned_qty)  AS allocated,
+                SUM(issued_qty)   AS issued,
+                SUM(returned_qty) AS returned
+         FROM %s
+         WHERE work_order_id = %d
+         GROUP BY product_variant_id",
+        $tblMaterials,
+        (int) $work_order->id
+    );
 
-        // Aggregate current WO materials (allocated/issued/returned) per variant
-        $womAggSql = sprintf(
-            "SELECT product_variant_id,
-                    SUM(qty_planned)  AS allocated,
-                    SUM(qty_issued)   AS issued,
-                    SUM(qty_returned) AS returned
-             FROM %s
-             WHERE work_order_id = %d
-             GROUP BY product_variant_id",
-            $tblMaterials,
-            (int) $workOrder->id
-        );
+    // multiplier (qty to produce)
+    $mult = (float) $work_order->quantity_to_produce; // may be 0 on draft WOs
 
-        $q = DB::table("$tblBomItems as bi")
-            ->join("$tblVariants as pv", 'pv.id', '=', 'bi.product_variant_id')
-            ->join("$tblProducts as p", 'p.id', '=', 'pv.product_id')
-            ->leftJoin(DB::raw("($womAggSql) wom"), 'wom.product_variant_id', '=', 'bi.product_variant_id')
-            ->where('bi.bom_id', $bomId)
-            ->when($term !== '', function ($qq) use ($term) {
-                $qq->where(function ($w) use ($term) {
-                    $w->where('pv.sku', 'like', "%{$term}%")
-                      ->orWhere('p.product_name', 'like', "%{$term}%");
-                });
-            })
-            ->when(!empty($except), fn($qq) => $qq->whereNotIn('bi.product_variant_id', $except))
-            ->groupBy('bi.product_variant_id', 'pv.sku', 'p.product_name', 'wom.allocated', 'wom.issued', 'wom.returned')
-            ->selectRaw('
-                bi.product_variant_id as id,
-                pv.sku,
-                p.product_name,
-                '.$requiredExpr.' as required_qty,
-                COALESCE(wom.allocated,0) as allocated,
-                COALESCE(wom.issued,0) as issued,
-                COALESCE(wom.returned,0) as returned,
-                ('.$requiredExpr.') - GREATEST(
+    $q = DB::table("$tblBomItems as bi")
+        ->join("$tblVariants as pv", 'pv.id', '=', 'bi.product_variant_id')
+        ->join("$tblProducts as p", 'p.id', '=', 'pv.product_id')
+        ->leftJoin(DB::raw("($womAggSql) wom"), 'wom.product_variant_id', '=', 'bi.product_variant_id')
+        ->where('bi.bom_header_id', $bomId)
+        ->when($term !== '', function ($qq) use ($term) {
+            $qq->where(function ($w) use ($term) {
+                $w->where('pv.sku', 'like', "%{$term}%")
+                  ->orWhere('p.product_name', 'like', "%{$term}%");
+            });
+        })
+        ->when(!empty($except), fn($qq) => $qq->whereNotIn('bi.product_variant_id', $except))
+        ->groupBy('bi.product_variant_id', 'pv.sku', 'p.product_name', 'wom.allocated', 'wom.issued', 'wom.returned')
+        ->selectRaw('
+            bi.product_variant_id as id,
+            pv.sku,
+            p.product_name,
+
+            -- BOM requirement per parent (exactly from bom_items)
+            SUM(bi.qty_per_parent)                                as req_per_parent,
+
+            -- WO totals (req, allocated, consumed)
+            SUM(bi.qty_per_parent) * ?                            as req_total,
+            COALESCE(wom.allocated,0)                             as allocated_total,
+            GREATEST(0, COALESCE(wom.issued,0) - COALESCE(wom.returned,0)) as consumed_total,
+
+            -- Convert totals back to per-parent (avoid divide-by-zero)
+            CASE WHEN ? > 0 THEN COALESCE(wom.allocated,0) / ? ELSE 0 END as allocated_per_parent,
+            CASE WHEN ? > 0 THEN GREATEST(0, COALESCE(wom.issued,0) - COALESCE(wom.returned,0)) / ? ELSE 0 END as consumed_per_parent,
+
+            -- Remaining per parent (what you want to show)
+            SUM(bi.qty_per_parent)
+              - GREATEST(
+                    CASE WHEN ? > 0 THEN COALESCE(wom.allocated,0) / ? ELSE 0 END,
+                    CASE WHEN ? > 0 THEN GREATEST(0, COALESCE(wom.issued,0) - COALESCE(wom.returned,0)) / ? ELSE 0 END
+                )                                                 as rem_per_parent,
+
+            -- (also compute remaining total in case you need it)
+            (SUM(bi.qty_per_parent) * ?)
+              - GREATEST(
                     COALESCE(wom.allocated,0),
                     GREATEST(0, COALESCE(wom.issued,0) - COALESCE(wom.returned,0))
-                ) as remaining_qty
-            ')
-            // only variants with remaining > 0
-            ->having('remaining_qty', '>', 0)
-            ->orderBy('pv.sku')
-            ->offset($offset)
-            ->limit($perPage + 1); // fetch one extra to know if there's a next page
+                )                                                 as rem_total
+        ', [$mult, $mult, $mult, $mult, $mult, $mult, $mult, $mult, $mult, $mult])
+        ->having('rem_per_parent', '>', 0)
+        ->orderBy('pv.sku')
+        ->offset($offset)
+        ->limit($perPage + 1);
 
-        $rows = $q->get();
+    $rows = $q->get();
 
-        $more = $rows->count() > $perPage;
-        if ($more) $rows = $rows->slice(0, $perPage);
+    $more = $rows->count() > $perPage;
+    if ($more) $rows = $rows->slice(0, $perPage);
 
-        // map to Select2
-        $results = $rows->map(function ($r) {
-            $rem = (float) $r->remaining_qty;
-            // clean number (avoid trailing zeros)
-            $remTxt = rtrim(rtrim(number_format($rem, 6, '.', ''), '0'), '.');
-            return [
-                'id'   => (int) $r->id,
-                'text' => "{$r->sku} — {$r->product_name} (rem: {$remTxt})",
-                // optional extras if you want to use them on the client:
-                'remaining' => $rem,
-                'required'  => (float) $r->required_qty,
-                'allocated' => (float) $r->allocated,
-                'consumed'  => max(0.0, (float)$r->issued - (float)$r->returned),
-            ];
-        });
+    $results = $rows->map(function ($r) {
+        // format per-parent values (what you care about)
+        $remPP = (float) $r->rem_per_parent;
+        $reqPP = (float) $r->req_per_parent;
 
-        return response()->json([
-            'results'    => $results,
-            'pagination' => ['more' => $more],
-        ]);
-    }
+        $fmt = fn($x) => rtrim(rtrim(number_format($x, 6, '.', ''), '0'), '.');
+
+        return [
+            'id'   => (int) $r->id,
+            // show per-parent values in the label
+            'text' => "{$r->sku} — {$r->product_name} (rem: {$fmt($remPP)} of {$fmt($reqPP)})",
+            // extras if needed
+            'remaining_per_parent' => $remPP,
+            'required_per_parent'  => $reqPP,
+            'remaining_total'      => (float) $r->rem_total,
+            'required_total'       => (float) $r->req_total,
+            'allocated_total'      => (float) $r->allocated_total,
+            'consumed_total'       => (float) $r->consumed_total,
+        ];
+    });
+
+    return response()->json(['results' => $results, 'pagination' => ['more' => $more]]);
+}
+
     
     public function datatable($workOrderId)
     {
         $q = WorkOrderMaterial::query()
-            ->with(['productVariant.product'])
+            ->with(['product_variant.product'])
             ->where('work_order_id', $workOrderId);
 
         return DataTables::of($q)
-            ->addColumn('sku', fn($r) => optional($r->productVariant)->sku ?: '—')
-            ->addColumn('name', fn($r) => optional(optional($r->productVariant)->product)->product_name ?: '—')
-            ->addColumn('qty_planned',   fn($r) => number_format((float)$r->qty_planned, 6))
-            ->addColumn('qty_issued',    fn($r) => number_format((float)$r->qty_issued, 6))
-            ->addColumn('qty_returned',  fn($r) => number_format((float)$r->qty_returned, 6))
-            ->addColumn('remaining',     fn($r) => number_format((float)($r->qty_planned - $r->qty_issued + $r->qty_returned), 6))
-            ->addColumn('notes',         fn($r) => e($r->note ?? ''))
+            ->addColumn('sku', fn($r) => optional($r->product_variant)->sku ?: '—')
+            ->addColumn('name', fn($r) => optional(optional($r->product_variant)->product)->product_name ?: '—')
+            ->addColumn('planned_qty',   fn($r) => number_format((float)$r->planned_qty, 2))
+            ->addColumn('issued_qty',    fn($r) => number_format((float)$r->issued_qty, 2))
+            ->addColumn('returned_qty',  fn($r) => number_format((float)$r->returned_qty, 2))
+            ->addColumn('remaining',     fn($r) => number_format((float)($r->planned_qty - $r->issued_qty + $r->returned_qty), 2))
+            ->addColumn('notes',         fn($r) => e($r->notes ?? ''))
             ->addColumn('actions', function ($r) {
                 $payload = e(json_encode([
                     'id' => $r->id,
                     'product_variant_id' => $r->product_variant_id,
-                    'variant_label' => optional($r->productVariant)->sku . ' — ' . optional(optional($r->productVariant)->product)->product_name,
-                    'qty_planned' => (float)$r->qty_planned,
-                    'note' => $r->note,
+                    'variant_label' => optional($r->product_variant)->sku . ' — ' . optional(optional($r->product_variant)->product)->product_name,
+                    'planned_qty' => (float)$r->planned_qty,
+                    'note' => $r->notes,
                 ]));
                 return '<div class="btn-group btn-group-sm">
                     <button class="btn btn-outline-primary issue-mat" data-id="'.$r->id.'" title="Issue"><i class="fas fa-arrow-up"></i></button>
@@ -153,7 +171,7 @@ class WorkOrderMaterialsController extends Controller
 
     // ---- CREATE ----
     public function store(Request $r, WorkOrder $workOrder)
-    {
+    { 
         $data = $r->validate([
             'product_variant_id' => ['required','exists:product_variants,id',
                 Rule::unique('work_order_materials', 'product_variant_id')->where(fn($q)=>$q->where('work_order_id',$workOrder->id))
@@ -165,10 +183,10 @@ class WorkOrderMaterialsController extends Controller
         WorkOrderMaterial::create([
             'work_order_id'      => $workOrder->id,
             'product_variant_id' => $data['product_variant_id'],
-            'qty_planned'        => $data['qty_planned'],
-            'qty_issued'         => 0,
-            'qty_returned'       => 0,
-            'note'               => $data['note'] ?? null,
+            'planned_qty'        => $data['qty_planned'],
+            'issued_qty'         => 0,
+            'returned_qty'       => 0,
+            'notes'              => $data['note'] ?? null,
         ]);
 
         return response()->json(['success'=>true,'message'=>'Material added']);
@@ -188,21 +206,25 @@ class WorkOrderMaterialsController extends Controller
         ]);
 
         // Guard: planned cannot drop below (issued - returned)
-        $minPlanned = max(0, (float)$material->qty_issued - (float)$material->qty_returned);
+        $minPlanned = max(0, (float)$material->issued_qty - (float)$material->returned_qty);
         if ((float)$data['qty_planned'] < $minPlanned) {
             return response()->json([
                 'message' => "Cannot set planned below currently consumed qty (min {$minPlanned})."
             ], 422);
         }
 
-        $material->update($data);
+        $material->update([
+            'product_variant_id' => $data['product_variant_id'],
+            'planned_qty'        => $data['qty_planned'],
+            'notes'              => $data['note'] ?? null,
+        ]);
         return response()->json(['success'=>true,'message'=>'Material updated']);
     }
 
     // ---- DELETE ----
     public function destroy(WorkOrderMaterial $material)
     {
-        if ($material->qty_issued > 0 || $material->qty_returned > 0) {
+        if ($material->issued_qty > 0 || $material->returned_qty > 0) {
             return response()->json(['message'=>'Cannot delete a line with any issue/return activity.'], 422);
         }
         $material->delete();

@@ -26,7 +26,7 @@ return new class extends Migration {
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->softDeletes();
             $table->timestamps();
-            $table->index(['work_order_id','sequence_index'], 'uq_wota_task_emp');
+            $table->index(['work_order_id','sequence_index'], 'idx_wot_workorder_seq');
             $table->index(['status','priority']);
         });
     }

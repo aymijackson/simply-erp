@@ -144,7 +144,7 @@ $(function() {
         e.preventDefault();
         const id = $('#bomItemId').val();
         const url = id
-            ? `/bom-items/${id}`               // update route
+            ? `{{ url('admin/production/boms/items') }}/${id}`
             : `{{ route('admin.production.boms.items.store') }}`;
         const method = id ? 'PUT' : 'POST';
 
@@ -205,7 +205,7 @@ $(function() {
         .then(result => {
             if (!result.isConfirmed) return;
             $.ajax({
-                url: `/bom-items/${id}`,
+                url: `{{ url('admin/production/boms/items') }}/${id}`,
                 type: 'DELETE',
                 data: { _token: '{{ csrf_token() }}' },
                 success: function(res) {

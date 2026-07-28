@@ -13,12 +13,18 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        $this->call(RolesAndPermissionsSeeder::class);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'aymi247@gmail.com',
-            'password' => \Hash::make("password")
-        ]);
+        $admin = User::firstOrCreate(
+            ['email' => 'aymi247@gmail.com'],
+            [
+                'name' => 'Admin User',
+                'password' => \Hash::make('password'),
+                'can_access_erp' => true,
+                'can_access_admin' => true,
+            ]
+        );
+
+        $admin->assignRole('admin');
     }
 }
