@@ -19,18 +19,14 @@ class CreateProductVariantsTable extends Migration
 
         Schema::create('product_attribute_value_product_variant', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('product_variant_id')
-                ->constrained()
-                ->onDelete('cascade')
-                ->comment('FK to product_variants')
-                ->name('fk_variant');
-
-            $table->foreignId('product_attribute_value_id')
-                ->constrained()
-                ->onDelete('cascade')
-                ->comment('FK to product_attribute_values')
-                ->name('fk_attr_value');
+            $table->foreignId('product_variant_id')->comment('FK to product_variants');
+            $table->foreignId('product_attribute_value_id')->comment('FK to product_attribute_values');
             $table->timestamps();
+
+            $table->foreign('product_variant_id', 'pavpv_variant_fk')
+                ->references('id')->on('product_variants')->onDelete('cascade');
+            $table->foreign('product_attribute_value_id', 'pavpv_attr_value_fk')
+                ->references('id')->on('product_attribute_values')->onDelete('cascade');
         });
     }
 

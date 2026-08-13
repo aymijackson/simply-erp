@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('purchase_order_headers', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('supplier_id')->constrained('suppliers')->onDelete('cascade');
+            $table->foreignId('supplier_id');
             $table->date('purchase_date');
             $table->decimal('total_amount', 10, 2);
             $table->timestamps();

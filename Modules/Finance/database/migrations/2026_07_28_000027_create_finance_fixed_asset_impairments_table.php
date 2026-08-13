@@ -17,7 +17,7 @@ return new class extends Migration {
             $table->foreignId('asset_id')->constrained('finance_fixed_assets')->onDelete('cascade');
             $table->date('impair_date');
             $table->decimal('impair_amount', 15, 2)->default(0);
-            $table->foreignId('impair_expense_account_id')->nullable()->constrained('finance_accounts')->nullOnDelete();
+            $table->foreignId('impair_expense_account_id')->nullable();
             $table->text('memo')->nullable();
             $table->string('status')->default('draft'); // draft, posted, void
             $table->foreignId('journal_entry_id')->nullable()->constrained('finance_journal_entries')->nullOnDelete();
@@ -28,6 +28,9 @@ return new class extends Migration {
             $table->string('void_reason')->nullable();
             $table->timestamps();
             $table->softDeletes();
+
+            $table->foreign('impair_expense_account_id', 'ffai_impair_expense_acct_fk')
+                ->references('id')->on('finance_accounts')->nullOnDelete();
         });
     }
 

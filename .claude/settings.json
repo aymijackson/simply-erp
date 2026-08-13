@@ -3,7 +3,26 @@
     "allow": [
       "Bash(git status *)",
       "Bash(mysql --version)",
-      "Bash(php -v)"
+      "Bash(php -v)",
+      "Bash(curl -s -o /dev/null -w \"GET /login: %{http_code}\\\\n\" http://127.0.0.1:8000/login)",
+      "Bash(curl -s -o /dev/null -w \"GET /: %{http_code}\\\\n\" http://127.0.0.1:8000/)",
+      "Bash(curl -s -o /dev/null -w \"GET /admin: %{http_code}\\\\n\" http://127.0.0.1:8000/admin)",
+      "Bash(curl -s http://127.0.0.1:8000/login)",
+      "Bash(/c/Users/User/.config/herd-lite/bin/php.exe -l database/migrations/2026_07_28_100009_create_setting_groups_table.php)",
+      "Bash(/c/Users/User/.config/herd-lite/bin/php.exe -l routes/web.php)",
+      "Bash(/c/xampp/mysql/bin/mysql.exe -u root -e \"DESCRIBE erp.products;\")",
+      "Bash(/c/xampp/mysql/bin/mysql.exe -u root -N -e \"SELECT TABLE_NAME, CONSTRAINT_NAME, CONSTRAINT_TYPE FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA='erp' AND CONSTRAINT_NAME='purchase_order_headers_supplier_id_foreign';\")",
+      "Bash(/c/Users/User/.config/herd-lite/bin/php.exe -l database/migrations/2026_07_28_100008_add_deferred_supplier_and_variant_fks.php)",
+      "Bash(/c/xampp/mysql/bin/mysql.exe -u root -e \"SELECT u.email, r.name as role FROM erp.users u JOIN erp.model_has_roles mhr ON mhr.model_id=u.id JOIN erp.roles r ON r.id=mhr.role_id WHERE u.email='aymi247@gmail.com';\")",
+      "Bash(/c/xampp/mysql/bin/mysql.exe -u root -e \"SELECT COUNT\\(*\\) FROM erp.permissions WHERE name='sales.deliveries.view';\")",
+      "Bash(/c/Users/User/.config/herd-lite/bin/php.exe -l database/seeders/RolesAndPermissionsSeeder.php)",
+      "Bash(/c/xampp/mysql/bin/mysql.exe -u root -e \"DROP DATABASE IF EXISTS erp_fresh_test;\")",
+      "Bash(/c/xampp/mysql/bin/mysql.exe -u root -e \"SELECT * FROM erp.setting_groups;\")",
+      "Bash(/c/xampp/mysql/bin/mysql.exe -u root -e \"SELECT COUNT\\(*\\) FROM erp.settings;\")",
+      "Bash(/c/xampp/mysql/bin/mysql.exe -u root -e \"DELETE FROM erp.setting_groups WHERE id=1 AND code='finance_accounting';\")",
+      "Bash(/c/xampp/mysql/bin/mysql.exe -u root -e \"SELECT id, name FROM erp.companies LIMIT 3;\")",
+      "Bash(/c/xampp/mysql/bin/mysql.exe -u root -e \"SELECT id, code, name, module FROM erp.setting_groups;\")",
+      "Bash(/c/xampp/mysql/bin/mysql.exe -u root -e \"SELECT id,name,slug FROM erp.modules;\")"
     ]
   }
 }

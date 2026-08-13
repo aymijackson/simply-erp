@@ -8,11 +8,15 @@ class CreateStockEntriesTable extends Migration
 {
     public function up()
     {
+        if (Schema::hasTable('stock_entries')) {
+            return;
+        }
+
         Schema::create('stock_entries', function (Blueprint $table) {
             $table->id();
             
             // Reference to product variant
-            $table->foreignId('product_variant_id')->constrained('product_variants')->onDelete('cascade');
+            $table->foreignId('product_variant_id');
 
             // Optional store and shelf
             $table->foreignId('store_id')->constrained('location_stores')->onDelete('set null')->nullable();

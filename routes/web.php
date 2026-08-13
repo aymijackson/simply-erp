@@ -188,6 +188,12 @@ use App\Http\Controllers\ReportController;
 
 require __DIR__.'/auth.php';
 
+Route::get('/', function () {
+    return auth()->check()
+        ? redirect()->route('admin.control_center')
+        : redirect()->route('login');
+})->name('home');
+
 Route::get('/states/by-country/{country_id}', [LocationController::class, 'getStates']);
 Route::get('/cities/by-state/{state_id}', [LocationController::class, 'getCities']);
 Route::get('/brands/by-manufacturer/{manufacturer_id}', [ProductController::class, 'brandsByManufacturer']);

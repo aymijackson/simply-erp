@@ -18,10 +18,10 @@ return new class extends Migration
             $table->text('product_description')->nullable();
             $table->decimal('product_price', 10, 2)->nullable();
             $table->decimal('average_cost', 10, 2)->nullable();
-            $table->foreignId('category_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('category_id')->nullable();
             $table->foreignId('brand_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('model_id')->nullable()->constrained('models')->nullOnDelete();
-            $table->foreignId('default_uom')->nullable()->constrained('units')->nullOnDelete();
+            $table->foreignId('model_id')->nullable();
+            $table->foreignId('default_uom')->nullable();
             $table->string('pack_size')->nullable();
             $table->integer('product_stock_quantity')->default(0);
             $table->boolean('is_active')->default(true);

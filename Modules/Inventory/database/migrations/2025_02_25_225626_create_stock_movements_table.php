@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
             $table->foreignId('product_instance_id')->nullable()->constrained('product_instances')->onDelete('set null');
             $table->foreignId('product_lot_id')->nullable()->constrained('product_lots')->onDelete('set null');
-            $table->foreignId('supplier_id')->nullable()->constrained('suppliers')->onDelete('set null');
+            $table->foreignId('supplier_id')->nullable();
             $table->enum('movement_type', ['inbound', 'outbound', 'manufacturing', 'adjustment']);
             $table->integer('quantity');
             $table->decimal('unit_price', 10, 2)->nullable(); // Price per unit (if applicable)

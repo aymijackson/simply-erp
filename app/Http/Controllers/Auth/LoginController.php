@@ -58,7 +58,7 @@ class LoginController extends Controller
 
         return $data['platform'] === 'admin'
             ? redirect()->intended(route('admin.control_center'))
-            : redirect()->intended(route('dashboard'));
+            : redirect()->intended(route('admin.dashboard.index'));
     }
     
     public function logout(Request $request)
