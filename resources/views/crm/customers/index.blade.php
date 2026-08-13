@@ -79,7 +79,7 @@
 $(function () {
     const modal = new bootstrap.Modal(document.getElementById('customerModal'));
     const table = $('#customerTable').DataTable({
-        ajax: '{{ route('admin.crm.customers.datatable') }}',
+        ajax: '{{ route('admin.customers.datatable') }}',
         columns: [
             { data: 'checkbox', orderable: false, searchable: false },
             { data: 'id' },
@@ -101,7 +101,7 @@ $(function () {
     $('#customerForm').submit(function (e) {
         e.preventDefault();
         const id = $('#customer_id').val();
-        const url = id ? `/admin/crm/customers/${id}` : `{{ route('admin.crm.customers.store') }}`;
+        const url = id ? `{{ url('admin/customers') }}/${id}` : `{{ route('admin.customers.store') }}`;
         const method = id ? 'PUT' : 'POST';
         const formData = $(this).serialize();
 
@@ -140,7 +140,7 @@ $(function () {
             confirmButtonText: 'Yes, delete it!'
         }).then(result => {
             if (result.isConfirmed) {
-                $.post(`/admin/crm/customers/${id}`, { _token: '{{ csrf_token() }}', _method: 'DELETE' })
+                $.post(`{{ url('admin/customers') }}/${id}`, { _token: '{{ csrf_token() }}', _method: 'DELETE' })
                     .done(res => {
                         table.ajax.reload();
                         Swal.fire('Deleted!', res.message, 'success');
@@ -163,7 +163,7 @@ $(function () {
             confirmButtonText: 'Yes, delete selected'
         }).then(result => {
             if (result.isConfirmed) {
-                $.post(`{{ route('admin.crm.customers.bulk-delete') }}`, { ids, _token: '{{ csrf_token() }}' })
+                $.post(`{{ route('admin.customers.bulk-delete') }}`, { ids, _token: '{{ csrf_token() }}' })
                     .done(res => {
                         table.ajax.reload();
                         Swal.fire('Deleted!', res.message, 'success');

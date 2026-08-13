@@ -159,12 +159,6 @@
         </a>
       @endcan
 
-      @can('inventory.reports.view')
-        <a href="{{ route('admin.reports.inventory.index') }}" class="btn btn-sm btn-outline-primary">
-          <i class="fas fa-file-alt mr-1"></i> Inventory Reports
-        </a>
-      @endcan
-
       @can('inventory.stock.workflow.sop.export')
         <a href="{{ route('admin.inventory.workflow.sop.index') }}" class="btn btn-sm btn-outline-secondary">
           <i class="fas fa-print mr-1"></i> Print SOP

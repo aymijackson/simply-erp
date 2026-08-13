@@ -110,7 +110,7 @@ $(function () {
     const table = $('#supplierAddressTable').DataTable({
         processing: true,
         serverSide: true,
-        ajax: '{{ route("admin.inventory.suppliers.addresses.datatable") }}',
+        ajax: '{{ route("admin.suppliers.addresses.datatable") }}',
         columns: [
             { data: 'checkbox', name: 'checkbox', orderable: false, searchable: false },
             { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
@@ -177,7 +177,7 @@ $(function () {
 
         if (ids.length && confirm('Are you sure you want to delete selected addresses?')) {
             $.ajax({
-                url: '{{ route("admin.inventory.suppliers.addresses.bulk-delete") }}',
+                url: '{{ route("admin.suppliers.addresses.bulk-delete") }}',
                 method: 'POST',
                 data: { _token: '{{ csrf_token() }}', ids },
                 success: function () {
@@ -206,7 +206,7 @@ $(function () {
         let id = $('#addressId').val();
         let url = id
             ? `/admin/inventory/suppliers/addresses/${id}`
-            : '{{ route("admin.inventory.suppliers.addresses.store") }}';
+            : '{{ route("admin.suppliers.addresses.store") }}';
         let method = id ? 'PUT' : 'POST';
 
         $.ajax({

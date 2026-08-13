@@ -8,7 +8,7 @@
 <div class="container-fluid">
   <div class="d-flex justify-content-between align-items-center mb-4">
       <h1 class="h3 text-primary mb-0">Stock Entry #{{ $entry->id }}</h1>
-      <a href="{{ route('admin.inventory.stock.entries.index') }}" class="btn btn-link">
+      <a href="{{ route('admin.inventory.stock_entries.index') }}" class="btn btn-link">
           <i class="fas fa-arrow-left me-1"></i> Back to Entries
       </a>
   </div>

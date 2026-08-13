@@ -108,7 +108,7 @@ $(function () {
     let table = $('#supplierTable').DataTable({
         processing: true,
         serverSide: true,
-        ajax: "{{ route('admin.inventory.suppliers.datatable') }}",
+        ajax: "{{ route('admin.suppliers.datatable') }}",
         columns: [
             { data: 'checkbox', orderable: false, searchable: false },
             { data: 'name' },
@@ -120,7 +120,7 @@ $(function () {
             { data: 'action', orderable: false, searchable: false },
         ],
         drawCallback: function () {
-            $.get("{{ route('admin.inventory.suppliers.metrics') }}", function (response) {
+            $.get("{{ route('admin.suppliers.metrics') }}", function (response) {
                 $('#totalSuppliers').text(response.total);
             });
         }
@@ -163,7 +163,7 @@ $(function () {
             _token: '{{ csrf_token() }}'
         };
 
-        const url = supplierId ? `{{ url('admin/inventory/suppliers') }}/${supplierId}` : `{{ route('admin.inventory.suppliers.store') }}`;
+        const url = supplierId ? `{{ url('admin/inventory/suppliers') }}/${supplierId}` : `{{ route('admin.suppliers.store') }}`;
 
         $.ajax({
             url: url,
@@ -232,7 +232,7 @@ $(function () {
         }).then(result => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: '{{ route('admin.inventory.suppliers.bulk-delete') }}',
+                    url: '{{ route('admin.suppliers.bulk-delete') }}',
                     type: 'POST',
                     data: {
                         _token: '{{ csrf_token() }}',

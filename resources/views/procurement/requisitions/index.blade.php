@@ -110,18 +110,18 @@
 
 @push('scripts')
 <script>
-const DT_URL   = "{{ route('admin.procurement.requisitions.datatable') }}";
-const STORE    = "{{ route('admin.procurement.requisitions.store') }}";
-const SHOW     = id => "{{ route('admin.procurement.requisitions.show',':id') }}".replace(':id', id);
-const UPDATE   = id => "{{ route('admin.procurement.requisitions.update',':id') }}".replace(':id', id);
-const DESTROY  = id => "{{ route('admin.procurement.requisitions.destroy',':id') }}".replace(':id', id);
-const SUBMIT   = id => "{{ route('admin.procurement.requisitions.submit',':id') }}".replace(':id', id);
-const APPROVE  = id => "{{ route('admin.procurement.requisitions.approve',':id') }}".replace(':id', id);
-const REJECT   = id => "{{ route('admin.procurement.requisitions.reject',':id') }}".replace(':id', id);
+const DT_URL   = "{{ route('admin.procurement.purchase_requisitions.datatable') }}";
+const STORE    = "{{ route('admin.procurement.purchase_requisitions.store') }}";
+const SHOW     = id => "{{ route('admin.procurement.purchase_requisitions.show',':id') }}".replace(':id', id);
+const UPDATE   = id => "{{ route('admin.procurement.purchase_requisitions.update',':id') }}".replace(':id', id);
+const DESTROY  = id => "{{ route('admin.procurement.purchase_requisitions.destroy',':id') }}".replace(':id', id);
+const SUBMIT   = id => "{{ route('admin.procurement.purchase_requisitions.submit',':id') }}".replace(':id', id);
+const APPROVE  = id => "{{ route('admin.procurement.purchase_requisitions.approve',':id') }}".replace(':id', id);
+const REJECT   = id => "{{ route('admin.procurement.purchase_requisitions.reject',':id') }}".replace(':id', id);
 
 // Select2 sources
-const S2_USERS    = "{{ route('admin.procurement.select2.users') }}";
-const S2_VARIANTS = "{{ route('admin.procurement.select2.variants') }}";
+const S2_USERS    = "{{ route('admin.users.select2') }}";
+const S2_VARIANTS = "{{ route('admin.procurement.purchase_requisitions.lookups.products') }}";
 
 function lineTpl(idx, prefill={}) {
   return `

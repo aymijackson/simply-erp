@@ -120,7 +120,7 @@ $(function () {
 
         const url = manufacturerId 
             ? `{{ url('admin/inventory/products/manufacturers') }}/${manufacturerId}`
-            : `{{ route('inventory.manufacturers.store') }}`;
+            : `{{ route('admin.inventory.products.manufacturers.store') }}`;
 
         $.ajax({
             url: url,

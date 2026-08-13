@@ -802,7 +802,7 @@
                 @endcan
                 
                 @can('finance.tax.settings.view')
-                <a class="collapse-item" href="{{ route('admin.finance.tax.settings.index') }}">
+                <a class="collapse-item" href="{{ route('admin.finance.settings.index') }}">
                   <i class="fas fa-cogs me-1"></i>
                   <span>VAT Settings</span>
                 </a>
@@ -837,12 +837,12 @@
                 </a>
               @endcan
               @can('finance.invoices.view')
-                <a class="collapse-item" href="{{ route('admin.finance.invoices.index') }}">
+                <a class="collapse-item" href="{{ route('admin.sales.invoices.index') }}">
                   <i class="fas fa-file-invoice"></i><span>Invoices</span>
                 </a>
               @endcan
               @can('finance.payments.view')
-                <a class="collapse-item" href="{{ route('admin.finance.payments.index') }}">
+                <a class="collapse-item" href="{{ route('admin.sales.payments.index') }}">
                   <i class="fas fa-credit-card"></i><span>Payments</span>
                 </a>
               @endcan
@@ -999,7 +999,7 @@
                 <span>Planning</span><i class="fas fa-chevron-down small"></i>
               </div>
               <div id="finPlanning" class="collapse finance-submenu">
-                <a class="collapse-item" href="{{ route('admin.finance.budgets.index') }}">
+                <a class="collapse-item" href="{{ route('admin.finance.budgets.budgets.index') }}">
                   <i class="fas fa-coins"></i><span>Budgets</span>
                 </a>
               </div>
@@ -1598,18 +1598,6 @@
                 <span>Module Guide</span>
             </a>
             @endcan
-            <!--
-            @can('projects.maintenance.view')
-              <a class="collapse-item" href="{{ route('admin.maintenance.index') }}">
-                <i class="fas fa-tools"></i><span>Maintenance</span>
-              </a>
-            @endcan
-            @can('projects.assets.view')
-              <a class="collapse-item" href="{{ route('admin.assets.index') }}">
-                <i class="fas fa-toolbox"></i><span>Assets</span>
-              </a>
-            @endcan
-            -->
           </div>
         </div>
       </li>
@@ -1669,26 +1657,6 @@
         </a>
         <div id="collapseReports" class="collapse" data-bs-parent="#accordionSidebar">
           <div class="bg-white py-2 collapse-inner rounded">
-            @can('reports.sales.view')
-              <a class="collapse-item" href="{{ route('admin.reports.sales.index') }}">
-                <i class="fas fa-chart-bar"></i><span>Sales</span>
-              </a>
-            @endcan
-            @can('reports.inventory.view')
-              <a class="collapse-item" href="{{ route('admin.reports.inventory.index') }}">
-                <i class="fas fa-boxes"></i><span>Inventory</span>
-              </a>
-            @endcan
-            @can('reports.finance.view')
-              <a class="collapse-item" href="{{ route('admin.reports.finance.index') }}">
-                <i class="fas fa-coins"></i><span>Finance</span>
-              </a>
-            @endcan
-            @can('reports.hrm.view')
-              <a class="collapse-item" href="{{ route('admin.reports.hr.index') }}">
-                <i class="fas fa-users"></i><span>HR</span>
-              </a>
-            @endcan
             @can('reports.projects.view')
               <a class="collapse-item" href="{{ route('admin.project_profitability.index') }}">
                   <i class="fas fa-chart-line"></i>

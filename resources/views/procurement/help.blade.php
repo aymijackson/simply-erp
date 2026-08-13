@@ -518,13 +518,13 @@ Route::get('/admin/procurement/guide', [\Modules\Procurement\Http\Controllers\Pr
                 </div>
                 <div class="col-lg-6">
 <pre class="bg-light p-3 rounded small mb-0"><code>// Sidebar example
-@can('procurement.guide.view')
-<li class="nav-item">
-    <a href="{{ route('admin.procurement.guide') }}" class="nav-link">
-        <i class="fas fa-book"></i> Procurement Guide
-    </a>
-</li>
-@endcan</code></pre>
+@@can('procurement.guide.view')
+&lt;li class="nav-item"&gt;
+    &lt;a href="@{{ route('admin.procurement.guide.index') }}" class="nav-link"&gt;
+        &lt;i class="fas fa-book"&gt;&lt;/i&gt; Procurement Guide
+    &lt;/a&gt;
+&lt;/li&gt;
+@@endcan</code></pre>
                 </div>
             </div>
         </div>

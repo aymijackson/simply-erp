@@ -701,7 +701,8 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
         
             Route::delete('/{bankAccount}', [BankAccountsController::class, 'destroy'])->name('destroy');
             Route::post('bulk-delete', [BankAccountsController::class, 'bulkDelete'])->name('bulk_delete');
-        
+            Route::post('set-default', [BankAccountsController::class, 'setDefault'])->name('set_default');
+
               // Select2 helper (pick GL account)
             Route::get('gl-accounts', [BankAccountsController::class, 'glAccounts'])->name('gl_accounts');
             

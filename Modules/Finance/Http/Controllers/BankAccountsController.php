@@ -267,6 +267,34 @@ class BankAccountsController extends Controller
         return response()->json(['message'=>'Deleted.']);
     }
 
+    public function setDefault(Request $request)
+    {
+        $companyId = auth()->user()->company_id ?? 1;
+        $id = (int) $request->input('id');
+
+        $row = DB::table('finance_bank_accounts')
+            ->where('company_id', $companyId)
+            ->where('id', $id)
+            ->whereNull('deleted_at')
+            ->first();
+
+        if (!$row) {
+            return response()->json(['message' => 'Bank/Cash account not found.'], 404);
+        }
+
+        DB::transaction(function () use ($companyId, $id) {
+            DB::table('finance_bank_accounts')
+                ->where('company_id', $companyId)
+                ->update(['is_default' => false]);
+
+            DB::table('finance_bank_accounts')
+                ->where('id', $id)
+                ->update(['is_default' => true, 'updated_at' => now()]);
+        });
+
+        return response()->json(['message' => 'Default bank/cash account updated.']);
+    }
+
     public function bulkDelete(Request $request)
     {
         $companyId = auth()->user()->company_id ?? 1;

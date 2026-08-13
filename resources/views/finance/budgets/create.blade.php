@@ -7,7 +7,7 @@
 
   <div class="card">
     <div class="card-body">
-      <form method="POST" action="{{ route('admin.finance.budgets.store') }}">
+      <form method="POST" action="{{ route('admin.finance.budgets.budgets.store') }}">
         @csrf
 
         <div class="row g-3">
@@ -58,7 +58,7 @@
 
         <div class="mt-3">
           <button class="btn btn-primary">Create</button>
-          <a href="{{ route('admin.finance.budgets.index') }}" class="btn btn-light">Cancel</a>
+          <a href="{{ route('admin.finance.budgets.budgets.index') }}" class="btn btn-light">Cancel</a>
         </div>
 
       </form>

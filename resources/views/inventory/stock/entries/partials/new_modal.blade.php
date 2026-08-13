@@ -136,14 +136,14 @@
   }
   function initBomSelect($sel){
     $sel.select2({
-      ajax:{ url: '{{ route('admin.production.boms.select2') }}', dataType:'json', delay:250, data: p=>({q:p.term}), processResults:d=>({results:d}) },
+      ajax:{ url: '{{ route('admin.production.boms.headers.select2') }}', dataType:'json', delay:250, data: p=>({q:p.term}), processResults:d=>({results:d}) },
       placeholder:'-- select BOM --', minimumInputLength:0, dropdownParent: $('#entryModal'), width:'100%'
     });
   }
 
   // Initialize selects
-  initPartySelect($('#supplier_id'), "{{ route('admin.inventory.suppliers.select2') }}", $('#entryModal'));
-  initPartySelect($('#customer_id'), "{{ route('admin.crm.customers.select2') }}", $('#entryModal'));
+  initPartySelect($('#supplier_id'), "{{ route('admin.suppliers.select2') }}", $('#entryModal'));
+  initPartySelect($('#customer_id'), "{{ route('admin.customers.select2') }}", $('#entryModal'));
   initBomSelect($('#borrow_source_bom_id'));
   initBomSelect($('#borrow_target_bom_id'));
 

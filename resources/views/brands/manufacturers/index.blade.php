@@ -69,7 +69,7 @@ $(function () {
   const table = $('#dt').DataTable({
     processing: true,
     serverSide: true,
-    ajax: '{{ route("admin.inventory.manufacturers.datatable") }}',
+    ajax: '{{ route("admin.inventory.products.manufacturers.datatable") }}',
     columns: [
       { data: 'checkbox', name: 'checkbox', orderable: false, searchable: false },
       { data: 'manufacturer_name', name: 'manufacturer_name' },
@@ -109,8 +109,8 @@ $(function () {
     e.preventDefault();
     const id = $('#manufacturerId').val();
     const url = id 
-      ? `{{ url('admin/inventory/manufacturers') }}/${id}`
-      : `{{ route('admin.inventory.manufacturers.store') }`;
+      ? `{{ url('admin/inventory/products/manufacturers') }}/${id}`
+      : `{{ route('admin.inventory.products.manufacturers.store') }}`;
     const type = id ? 'PUT' : 'POST';
 
     $.ajax({
@@ -140,7 +140,7 @@ $(function () {
     }).then(result => {
       if (result.isConfirmed) {
         $.ajax({
-          url: `{{ url('admin/inventory/manufacturers') }}/${id}`,
+          url: `{{ url('admin/inventory/products/manufacturers') }}/${id}`,
           method: 'DELETE',
           data: { _token: '{{ csrf_token() }}' },
           success: function (res) {
@@ -168,7 +168,7 @@ $(function () {
       confirmButtonColor: '#d33'
     }).then(result => {
       if (result.isConfirmed) {
-        $.post('{{ route("admin.inventory.manufacturers.bulk-delete") }}', {
+        $.post('{{ route("admin.inventory.products.manufacturers.bulk-delete") }}', {
           _token: '{{ csrf_token() }}',
           ids
         }, function (res) {

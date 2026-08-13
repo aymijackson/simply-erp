@@ -20,7 +20,7 @@
     @endcan
 
     @can('sales.payments.allocate')
-        <a href="{{ route('admin.sales.payments.allocate', $id) }}" class="btn btn-outline-info" title="Allocate">
+        <a href="{{ route('admin.sales.payments.allocations', $id) }}" class="btn btn-outline-info" title="Allocate">
             <i class="fas fa-random"></i>
         </a>
     @endcan

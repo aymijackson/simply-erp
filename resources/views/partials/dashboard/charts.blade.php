@@ -13,8 +13,8 @@
 
                     <ul class="dropdown-menu dropdown-menu-end shadow animated--fade-in" aria-labelledby="usersChartMenu">
                         <li><h6 class="dropdown-header">Quick actions</h6></li>
-                        <li><a class="dropdown-item" href="{{ route('admin.dashboard') }}">Refresh</a></li>
-                        <li><a class="dropdown-item" href="{{ route('admin.dashboard') }}?range=12m">View 12 months</a></li>
+                        <li><a class="dropdown-item" href="{{ route('admin.dashboard.index') }}">Refresh</a></li>
+                        <li><a class="dropdown-item" href="{{ route('admin.dashboard.index') }}?range=12m">View 12 months</a></li>
                     </ul>
                 </div>
             </div>
@@ -41,7 +41,7 @@
 
                     <ul class="dropdown-menu dropdown-menu-end shadow animated--fade-in" aria-labelledby="stockAgeMenu">
                         <li><h6 class="dropdown-header">Quick actions</h6></li>
-                        <li><a class="dropdown-item" href="{{ route('admin.dashboard') }}">Refresh</a></li>
+                        <li><a class="dropdown-item" href="{{ route('admin.dashboard.index') }}">Refresh</a></li>
                         <li><a class="dropdown-item" href="#">View stock report</a></li>
                     </ul>
                 </div>

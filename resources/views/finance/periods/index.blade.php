@@ -182,7 +182,7 @@
                     @else
                       <button type="button"
                         class="btn btn-outline-primary btn-open-period"
-                        data-action="{{ route('admin.finance.periods.open', ['id' => $p->id]) }}"
+                        data-action="{{ route('admin.finance.periods.reopen', ['id' => $p->id]) }}"
                         data-name="{{ e($p->name ?? ('Period #'.$p->id)) }}">
                         <i class="fas fa-unlock"></i>
                       </button>

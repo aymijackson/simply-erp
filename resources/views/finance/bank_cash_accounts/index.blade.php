@@ -135,8 +135,8 @@ function swalCompat(optsOrTitle, text, icon){
 function swalOk(msg){ return swalCompat({icon:'success', title:'Success', text: msg || 'Done.'}); }
 function swalErr(msg){ return swalCompat({icon:'error', title:'Error', text: msg || 'Something went wrong.'}); }
 
-const dtUrl     = "{{ route('admin.finance.bank_cash_accounts.datatable') }}";
-const storeUrl  = "{{ route('admin.finance.bank_cash_accounts.store') }}";
+const dtUrl     = "{{ route('admin.finance.bank_accounts.datatable') }}";
+const storeUrl  = "{{ route('admin.finance.bank_accounts.store') }}";
 
 let DT = null;
 
@@ -220,7 +220,7 @@ $('#bulkDeleteBtn').on('click', function(){
     dangerMode:true
   }).then((ok)=>{
     if(!ok) return;
-    $.post("{{ route('admin.finance.bank_cash_accounts.bulk_delete') }}", {ids})
+    $.post("{{ route('admin.finance.bank_accounts.bulk_delete') }}", {ids})
       .done(res=>{
         swalOk(res.message || 'Deleted.');
         $('#bulkDeleteBtn').addClass('d-none');
@@ -317,7 +317,7 @@ $(document).on('click', '.btn-default-bc', function(){
   }).then((ok)=>{
     if(!ok) return;
 
-    $.post("{{ route('admin.finance.bank_cash_accounts.set_default') }}", {id})
+    $.post("{{ route('admin.finance.bank_accounts.set_default') }}", {id})
       .done(res=>{ swalOk(res.message || 'Default set.'); refreshDT(); })
       .fail(xhr=>{ swalErr(xhr?.responseJSON?.message || 'Failed to set default.'); });
   });

@@ -84,7 +84,7 @@ $(function () {
     const table = $('#supplierContactTable').DataTable({
         processing: true,
         serverSide: true,
-        ajax: '{{ route("admin.inventory.suppliers.contacts.datatable") }}',
+        ajax: '{{ route("admin.suppliers.contacts.datatable") }}',
         columns: [
             { data: 'checkbox', name: 'checkbox', orderable: false, searchable: false },
             { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
@@ -119,7 +119,7 @@ $(function () {
 
         if (ids.length && confirm('Are you sure you want to delete selected contacts?')) {
             $.ajax({
-                url: '{{ route("admin.inventory.suppliers.contacts.bulk-delete") }}',
+                url: '{{ route("admin.suppliers.contacts.bulk-delete") }}',
                 method: 'POST',
                 data: { _token: '{{ csrf_token() }}', ids },
                 success: function () {
@@ -151,7 +151,7 @@ $(function () {
         let id = $('#contactId').val();
         let url = id
             ? `/admin/inventory/suppliers/contacts/${id}`
-            : '{{ route("admin.inventory.suppliers.contacts.store") }}';
+            : '{{ route("admin.suppliers.contacts.store") }}';
         let method = id ? 'PUT' : 'POST';
 
         $.ajax({
