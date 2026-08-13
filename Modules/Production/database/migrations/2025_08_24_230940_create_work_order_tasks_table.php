@@ -6,6 +6,10 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
     public function up(): void {
+        if (Schema::hasTable('work_order_tasks')) {
+            return;
+        }
+
         Schema::create('work_order_tasks', function (Blueprint $table) 
         {
             $table->id();

@@ -8,6 +8,10 @@ class CreateSupplierProductsTable extends Migration
 {
     public function up()
     {
+        if (Schema::hasTable('supplier_products')) {
+            return;
+        }
+
         Schema::create('supplier_products', function (Blueprint $table) {
             $table->unsignedBigInteger('supplier_id');
             $table->unsignedBigInteger('product_id');

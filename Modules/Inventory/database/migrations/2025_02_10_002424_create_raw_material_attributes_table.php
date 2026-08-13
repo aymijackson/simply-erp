@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('raw_material_attributes')) {
+            return;
+        }
+
         Schema::create('raw_material_attributes', function (Blueprint $table) {
             $table->id();
             $table->foreignId('raw_material_id')->constrained('raw_materials')->onDelete('cascade');

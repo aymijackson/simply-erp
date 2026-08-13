@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
     public function up(): void {
+        if (Schema::hasTable('bom_deficit_transactions')) {
+            return;
+        }
+
         Schema::create('bom_deficit_transactions', function (Blueprint $t) {
             $t->id();
             $t->unsignedBigInteger('bom_id');                  // borrower BOM

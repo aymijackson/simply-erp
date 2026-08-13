@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('purchase_order_headers')) {
+            return;
+        }
+
         Schema::create('purchase_order_headers', function (Blueprint $table) {
             $table->id();
             $table->foreignId('supplier_id');

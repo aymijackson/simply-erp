@@ -8,6 +8,10 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
+        if (Schema::hasTable('stock_returns')) {
+            return;
+        }
+
         Schema::create('stock_returns', function (Blueprint $t) {
             $t->id();
             $t->enum('return_type',['customer','supplier']);

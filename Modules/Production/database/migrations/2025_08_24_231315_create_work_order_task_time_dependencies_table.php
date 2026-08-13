@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('work_order_task_time_dependencies')) {
+            return;
+        }
+
         Schema::create('work_order_task_time_dependencies', function (Blueprint $table) {
             $table->id();
             $table->foreignId('work_order_task_id', 'fk_wottd_task')->constrained('work_order_tasks')->cascadeOnDelete();

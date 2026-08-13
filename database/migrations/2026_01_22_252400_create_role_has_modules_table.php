@@ -8,6 +8,10 @@ class CreateRoleHasModulesTable extends Migration
 {
     public function up()
     {
+        if (Schema::hasTable('role_has_modules')) {
+            return;
+        }
+
         Schema::create('role_has_modules', function ($table) {
             $table->unsignedBigInteger('role_id');
             $table->unsignedBigInteger('module_id');

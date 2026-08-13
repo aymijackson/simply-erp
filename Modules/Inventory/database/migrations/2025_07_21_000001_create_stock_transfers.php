@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
+        if (Schema::hasTable('stock_transfers')) {
+            return;
+        }
+
         Schema::create('stock_transfers', function (Blueprint $t) {
             $t->id();
             $t->string('transfer_no')->unique();

@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('work_order_task_checklist_items')) {
+            return;
+        }
+
         Schema::create('work_order_task_checklist_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('work_order_task_id', 'fk_wotci_task')->constrained('work_order_tasks')->cascadeOnDelete();

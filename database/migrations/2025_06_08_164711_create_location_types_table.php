@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('location_types')) {
+            return;
+        }
+
         Schema::create('location_types', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique(); // e.g. 'building', 'warehouse'

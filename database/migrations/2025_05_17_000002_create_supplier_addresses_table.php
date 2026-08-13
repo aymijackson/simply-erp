@@ -8,6 +8,10 @@ class CreateSupplierAddressesTable extends Migration
 {
     public function up()
     {
+        if (Schema::hasTable('supplier_addresses')) {
+            return;
+        }
+
         Schema::create('supplier_addresses', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->unsignedBigInteger('supplier_id');
