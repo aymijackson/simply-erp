@@ -119,8 +119,6 @@ class ProfitLossController extends Controller
             ->join('finance_accounts as a', 'a.id', '=', 'l.account_id')
             ->where('j.company_id', $companyId)
             ->where('l.account_id', $accountId)
-            ->whereNull('j.deleted_at')
-            ->whereNull('l.deleted_at')
             ->whereBetween('j.entry_date', [$from, $to])
             ->when($postedOnly === 1, function ($q) {
                 $q->where('j.status', 'posted');
@@ -232,8 +230,6 @@ class ProfitLossController extends Controller
             ->join('finance_account_types as t', 't.id', '=', 'a.account_type_id')
             ->leftJoin('finance_accounts as p', 'p.id', '=', 'a.parent_id')
             ->where('j.company_id', $companyId)
-            ->whereNull('j.deleted_at')
-            ->whereNull('l.deleted_at')
             ->whereNull('a.deleted_at')
             ->whereBetween('j.entry_date', [$from, $to])
             ->whereIn('t.category', ['income', 'cogs', 'expense'])

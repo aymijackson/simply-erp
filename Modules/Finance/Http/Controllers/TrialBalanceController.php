@@ -164,8 +164,6 @@ class TrialBalanceController extends Controller
             ->join('finance_journal_entries as je', 'je.id', '=', 'l.journal_entry_id')
             ->join('finance_accounts as a', 'a.id', '=', 'l.account_id')
             ->where('je.company_id', $companyId)
-            ->whereNull('je.deleted_at')
-            ->whereNull('l.deleted_at')
             ->whereNull('a.deleted_at')
             ->when($status !== '', function ($q) use ($status) {
                 $q->where('je.status', $status);

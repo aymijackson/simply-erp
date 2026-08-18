@@ -193,6 +193,38 @@ class JournalEntriesController extends Controller
         ]);
     }
 
+    public function lines($id)
+    {
+        $companyId = auth()->user()->company_id ?? 1;
+
+        $entry = DB::table('finance_journal_entries')
+            ->where('company_id', $companyId)
+            ->where('id', $id)
+            ->first();
+
+        if (!$entry) {
+            return response()->json(['message' => 'Entry not found'], 404);
+        }
+
+        $lines = DB::table('finance_journal_entry_lines as l')
+            ->leftJoin('finance_accounts as a', 'a.id', '=', 'l.account_id')
+            ->leftJoin('finance_bank_accounts as b', 'b.id', '=', 'l.bank_account_id')
+            ->where('l.journal_entry_id', $id)
+            ->select([
+                'l.account_id',
+                'l.debit',
+                'l.credit',
+                'l.currency_code',
+                'l.fx_rate',
+                'l.bank_account_id',
+                DB::raw("CONCAT(a.code, ' - ', a.name) as account_label"),
+                'b.name as bank_account_label',
+            ])
+            ->get();
+
+        return response()->json(['lines' => $lines]);
+    }
+
     public function store(Request $request)
     {
         $companyId = auth()->user()->company_id ?? 1;

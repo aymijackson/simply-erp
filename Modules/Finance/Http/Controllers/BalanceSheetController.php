@@ -30,7 +30,6 @@ class BalanceSheetController extends Controller
             ->leftJoin('finance_journal_entry_lines as l', 'l.account_id', '=', 'a.id')
             ->leftJoin('finance_journal_entries as j', function ($join) use ($dateTo) {
                 $join->on('j.id', '=', 'l.journal_entry_id')
-                    ->whereNull('j.deleted_at')
                     ->where('j.status', 'posted')
                     ->whereDate('j.entry_date', '<=', $dateTo);
             })
@@ -101,7 +100,6 @@ class BalanceSheetController extends Controller
             ->leftJoin('finance_journal_entry_lines as l', 'l.account_id', '=', 'a.id')
             ->leftJoin('finance_journal_entries as j', function ($join) use ($dateFrom, $dateTo) {
                 $join->on('j.id', '=', 'l.journal_entry_id')
-                    ->whereNull('j.deleted_at')
                     ->where('j.status', 'posted')
                     ->whereBetween('j.entry_date', [$dateFrom, $dateTo]);
             })

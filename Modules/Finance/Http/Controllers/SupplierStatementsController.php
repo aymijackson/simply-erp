@@ -39,7 +39,7 @@ class SupplierStatementsController extends Controller
      * JSON statement lines + totals
      * Uses ONLY:
      *  - finance_supplier_bills (posted/part_paid/paid)
-     *  - finance_supplier_bill_payments (posted)
+     *  - finance_supplier_payments (posted)
      *  - finance_supplier_credits (posted)
      *
      * Running balance logic:
@@ -144,13 +144,13 @@ class SupplierStatementsController extends Controller
             ->where('b.bill_date', '<', $from)
             ->sum('b.total_amount');
 
-        $payments = DB::table('finance_supplier_bill_payments as p')
+        $payments = DB::table('finance_supplier_payments as p')
             ->where('p.company_id', $companyId)
             ->where('p.supplier_id', $supplierId)
             ->whereNull('p.deleted_at')
             ->where('p.status', 'posted')
             ->where('p.payment_date', '<', $from)
-            ->sum('p.amount_total');
+            ->sum('p.amount');
 
         $credits = DB::table('finance_supplier_credits as c')
             ->where('c.company_id', $companyId)
@@ -183,7 +183,7 @@ class SupplierStatementsController extends Controller
             ");
 
         // payments: -amount
-        $payments = DB::table('finance_supplier_bill_payments as p')
+        $payments = DB::table('finance_supplier_payments as p')
             ->where('p.company_id', $companyId)
             ->where('p.supplier_id', $supplierId)
             ->whereNull('p.deleted_at')
@@ -195,7 +195,7 @@ class SupplierStatementsController extends Controller
                 'Payment' as txn_type,
                 COALESCE(p.payment_no, CONCAT('PAY-', p.id)) as ref,
                 p.memo as memo,
-                CAST((0 - p.amount_total) as DECIMAL(18,2)) as amount
+                CAST((0 - p.amount) as DECIMAL(18,2)) as amount
             ");
 
         // credits: -amount

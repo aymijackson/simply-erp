@@ -924,6 +924,29 @@ class SupplierBillsController extends Controller
         return response()->json(['results' => $items]);
     }
 
+    public function bankAccounts(Request $request)
+    {
+        $companyId = auth()->user()->company_id ?? 1;
+        $term = trim((string) $request->get('q', ''));
+
+        $q = DB::table('finance_bank_accounts')
+            ->where('company_id', $companyId)
+            ->whereNull('deleted_at')
+            ->select(['id', 'name'])
+            ->orderBy('name');
+
+        if ($term !== '') {
+            $q->where('name', 'like', "%{$term}%");
+        }
+
+        $items = $q->limit(50)->get()->map(fn ($a) => [
+            'id' => $a->id,
+            'text' => $a->name,
+        ]);
+
+        return response()->json(['results' => $items]);
+    }
+
     public function currencies(Request $request)
     {
         $term = strtoupper(trim((string) $request->get('q', '')));

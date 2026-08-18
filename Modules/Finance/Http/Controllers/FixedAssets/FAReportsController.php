@@ -32,7 +32,7 @@ class FAReportsController extends Controller
             ->where('finance_fixed_asset_depr_runs.company_id',$companyId)
             ->where('finance_fixed_asset_depr_runs.status','posted')
             ->whereNull('finance_fixed_asset_depr_runs.deleted_at')
-            ->select('finance_fixed_asset_depr_lines.asset_id', DB::raw('SUM(finance_fixed_asset_depr_lines.amount) as total'))
+            ->select('finance_fixed_asset_depr_lines.asset_id', DB::raw('SUM(finance_fixed_asset_depr_lines.depreciation_amount) as total'))
             ->groupBy('finance_fixed_asset_depr_lines.asset_id')
             ->pluck('total','asset_id');
 
