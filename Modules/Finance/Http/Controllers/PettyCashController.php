@@ -34,7 +34,7 @@ class PettyCashController extends Controller
                 'employeePayee',
                 'supplierPayee',
                 'customerPayee',
-            ])->when(Auth::user()->company_id, fn($q) => $q->where('company_id', Auth::user()->company_id));
+            ])->when(Auth::user()->company_id ?? 1, fn($q) => $q->where('company_id', Auth::user()->company_id ?? 1));
 
             if ($request->filled('status')) {
                 $query->where('status', $request->status);
@@ -112,7 +112,7 @@ class PettyCashController extends Controller
 
     protected function summaryData(): array
     {
-        $companyId = Auth::user()->company_id;
+        $companyId = Auth::user()->company_id ?? 1;
 
         $accounts = PettyCashAccount::when($companyId, fn($q) => $q->where('company_id', $companyId));
         $transactions = PettyCashTransaction::when($companyId, fn($q) => $q->where('company_id', $companyId));
@@ -139,7 +139,7 @@ class PettyCashController extends Controller
 
         if ($request->ajax()) {
             $query = PettyCashAccount::with(['custodian', 'location', 'cashGlAccount'])
-                ->when(Auth::user()->company_id, fn($q) => $q->where('company_id', Auth::user()->company_id));
+                ->when(Auth::user()->company_id ?? 1, fn($q) => $q->where('company_id', Auth::user()->company_id ?? 1));
 
             return DataTables::of($query)
             ->addColumn('custodian_name', function ($row) {
@@ -181,7 +181,7 @@ class PettyCashController extends Controller
         $term = trim($request->get('q', ''));
 
         $query = PettyCashAccount::query()
-            ->when(Auth::user()->company_id, fn($q) => $q->where('company_id', Auth::user()->company_id))
+            ->when(Auth::user()->company_id ?? 1, fn($q) => $q->where('company_id', Auth::user()->company_id ?? 1))
             ->where('status', 'active');
 
         if ($term !== '') {
@@ -240,7 +240,7 @@ class PettyCashController extends Controller
 
         if ($type === 'supplier') {
             $rows = Supplier::query()
-                ->when(Auth::user()->company_id ?? null, fn($q) => $q->where('company_id', Auth::user()->company_id))
+                ->when(Auth::user()->company_id ?? 1, fn($q) => $q->where('company_id', Auth::user()->company_id ?? 1))
                 ->when($term !== '', fn($q) => $q->where('name', 'like', "%{$term}%"))
                 ->orderBy('name')
                 ->limit(30)
@@ -254,7 +254,7 @@ class PettyCashController extends Controller
 
         if ($type === 'customer') {
             $rows = \Modules\CRM\Models\Customer::query()
-                ->when(Auth::user()->company_id ?? null, fn($q) => $q->where('company_id', Auth::user()->company_id))
+                ->when(Auth::user()->company_id ?? 1, fn($q) => $q->where('company_id', Auth::user()->company_id ?? 1))
                 ->when($term !== '', fn($q) => $q->where('name', 'like', "%{$term}%"))
                 ->orderBy('name')
                 ->limit(30)
@@ -452,7 +452,7 @@ class PettyCashController extends Controller
         ]);
 
         $account = PettyCashAccount::create([
-            'company_id' => Auth::user()->company_id,
+            'company_id' => Auth::user()->company_id ?? 1,
             'account_code' => $request->account_code,
             'name' => $request->name,
             'custodian_employee_id' => $request->custodian_employee_id,
@@ -532,7 +532,7 @@ class PettyCashController extends Controller
         $voucherNo = 'PCV-' . now()->format('Ymd') . '-' . str_pad((string) $nextId, 5, '0', STR_PAD_LEFT);
 
         $payload = [
-            'company_id' => Auth::user()->company_id,
+            'company_id' => Auth::user()->company_id ?? 1,
             'petty_cash_account_id' => $request->petty_cash_account_id,
             'transaction_no' => $transactionNo,
             'voucher_no' => $voucherNo,
@@ -888,7 +888,7 @@ class PettyCashController extends Controller
             $oldAccount = $account->toArray();
 
             $journal = FinanceJournalEntry::create([
-                'company_id' => Auth::user()->company_id,
+                'company_id' => Auth::user()->company_id ?? 1,
                 'entry_no' => 'JE-PC-' . now()->format('YmdHis'),
                 'entry_date' => $transaction->transaction_date,
                 'reference_no' => $transaction->transaction_no,
@@ -1061,7 +1061,7 @@ class PettyCashController extends Controller
 
         if ($request->ajax()) {
             $query = PettyCashReconciliation::with('account')
-                ->when(Auth::user()->company_id, fn($q) => $q->where('company_id', Auth::user()->company_id));
+                ->when(Auth::user()->company_id ?? 1, fn($q) => $q->where('company_id', Auth::user()->company_id ?? 1));
 
             return DataTables::of($query)
                 ->addColumn('account_name', fn($row) => $row->account->name ?? '-')
@@ -1128,7 +1128,7 @@ class PettyCashController extends Controller
         $nextId = (PettyCashReconciliation::max('id') ?? 0) + 1;
 
         $row = PettyCashReconciliation::create([
-            'company_id' => Auth::user()->company_id,
+            'company_id' => Auth::user()->company_id ?? 1,
             'petty_cash_account_id' => $account->id,
             'reconciliation_no' => 'PCR-' . now()->format('Ymd') . '-' . str_pad((string) $nextId, 5, '0', STR_PAD_LEFT),
             'reconciliation_date' => $request->reconciliation_date,
@@ -1228,7 +1228,7 @@ class PettyCashController extends Controller
             $account = $row->account;
 
             $journal = FinanceJournalEntry::create([
-                'company_id' => Auth::user()->company_id,
+                'company_id' => Auth::user()->company_id ?? 1,
                 'entry_no' => 'JE-PCR-' . now()->format('YmdHis'),
                 'entry_date' => $row->reconciliation_date,
                 'reference_no' => $row->reconciliation_no,
@@ -1303,7 +1303,7 @@ class PettyCashController extends Controller
     protected function audit($action, $description = null, $oldValues = null, $newValues = null, $accountId = null, $transactionId = null, $reconciliationId = null)
     {
         PettyCashAudit::create([
-            'company_id' => Auth::user()->company_id,
+            'company_id' => Auth::user()->company_id ?? 1,
             'petty_cash_account_id' => $accountId,
             'petty_cash_transaction_id' => $transactionId,
             'reconciliation_id' => $reconciliationId,
@@ -1346,7 +1346,7 @@ class PettyCashController extends Controller
         $voucherNo = 'PCV-' . now()->format('Ymd') . '-' . str_pad((string) $nextId, 5, '0', STR_PAD_LEFT);
     
         $payload = [
-            'company_id' => Auth::user()->company_id,
+            'company_id' => Auth::user()->company_id ?? 1,
             'petty_cash_account_id' => $account->id,
             'transaction_no' => $transactionNo,
             'voucher_no' => $voucherNo,

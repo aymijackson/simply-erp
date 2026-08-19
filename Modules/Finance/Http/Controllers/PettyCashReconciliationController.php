@@ -22,8 +22,8 @@ class PettyCashReconciliationController extends Controller
         if ($request->ajax()) {
             $query = PettyCashReconciliation::query()
                 ->with(['account'])
-                ->when(Auth::user()->company_id ?? null, function ($q) {
-                    $q->where('company_id', Auth::user()->company_id);
+                ->when(Auth::user()->company_id ?? 1, function ($q) {
+                    $q->where('company_id', Auth::user()->company_id ?? 1);
                 });
 
             if ($request->filled('petty_cash_account_id')) {
@@ -137,8 +137,8 @@ class PettyCashReconciliationController extends Controller
 
         try {
             $account = PettyCashAccount::query()
-                ->when(Auth::user()->company_id ?? null, function ($q) {
-                    $q->where('company_id', Auth::user()->company_id);
+                ->when(Auth::user()->company_id ?? 1, function ($q) {
+                    $q->where('company_id', Auth::user()->company_id ?? 1);
                 })
                 ->findOrFail($request->petty_cash_account_id);
 
@@ -167,7 +167,7 @@ class PettyCashReconciliationController extends Controller
             $variance = $counted - $systemBalance;
 
             $recon = PettyCashReconciliation::create([
-                'company_id' => Auth::user()->company_id,
+                'company_id' => Auth::user()->company_id ?? 1,
                 'petty_cash_account_id' => $account->id,
                 'reconciliation_no' => $this->generateReconciliationNo(),
                 'reconciliation_date' => $request->reconciliation_date,
@@ -416,8 +416,8 @@ class PettyCashReconciliationController extends Controller
         ]);
     
         $account = PettyCashAccount::query()
-            ->when(Auth::user()->company_id ?? null, function ($q) {
-                $q->where('company_id', Auth::user()->company_id);
+            ->when(Auth::user()->company_id ?? 1, function ($q) {
+                $q->where('company_id', Auth::user()->company_id ?? 1);
             })
             ->findOrFail($request->petty_cash_account_id);
     

@@ -31,7 +31,7 @@ class FinanceDataFlushController extends Controller
         return response()->json([
             'ok' => true,
             'summary' => $svc->preview(
-                companyId: (int) $request->user()->company_id,
+                companyId: (int) ($request->user()->company_id ?? 1),
                 options: $data
             ),
         ]);
@@ -65,7 +65,7 @@ class FinanceDataFlushController extends Controller
         }
 
         $result = $svc->run(
-            companyId: (int) $request->user()->company_id,
+            companyId: (int) ($request->user()->company_id ?? 1),
             options: $data,
             actorId: (int) $request->user()->id
         );

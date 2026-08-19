@@ -24,7 +24,7 @@ class BankReconciliationController extends Controller
     {
         abort_unless(auth()->user()->can('finance.budgets.view'), 403);
     
-        $companyId = $request->user()->company_id ?? null;
+        $companyId = $request->user()->company_id ?? 1;
     
         $q = BankReconciliation::query()
             ->when($companyId, fn($x) => $x->where('company_id', $companyId))
@@ -42,7 +42,7 @@ class BankReconciliationController extends Controller
     {
         abort_unless(auth()->user()->can('finance.bank_reconciliation.create'), 403);
 
-        $companyId = auth()->user()->company_id ?? null;
+        $companyId = auth()->user()->company_id ?? 1;
 
         $bankAccounts = BankAccount::query()
             ->when($companyId, fn($x) => $x->where('company_id', $companyId))
@@ -56,7 +56,7 @@ class BankReconciliationController extends Controller
     public function store(StoreBankReconciliationRequest $request, BankReconciliationService $svc)
     {
         $data = $request->validated();
-        $companyId = $request->user()->company_id ?? $request->input('company_id');
+        $companyId = $request->user()->company_id ?? $request->input('company_id') ?? 1;
 
         $recon = BankReconciliation::query()->create([
             'company_id' => $companyId,

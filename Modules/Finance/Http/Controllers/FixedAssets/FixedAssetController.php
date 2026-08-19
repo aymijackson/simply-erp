@@ -14,7 +14,7 @@ class FixedAssetController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_assets.view'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $categories = FixedAssetCategory::where('company_id',$companyId)->whereNull('deleted_at')->orderBy('name')->get();
 
@@ -31,7 +31,7 @@ class FixedAssetController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_assets.view'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $rows = FixedAsset::with('category:id,name')
             ->where('company_id',$companyId)
@@ -59,7 +59,7 @@ class FixedAssetController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_assets.view'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $asset = FixedAsset::where('company_id',$companyId)->where('id',$id)->firstOrFail();
         return response()->json(['ok'=>true,'data'=>$asset]);
@@ -69,7 +69,7 @@ class FixedAssetController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_assets.create'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $data = $request->validate([
             'category_id' => 'required|integer',
@@ -122,7 +122,7 @@ class FixedAssetController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_assets.update'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $asset = FixedAsset::where('company_id',$companyId)->where('id',$id)->firstOrFail();
         if ($asset->status !== 'draft') {
@@ -175,7 +175,7 @@ class FixedAssetController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_assets.delete'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $asset = FixedAsset::where('company_id',$companyId)->where('id',$id)->firstOrFail();
         if ($asset->status !== 'draft') {
@@ -190,7 +190,7 @@ class FixedAssetController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_assets.activate'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $asset = FixedAsset::with('category')->where('company_id',$companyId)->where('id',$id)->firstOrFail();
         if ($asset->status !== 'draft') {
@@ -217,7 +217,7 @@ class FixedAssetController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_assets.view'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $asset = FixedAsset::with('category')->where('company_id',$companyId)->where('id',$id)->firstOrFail();
 

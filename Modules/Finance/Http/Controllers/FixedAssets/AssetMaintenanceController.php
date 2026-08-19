@@ -15,7 +15,7 @@ class AssetMaintenanceController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_maintenance.view'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $accounts = DB::table('finance_accounts')
             ->where('company_id',$companyId)
@@ -30,7 +30,7 @@ class AssetMaintenanceController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_maintenance.view'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $rows = FixedAssetMaintenance::where('company_id',$companyId)
             ->whereNull('deleted_at')
@@ -44,7 +44,7 @@ class AssetMaintenanceController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_maintenance.create'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $data = $request->validate([
             'asset_id' => 'required|integer',
@@ -83,7 +83,7 @@ class AssetMaintenanceController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_maintenance.post'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $row = FixedAssetMaintenance::where('company_id',$companyId)->where('id',$id)->firstOrFail();
         if ($row->status !== 'draft') return response()->json(['ok'=>false,'message'=>'Only Draft items can be posted.'], 422);
@@ -137,7 +137,7 @@ class AssetMaintenanceController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_maintenance.void'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
         $data = $request->validate(['reason'=>'required|string|max:255']);
 
         $row = FixedAssetMaintenance::where('company_id',$companyId)->where('id',$id)->firstOrFail();

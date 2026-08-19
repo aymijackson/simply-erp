@@ -13,7 +13,7 @@ class FixedAssetCategoryController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_categories.view'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $accounts = DB::table('finance_accounts')
             ->where('company_id',$companyId)
@@ -28,7 +28,7 @@ class FixedAssetCategoryController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_categories.view'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $rows = FixedAssetCategory::where('company_id',$companyId)
             ->whereNull('deleted_at')
@@ -42,7 +42,7 @@ class FixedAssetCategoryController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_categories.view'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $row = FixedAssetCategory::where('company_id',$companyId)->where('id',$id)->firstOrFail();
         return response()->json(['ok'=>true,'data'=>$row]);
@@ -69,7 +69,7 @@ class FixedAssetCategoryController extends Controller
             'is_active' => 'nullable|boolean',
         ]);
 
-        $data['company_id'] = $request->user()->company_id;
+        $data['company_id'] = $request->user()->company_id ?? 1;
         $data['default_salvage_value'] = $data['default_salvage_value'] ?? 0;
         $data['is_active'] = isset($data['is_active']) ? (int)$data['is_active'] : 1;
 
@@ -82,7 +82,7 @@ class FixedAssetCategoryController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_categories.update'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $row = FixedAssetCategory::where('company_id',$companyId)->where('id',$id)->firstOrFail();
 
@@ -115,7 +115,7 @@ class FixedAssetCategoryController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_categories.delete'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $row = FixedAssetCategory::where('company_id',$companyId)->where('id',$id)->firstOrFail();
         $row->delete();

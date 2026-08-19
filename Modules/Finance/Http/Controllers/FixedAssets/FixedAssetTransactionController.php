@@ -15,7 +15,7 @@ class FixedAssetTransactionController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_transactions.view'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $asset = FixedAsset::where('company_id',$companyId)->where('id',$assetId)->firstOrFail();
 
@@ -32,7 +32,7 @@ class FixedAssetTransactionController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_transactions.create'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $asset = FixedAsset::with('category')->where('company_id',$companyId)->where('id',$assetId)->firstOrFail();
 
@@ -88,7 +88,7 @@ class FixedAssetTransactionController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_transactions.post'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $txn = FixedAssetTransaction::where('company_id',$companyId)->where('id',$txnId)->firstOrFail();
         if ($txn->status !== 'draft') {
@@ -139,7 +139,7 @@ class FixedAssetTransactionController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_transactions.void'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $data = $request->validate([
             'reason' => 'required|string|max:255',

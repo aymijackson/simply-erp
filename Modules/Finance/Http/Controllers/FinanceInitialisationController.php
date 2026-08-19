@@ -17,7 +17,7 @@ class FinanceInitialisationController extends Controller
 
     public function preview(Request $request,FinanceInitialisationService $svc)
     {
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         return response()->json([
             'ok'=>true,
@@ -36,7 +36,7 @@ class FinanceInitialisationController extends Controller
             ],422);
         }
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $result = $svc->run(
             companyId:$companyId,

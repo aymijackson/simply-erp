@@ -17,7 +17,7 @@ class DepreciationController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_depreciation.view'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $runs = FixedAssetDeprRun::where('company_id',$companyId)->whereNull('deleted_at')->orderByDesc('id')->limit(80)->get();
 
@@ -34,7 +34,7 @@ class DepreciationController extends Controller
             'run_date' => 'required|date',
         ]);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $assets = FixedAsset::where('company_id',$companyId)->whereNull('deleted_at')->where('status','active')->get();
 
@@ -68,7 +68,7 @@ class DepreciationController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $exists = FixedAssetDeprRun::where('company_id',$companyId)
             ->where('period_start',$data['period_start'])
@@ -119,7 +119,7 @@ class DepreciationController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_depreciation.post'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $run = FixedAssetDeprRun::where('company_id',$companyId)->where('id',$runId)->firstOrFail();
         if ($run->status !== 'draft') return response()->json(['ok'=>false,'message'=>'Only Draft runs can be posted.'], 422);
@@ -191,7 +191,7 @@ class DepreciationController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_depreciation.void'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $data = $request->validate(['reason'=>'required|string|max:255']);
 

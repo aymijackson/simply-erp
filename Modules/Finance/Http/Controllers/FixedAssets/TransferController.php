@@ -19,7 +19,7 @@ class TransferController extends Controller
     public function datatable(Request $request)
     {
         abort_unless($request->user()->can('finance.fixed_asset_transfers.view'), 403);
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $rows = Transfer::where('company_id',$companyId)->whereNull('deleted_at')->orderByDesc('id')->get();
         return response()->json(['data'=>$rows]);
@@ -29,7 +29,7 @@ class TransferController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_transfers.create'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $data = $request->validate([
             'asset_id' => 'required|integer',
@@ -65,7 +65,7 @@ class TransferController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_transfers.post'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
         $row = Transfer::where('company_id',$companyId)->where('id',$id)->firstOrFail();
 
         if ($row->status !== 'draft') return response()->json(['ok'=>false,'message'=>'Only Draft transfers can be posted.'], 422);
@@ -91,7 +91,7 @@ class TransferController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_transfers.void'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
         $data = $request->validate(['reason'=>'required|string|max:255']);
 
         $row = Transfer::where('company_id',$companyId)->where('id',$id)->firstOrFail();

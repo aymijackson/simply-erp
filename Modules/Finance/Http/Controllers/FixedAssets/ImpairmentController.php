@@ -23,7 +23,7 @@ class ImpairmentController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_impairments.view'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
         $accounts = DB::table('finance_accounts')
             ->where('company_id',$companyId)
             ->whereNull('deleted_at')
@@ -37,7 +37,7 @@ class ImpairmentController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_impairments.view'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $rows = Impairment::where('company_id',$companyId)
             ->whereNull('deleted_at')
@@ -51,7 +51,7 @@ class ImpairmentController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_impairments.create'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $data = $request->validate([
             'asset_id' => 'required|integer',
@@ -85,7 +85,7 @@ class ImpairmentController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_impairments.post'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $row = Impairment::where('company_id',$companyId)->where('id',$id)->firstOrFail();
         if ($row->status !== 'draft') {
@@ -120,7 +120,7 @@ class ImpairmentController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_impairments.void'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
         $data = $request->validate(['reason'=>'required|string|max:255']);
 
         $row = Impairment::where('company_id',$companyId)->where('id',$id)->firstOrFail();

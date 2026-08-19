@@ -19,7 +19,7 @@ class FinanceHealthCheckController extends Controller
     {
         abort_unless($request->user()->can('finance.health_check.view'), 403);
 
-        $companyId = (int) $request->user()->company_id;
+        $companyId = (int) ($request->user()->company_id ?? 1);
 
         $result = $svc->run($companyId, (int) $request->user()->id);
 

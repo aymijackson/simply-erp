@@ -19,7 +19,7 @@ class FAReportsController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_reports.view'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $assets = FixedAsset::with('category')
             ->where('company_id',$companyId)
@@ -56,7 +56,7 @@ class FAReportsController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_reports.view'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $runs = DB::table('finance_fixed_asset_depr_runs')
             ->where('company_id',$companyId)
@@ -80,7 +80,7 @@ class FAReportsController extends Controller
     public function movements(Request $request)
     {
         abort_unless($request->user()->can('finance.fixed_asset_reports.view'), 403);
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $txns = DB::table('finance_fixed_asset_transactions')
             ->where('company_id',$companyId)
@@ -112,7 +112,7 @@ class FAReportsController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_reports.view'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $assets = FixedAsset::where('company_id',$companyId)
             ->whereNull('deleted_at')

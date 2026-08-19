@@ -16,7 +16,7 @@ class RevaluationController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_revaluations.view'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
         $accounts = DB::table('finance_accounts')->where('company_id',$companyId)->whereNull('deleted_at')->orderBy('name')->get(['id','code','name']);
 
         return view('finance.fixed_assets.revaluations', compact('accounts'));
@@ -25,7 +25,7 @@ class RevaluationController extends Controller
     public function datatable(Request $request)
     {
         abort_unless($request->user()->can('finance.fixed_asset_revaluations.view'), 403);
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $rows = Revaluation::where('company_id',$companyId)->whereNull('deleted_at')->orderByDesc('id')->get();
         return response()->json(['data'=>$rows]);
@@ -35,7 +35,7 @@ class RevaluationController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_revaluations.create'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $data = $request->validate([
             'asset_id' => 'required|integer',
@@ -75,7 +75,7 @@ class RevaluationController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_revaluations.post'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
         $row = Revaluation::where('company_id',$companyId)->where('id',$id)->firstOrFail();
 
         if ($row->status !== 'draft') return response()->json(['ok'=>false,'message'=>'Only Draft revaluations can be posted.'], 422);
@@ -107,7 +107,7 @@ class RevaluationController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_revaluations.void'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
         $data = $request->validate(['reason'=>'required|string|max:255']);
 
         $row = Revaluation::where('company_id',$companyId)->where('id',$id)->firstOrFail();

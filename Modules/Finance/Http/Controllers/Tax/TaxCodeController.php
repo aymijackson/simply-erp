@@ -13,7 +13,7 @@ class TaxCodeController extends Controller
     {
         abort_unless($request->user()->can('finance.tax.codes.view'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $rates = TaxRate::where('company_id', $companyId)
             ->whereNull('deleted_at')
@@ -28,7 +28,7 @@ class TaxCodeController extends Controller
     {
         abort_unless($request->user()->can('finance.tax.codes.view'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $rows = TaxCode::with('rate:id,name,code,rate')
             ->where('company_id', $companyId)
@@ -61,7 +61,7 @@ class TaxCodeController extends Controller
     {
         abort_unless($request->user()->can('finance.tax.codes.view'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $row = TaxCode::where('company_id', $companyId)
             ->where('id', $id)
@@ -74,7 +74,7 @@ class TaxCodeController extends Controller
     {
         abort_unless($request->user()->can('finance.tax.codes.create'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $data = $request->validate([
             'name' => 'required|string|max:120',
@@ -121,7 +121,7 @@ class TaxCodeController extends Controller
     {
         abort_unless($request->user()->can('finance.tax.codes.update'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $row = TaxCode::where('company_id', $companyId)
             ->where('id', $id)
@@ -172,7 +172,7 @@ class TaxCodeController extends Controller
     {
         abort_unless($request->user()->can('finance.tax.codes.delete'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $row = TaxCode::where('company_id', $companyId)
             ->where('id', $id)

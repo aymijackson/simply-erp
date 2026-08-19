@@ -21,7 +21,7 @@ class TaxRateController extends Controller
     {
         abort_unless($request->user()->can('finance.tax.rates.view'), 403);
     
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
     
         $query = TaxRate::where('company_id', $companyId)
             ->whereNull('deleted_at')
@@ -59,7 +59,7 @@ class TaxRateController extends Controller
     {
         abort_unless($request->user()->can('finance.tax.rates.view'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $row = TaxRate::where('company_id', $companyId)
             ->where('id', $id)
@@ -72,7 +72,7 @@ class TaxRateController extends Controller
     {
         abort_unless($request->user()->can('finance.tax.rates.create'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $data = $request->validate([
             'name' => 'required|string|max:120',
@@ -113,7 +113,7 @@ class TaxRateController extends Controller
     {
         abort_unless($request->user()->can('finance.tax.rates.update'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $row = TaxRate::where('company_id', $companyId)
             ->where('id', $id)
@@ -158,7 +158,7 @@ class TaxRateController extends Controller
     {
         abort_unless($request->user()->can('finance.tax.rates.delete'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $row = TaxRate::where('company_id', $companyId)
             ->where('id', $id)

@@ -21,7 +21,7 @@ class WriteoffController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_writeoffs.view'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $rows = Writeoff::where('company_id',$companyId)
             ->whereNull('deleted_at')
@@ -35,7 +35,7 @@ class WriteoffController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_writeoffs.create'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $data = $request->validate([
             'asset_id' => 'required|integer',
@@ -70,7 +70,7 @@ class WriteoffController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_writeoffs.post'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $row = Writeoff::where('company_id',$companyId)->where('id',$id)->firstOrFail();
         if ($row->status !== 'draft') {
@@ -108,7 +108,7 @@ class WriteoffController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_writeoffs.void'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
         $data = $request->validate(['reason'=>'required|string|max:255']);
 
         $row = Writeoff::where('company_id',$companyId)->where('id',$id)->firstOrFail();

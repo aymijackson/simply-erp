@@ -19,7 +19,7 @@ class AssetComponentController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_components.view'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $rows = FixedAssetComponent::where('company_id',$companyId)
             ->whereNull('deleted_at')
@@ -33,7 +33,7 @@ class AssetComponentController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_components.create'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $data = $request->validate([
             'parent_asset_id' => 'required|integer',
@@ -72,7 +72,7 @@ class AssetComponentController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_components.activate'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $row = FixedAssetComponent::where('company_id',$companyId)->where('id',$id)->firstOrFail();
         if ($row->status !== 'draft') return response()->json(['ok'=>false,'message'=>'Only Draft components can be activated.'], 422);
@@ -86,7 +86,7 @@ class AssetComponentController extends Controller
     {
         abort_unless($request->user()->can('finance.fixed_asset_components.retire'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $row = FixedAssetComponent::where('company_id',$companyId)->where('id',$id)->firstOrFail();
         if (!in_array($row->status, ['draft','active'])) return response()->json(['ok'=>false,'message'=>'Component cannot be retired.'], 422);

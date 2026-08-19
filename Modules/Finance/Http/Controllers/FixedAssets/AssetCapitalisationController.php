@@ -15,7 +15,7 @@ class AssetCapitalisationController extends Controller
     {
         abort_unless($request->user()->can('finance.asset_capitalisations.view'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $categories = FixedAssetCategory::where('company_id',$companyId)
             ->whereNull('deleted_at')
@@ -29,7 +29,7 @@ class AssetCapitalisationController extends Controller
     {
         abort_unless($request->user()->can('finance.asset_capitalisations.view'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $rows = AssetCapitalisation::where('company_id',$companyId)
             ->whereNull('deleted_at')
@@ -43,7 +43,7 @@ class AssetCapitalisationController extends Controller
     {
         abort_unless($request->user()->can('finance.asset_capitalisations.create'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $data = $request->validate([
             'source_module' => 'required|string|max:50',
@@ -95,7 +95,7 @@ class AssetCapitalisationController extends Controller
     {
         abort_unless($request->user()->can('finance.asset_capitalisations.convert'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
 
         $row = AssetCapitalisation::where('company_id',$companyId)->where('id',$id)->firstOrFail();
         if ($row->status !== 'pending') return response()->json(['ok'=>false,'message'=>'Only Pending items can be converted.'], 422);
@@ -150,7 +150,7 @@ class AssetCapitalisationController extends Controller
     {
         abort_unless($request->user()->can('finance.asset_capitalisations.void'), 403);
 
-        $companyId = $request->user()->company_id;
+        $companyId = $request->user()->company_id ?? 1;
         $data = $request->validate(['reason'=>'required|string|max:255']);
 
         $row = AssetCapitalisation::where('company_id',$companyId)->where('id',$id)->firstOrFail();

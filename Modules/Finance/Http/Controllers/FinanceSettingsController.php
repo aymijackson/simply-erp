@@ -124,6 +124,22 @@ class FinanceSettingsController extends Controller
                     ]
                 );
             }
+
+            // finance_company_settings is what YearEndCloseService and the posting
+            // services actually read at runtime - the generic settings table above
+            // is just the admin-facing form. Write the two fields they need through
+            // to it so this form is the real, working source of truth for them.
+            if ($this->tableExists('finance_company_settings')) {
+                DB::table('finance_company_settings')->updateOrInsert(
+                    ['company_id' => $companyId],
+                    [
+                        'retained_earnings_account_id' => $data['retained_earnings_account_id'],
+                        'income_summary_account_id' => $data['income_summary_account_id'],
+                        'updated_at' => now(),
+                        'created_at' => now(),
+                    ]
+                );
+            }
         });
 
         return response()->json(['message' => 'Finance settings saved successfully.']);

@@ -26,7 +26,7 @@ class BudgetController extends Controller
     {
         abort_unless(auth()->user()->can('finance.budgets.view'), 403);
     
-        $companyId = $request->user()->company_id ?? null;
+        $companyId = $request->user()->company_id ?? 1;
     
         $q = Budget::query()
             ->when($companyId, fn($x) => $x->where('company_id', $companyId))
@@ -41,7 +41,7 @@ class BudgetController extends Controller
         abort_unless(auth()->user()->can('finance.budgets.create'), 403);
 
         // You can swap this for your COA table/model. Using DB for compatibility.
-        $companyId = auth()->user()->company_id ?? null;
+        $companyId = auth()->user()->company_id ?? 1;
 
         $accounts = DB::table('finance_accounts')
             ->when($companyId, fn($x) => $x->where('company_id', $companyId))
@@ -55,7 +55,7 @@ class BudgetController extends Controller
     public function store(StoreBudgetRequest $request, BudgetService $svc)
     {
         $data = $request->validated();
-        $companyId = $request->user()->company_id ?? $request->input('company_id');
+        $companyId = $request->user()->company_id ?? $request->input('company_id') ?? 1;
 
         $budget = Budget::query()->create([
             'company_id' => $companyId,
@@ -119,7 +119,7 @@ class BudgetController extends Controller
         }
 
         // For “Add account” modal
-        $companyId = auth()->user()->company_id ?? null;
+        $companyId = auth()->user()->company_id ?? 1;
         $allAccounts = DB::table('finance_accounts')
             ->when($companyId, fn($x) => $x->where('company_id', $companyId))
             ->whereNull('deleted_at')
