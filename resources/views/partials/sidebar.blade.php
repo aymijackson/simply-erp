@@ -2,13 +2,8 @@
 {{-- SB Admin 2 Sidebar (Bootstrap 5) + Sidebar Search + Mobile Overlay + Finance Optimisation + Collapse-all on search clear --}}
 
 {{-- ===================== 1) STYLES ===================== --}}
+{{-- --sidebar-width / --sidebar-width-mobile / --sidebar-collapsed-width are defined once in theme.css --}}
 <style>
-  :root{
-    --sb-sidebar-width: 14rem;
-    --sb-sidebar-width-mobile: 16rem;
-    --sb-sidebar-collapsed-width: 6.5rem;
-  }
-
   .collapse-inner .collapse-item{
     display:flex;
     align-items:center;
@@ -50,7 +45,7 @@
       position:fixed !important;
       top:0;
       left:0;
-      width:var(--sb-sidebar-width-mobile) !important;
+      width:var(--sidebar-width-mobile) !important;
       transform:translateX(-105%);
       transition:transform .2s ease-in-out;
       z-index:1050;
@@ -67,12 +62,12 @@
       position:fixed !important;
       top:0;
       left:0;
-      width:var(--sb-sidebar-width) !important;
+      width:var(--sidebar-width) !important;
       z-index:1030;
     }
 
     body.sidebar-toggled .sidebar{
-      width:var(--sb-sidebar-collapsed-width) !important;
+      width:var(--sidebar-collapsed-width) !important;
       overflow-y:auto !important;
       overflow-x:hidden !important;
     }
@@ -113,9 +108,14 @@
 <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
   {{-- Brand --}}
-  <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('admin.dashboard.index') }}">
-    <div class="sidebar-brand-icon rotate-n-15"><i class="fas fa-laugh-wink"></i></div>
-    <div class="sidebar-brand-text mx-3">{{ env('APP_NAME','Simply-ERP') }}</div>
+  @php
+      $__appName = env('APP_NAME', 'Simply-ERP');
+      $__appInitials = strtoupper(collect(explode(' ', trim(str_replace(['-', '_'], ' ', $__appName))))
+          ->filter()->map(fn ($w) => mb_substr($w, 0, 1))->take(2)->implode(''));
+  @endphp
+  <a class="sidebar-brand d-flex align-items-center" href="{{ route('admin.dashboard.index') }}">
+    <div class="sidebar-brand-badge">{{ $__appInitials ?: 'E' }}</div>
+    <div class="sidebar-brand-text ms-2">{{ $__appName }}</div>
   </a>
 
   <hr class="sidebar-divider my-0">

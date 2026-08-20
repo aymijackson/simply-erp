@@ -1,5 +1,17 @@
 <!DOCTYPE html>
-<html lang="en">
+{{--
+    Theming attributes resolved server-side (no flash-of-wrong-theme):
+    per-user preference ?? company default ?? built-in default. The company
+    default resolution lands in Phase 2 of the design-system work; for now
+    these fall straight to the built-in defaults (system mode, indigo, dark
+    sidebar).
+--}}
+@php
+    $__themeMode = auth()->user()->theme_mode ?? null;
+    $__themeAccent = auth()->user()->theme_accent ?? 'indigo';
+    $__themeSidebar = auth()->user()->theme_sidebar ?? 'dark';
+@endphp
+<html lang="en" @if($__themeMode) data-mode="{{ $__themeMode }}" @endif data-accent="{{ $__themeAccent }}" data-sidebar="{{ $__themeSidebar }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -12,20 +24,18 @@
     <link rel="stylesheet" href="{{ asset('assets/css/sb-admin-2.min.css') }}">
 
     {{-- Bootstrap 5 + DataTables (BS5) --}}
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.datatables.net/v/bs5/dt-2.3.2/b-2.4.2/r-2.4.1/datatables.min.css"/>
 
     {{-- Select2 --}}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"/>
 
-    {{-- Custom layout fixes (Mobile sidebar support) --}}
-    
-    <style>
-        :root{
-            --sidebar-width: 14rem;
-            --sidebar-width-mobile: 16rem;
-        }
+    {{-- Design system (theming tokens + component overrides) --}}
+    <link rel="stylesheet" href="{{ asset('assets/css/theme.css') }}">
 
+    {{-- Custom layout fixes (Mobile sidebar support) --}}
+
+    <style>
         #wrapper{ min-height: 100vh; }
         
         /* Ensure topbar is ALWAYS above sidebar on mobile */
@@ -240,8 +250,8 @@
 <!-- Bootstrap 5 bundle -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- DataTables -->
-<script src="https://cdn.datatables.net/v/bs5/dt-1.13.8/b-2.4.2/b-html5-2.4.2/r-2.5.0/datatables.min.js"></script>
+<!-- DataTables (version-matched to the CSS bundle above) -->
+<script src="https://cdn.datatables.net/v/bs5/dt-2.3.2/b-2.4.2/b-html5-2.4.2/r-2.4.1/datatables.min.js"></script>
 
 <!-- Select2 -->
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -291,24 +301,22 @@
     });
   })();
 
-  // SweetAlert flash
+  // Flash messages as toasts (non-blocking)
   document.addEventListener('DOMContentLoaded', function () {
+    const toast = Swal.mixin({
+      toast: true,
+      position: 'top-end',
+      timer: 3000,
+      timerProgressBar: true,
+      showConfirmButton: false,
+    });
+
     @if(session('ok'))
-      Swal.fire({
-        icon: 'success',
-        title: 'Success',
-        text: @json(session('ok')),
-        timer: 2500,
-        showConfirmButton: false
-      });
+      toast.fire({ icon: 'success', title: @json(session('ok')) });
     @endif
 
     @if(session('error'))
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: @json(session('error'))
-      });
+      toast.fire({ icon: 'error', title: @json(session('error')), timer: 4500 });
     @endif
   });
 </script>
