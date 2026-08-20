@@ -305,6 +305,57 @@ nav.topbar {
   background: var(--brand-primary) !important;
 }
 
+/* Global search results dropdown */
+.global-search-results {
+  position: absolute;
+  top: calc(100% + .4rem);
+  left: 0;
+  right: 0;
+  max-height: 24rem;
+  overflow-y: auto;
+  background: var(--surface-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 1070;
+  padding: .5rem 0;
+}
+
+.global-search-results .gsr-group-label {
+  padding: .35rem 1rem .15rem;
+  font-size: var(--fs-small);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--text-muted);
+}
+
+.global-search-results .gsr-item {
+  display: block;
+  padding: .5rem 1rem;
+  color: var(--text-primary);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.global-search-results .gsr-item:hover,
+.global-search-results .gsr-item.gsr-active {
+  background-color: var(--brand-primary-soft);
+  color: var(--brand-primary);
+}
+
+.global-search-results .gsr-item .gsr-title { font-weight: 600; font-size: var(--fs-body); }
+.global-search-results .gsr-item .gsr-subtitle { font-size: var(--fs-small); color: var(--text-secondary); }
+.global-search-results .gsr-item:hover .gsr-subtitle,
+.global-search-results .gsr-item.gsr-active .gsr-subtitle { color: inherit; opacity: .8; }
+
+.global-search-results .gsr-empty,
+.global-search-results .gsr-loading {
+  padding: .75rem 1rem;
+  color: var(--text-muted);
+  font-size: var(--fs-small);
+}
+
 /* ============================== CARDS ============================== */
 
 .card {

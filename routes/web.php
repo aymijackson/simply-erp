@@ -204,7 +204,9 @@ Route::get('/documents/public-preview/{id}', [DocumentController::class, 'public
     
 // ERP Main Admin Panel
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
-    
+
+    Route::get('search', [\App\Http\Controllers\GlobalSearchController::class, 'search'])->name('search');
+
     Route::get('companies/search', [LocationController::class, 'getCompanies'])->name('companies.search');
     Route::get('countries/search', [LocationController::class, 'searchCountries'])->name('countries.search');
     Route::get('states/search', [LocationController::class, 'searchStates'])->name('states.search');

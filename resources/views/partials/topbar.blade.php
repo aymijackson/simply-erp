@@ -7,17 +7,20 @@
     </button>
 
     {{-- Topbar Search (Desktop) --}}
-    <form class="d-none d-sm-inline-block form-inline me-auto ms-md-3 my-2 my-md-0 mw-100 navbar-search">
+    <form class="d-none d-sm-inline-block form-inline me-auto ms-md-3 my-2 my-md-0 mw-100 navbar-search position-relative" onsubmit="return false;">
         <div class="input-group">
             <input type="text"
+                   id="globalSearchInput"
                    class="form-control bg-light border-0 small"
                    placeholder="Search..."
                    aria-label="Search"
+                   autocomplete="off"
                    aria-describedby="topbar-search">
             <button class="btn btn-primary" id="topbar-search" type="button">
                 <i class="fas fa-search fa-sm"></i>
             </button>
         </div>
+        <div id="globalSearchResults" class="global-search-results d-none"></div>
     </form>
 
     {{-- Topbar Navbar --}}
@@ -32,14 +35,15 @@
 
             <div class="dropdown-menu dropdown-menu-end p-3 shadow animated--grow-in"
                  aria-labelledby="searchDropdown" style="min-width: 18rem;">
-                <form class="form-inline w-100">
+                <form class="form-inline w-100 position-relative" onsubmit="return false;">
                     <div class="input-group">
-                        <input type="text" class="form-control bg-light border-0 small"
-                               placeholder="Search..." aria-label="Search">
+                        <input type="text" id="globalSearchInputMobile" class="form-control bg-light border-0 small"
+                               placeholder="Search..." aria-label="Search" autocomplete="off">
                         <button class="btn btn-primary" type="button">
                             <i class="fas fa-search fa-sm"></i>
                         </button>
                     </div>
+                    <div id="globalSearchResultsMobile" class="global-search-results d-none"></div>
                 </form>
             </div>
         </li>
@@ -185,3 +189,129 @@
     </ul>
 </nav>
 <!-- End of Topbar -->
+
+<script>
+(function () {
+    const SEARCH_URL = @json(route('admin.search'));
+
+    function wireUpSearch(inputId, resultsId) {
+        const input = document.getElementById(inputId);
+        const results = document.getElementById(resultsId);
+        if (!input || !results) return;
+
+        let debounceTimer = null;
+        let currentRequest = null;
+        let activeIndex = -1;
+
+        function hide() {
+            results.classList.add('d-none');
+            results.innerHTML = '';
+            activeIndex = -1;
+        }
+
+        function itemEls() {
+            return Array.from(results.querySelectorAll('.gsr-item'));
+        }
+
+        function setActive(idx) {
+            const items = itemEls();
+            items.forEach((el) => el.classList.remove('gsr-active'));
+            if (items[idx]) {
+                items[idx].classList.add('gsr-active');
+                items[idx].scrollIntoView({ block: 'nearest' });
+            }
+            activeIndex = idx;
+        }
+
+        function render(groups) {
+            if (!groups || groups.length === 0) {
+                results.innerHTML = '<div class="gsr-empty">No matches found.</div>';
+                results.classList.remove('d-none');
+                return;
+            }
+
+            let html = '';
+            groups.forEach((group) => {
+                html += '<div class="gsr-group-label">' + escapeHtml(group.label) + '</div>';
+                group.items.forEach((item) => {
+                    html += '<a class="gsr-item" href="' + escapeHtml(item.url) + '">'
+                        + '<div class="gsr-title">' + escapeHtml(item.title) + '</div>'
+                        + (item.subtitle ? '<div class="gsr-subtitle">' + escapeHtml(item.subtitle) + '</div>' : '')
+                        + '</a>';
+                });
+            });
+            results.innerHTML = html;
+            results.classList.remove('d-none');
+        }
+
+        function escapeHtml(s) {
+            return String(s ?? '').replace(/[&<>"']/g, (c) => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+            })[c]);
+        }
+
+        function runSearch(term) {
+            if (currentRequest) currentRequest.abort();
+
+            const controller = new AbortController();
+            currentRequest = controller;
+
+            results.innerHTML = '<div class="gsr-loading">Searching…</div>';
+            results.classList.remove('d-none');
+
+            fetch(SEARCH_URL + '?q=' + encodeURIComponent(term), {
+                headers: { 'Accept': 'application/json' },
+                signal: controller.signal,
+            })
+                .then((r) => r.json())
+                .then((data) => render(data.groups))
+                .catch((err) => {
+                    if (err.name !== 'AbortError') hide();
+                });
+        }
+
+        input.addEventListener('input', function () {
+            const term = input.value.trim();
+            clearTimeout(debounceTimer);
+
+            if (term.length < 2) {
+                hide();
+                return;
+            }
+
+            debounceTimer = setTimeout(() => runSearch(term), 250);
+        });
+
+        input.addEventListener('keydown', function (e) {
+            const items = itemEls();
+            if (!items.length) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setActive(Math.min(activeIndex + 1, items.length - 1));
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setActive(Math.max(activeIndex - 1, 0));
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (activeIndex >= 0 && items[activeIndex]) {
+                    window.location.href = items[activeIndex].getAttribute('href');
+                }
+            } else if (e.key === 'Escape') {
+                hide();
+            }
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!results.contains(e.target) && e.target !== input) {
+                hide();
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        wireUpSearch('globalSearchInput', 'globalSearchResults');
+        wireUpSearch('globalSearchInputMobile', 'globalSearchResultsMobile');
+    });
+})();
+</script>
