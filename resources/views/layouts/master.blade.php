@@ -250,8 +250,15 @@
 <!-- Bootstrap 5 bundle -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- DataTables (version-matched to the CSS bundle above) -->
-<script src="https://cdn.datatables.net/v/bs5/dt-2.3.2/b-2.4.2/b-html5-2.4.2/r-2.4.1/datatables.min.js"></script>
+<!--
+    DataTables JS. REVERTED to 1.13.8: bumping this to match the 2.3.2 CSS
+    bundle broke table/column layout across the live app (confirmed - horizontal
+    overflow, truncated columns, a misplaced sidebar submenu flyout). The
+    1.x JS / 2.x CSS mismatch is pre-existing (predates this session) and was
+    already the live, working state - restoring it rather than "fixing" it
+    without the ability to test DataTables' actual rendering in a real browser.
+-->
+<script src="https://cdn.datatables.net/v/bs5/dt-1.13.8/b-2.4.2/b-html5-2.4.2/r-2.5.0/datatables.min.js"></script>
 
 <!-- Select2 -->
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
