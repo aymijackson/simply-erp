@@ -36,6 +36,21 @@
     {{-- Custom layout fixes (Mobile sidebar support) --}}
 
     <style>
+        /*
+            Fallback for --sidebar-width and friends, also defined in theme.css.
+            If theme.css fails to load for any reason (deploy gap, CDN hiccup,
+            wrong path), #content-wrapper's margin-left/width calc() below
+            would otherwise resolve against an undefined custom property and
+            collapse the whole layout - this keeps core page structure usable
+            even in that failure case. Same value in both places, so it's a
+            harmless no-op when theme.css does load correctly.
+        */
+        :root{
+            --sidebar-width: 14rem;
+            --sidebar-width-mobile: 16rem;
+            --sidebar-collapsed-width: 6.5rem;
+        }
+
         #wrapper{ min-height: 100vh; }
         
         /* Ensure topbar is ALWAYS above sidebar on mobile */
