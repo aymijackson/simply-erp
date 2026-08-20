@@ -215,7 +215,7 @@ ul.navbar-nav.sidebar {
   display: flex;
   align-items: center;
   gap: .65rem;
-  color: var(--sidebar-text);
+  color: var(--sidebar-text) !important;
   border-left: 3px solid transparent;
   border-radius: var(--radius-sm);
   padding: .55rem .65rem;
@@ -225,13 +225,13 @@ ul.navbar-nav.sidebar {
 
 .sidebar .nav-item .nav-link:hover,
 .sidebar .nav-item .nav-link:focus {
-  color: var(--sidebar-text-active);
+  color: var(--sidebar-text-active) !important;
   background-color: var(--sidebar-item-hover);
 }
 
 .sidebar .nav-item .nav-link.active,
 .sidebar .nav-item .nav-link[aria-expanded="true"] {
-  color: var(--sidebar-text-active);
+  color: var(--sidebar-text-active) !important;
   background-color: var(--sidebar-item-active);
   border-left-color: var(--brand-primary);
 }
@@ -302,7 +302,7 @@ ul.navbar-nav.sidebar {
   display: flex;
   align-items: center;
   gap: .55rem;
-  color: var(--sidebar-text);
+  color: var(--sidebar-text) !important;
   border-radius: var(--radius-sm);
   padding: .45rem .6rem;
   margin: .05rem 0;
@@ -315,7 +315,7 @@ ul.navbar-nav.sidebar {
 
 .sidebar .collapse-inner .collapse-item:hover,
 .sidebar .collapse-inner .collapse-item.active {
-  color: var(--sidebar-text-active);
+  color: var(--sidebar-text-active) !important;
   background-color: var(--sidebar-item-hover);
 }
 
