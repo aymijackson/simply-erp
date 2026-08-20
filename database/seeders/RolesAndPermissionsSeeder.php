@@ -466,20 +466,29 @@ class RolesAndPermissionsSeeder extends Seeder
             'sales.pricing_rules.view',
     ];
 
+    /**
+     * The two full-access role names actually used in this app ("Administrator" and
+     * "Super Admin" - confirmed against the real database; earlier versions of this
+     * seeder targeted a role literally named "admin", which doesn't exist there, so it
+     * silently created an unused orphan role and every permission added since then
+     * (including all of production.*) never reached anyone real).
+     */
+    protected array $fullAccessRoles = ['Administrator', 'Super Admin'];
+
     public function run(): void
     {
         foreach ($this->permissions as $name) {
             Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
         }
 
-        $admin = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
-        $admin->syncPermissions($this->permissions);
+        foreach ($this->fullAccessRoles as $roleName) {
+            $role = Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
+            $role->syncPermissions($this->permissions);
+        }
 
-        $manager = Role::firstOrCreate(['name' => 'manager', 'guard_name' => 'web']);
-        $user = Role::firstOrCreate(['name' => 'user', 'guard_name' => 'web']);
-
-        // Manager/user start with no permissions beyond what already existed;
-        // grant specific permissions to them via the admin Users screen.
+        // Sales Manager / Inventory Manager / Regular User start with no permissions
+        // beyond what already existed; grant specific permissions to them via the
+        // Roles screen.
         // This seeder's job is to guarantee every permission the app checks
         // for actually exists, and that 'admin' is never locked out.
     }
