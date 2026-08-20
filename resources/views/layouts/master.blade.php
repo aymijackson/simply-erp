@@ -18,9 +18,6 @@
     {{-- Select2 --}}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"/>
 
-    {{-- Sidebar search --}}
-    <link rel="stylesheet" href="{{ asset('assets/css/sidebar-search.css') }}">
-    
     {{-- Custom layout fixes (Mobile sidebar support) --}}
     
     <style>
@@ -254,9 +251,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-
-<!-- Sidebar search -->
-<script src="{{ asset('assets/js/sidebar-search.js') }}"></script>
 
 <script>
   // ✅ Mobile sidebar toggle (Bootstrap 5 safe)
