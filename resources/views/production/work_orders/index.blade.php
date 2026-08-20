@@ -122,12 +122,10 @@
           </div>
           <div class="col-md-3">
             <label class="form-label">Status</label>
-            <select id="status" name="status" class="form-select form-control-sm">
-              <option value="pending" selected>Pending</option>
-              <option value="in_progress">In Progress</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
+            <select id="status" name="status" class="form-select form-control-sm" disabled>
+              <option value="draft" selected>Draft</option>
             </select>
+            <div class="form-text">New work orders always start as Draft. Use Release / Start / Complete / Close on the work order page to change status.</div>
           </div>
           <div class="col-md-6">
             <label class="form-label">Start (optional)</label>

@@ -2725,7 +2725,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
                          ->name('index');
 
                     Route::get('datatable', [RoutingStepController::class, 'datatable'])
-                         ->name('datatable');
+                         ->name('datatable_all');
 
                     Route::post('steps', [RoutingStepController::class, 'store'])
                          ->name('store');
@@ -2854,8 +2854,8 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
                Route::get('/create',        [\Modules\Production\Http\Controllers\WorkOrderController::class, 'create'])->name('create');
                Route::post('/',             [\Modules\Production\Http\Controllers\WorkOrderController::class, 'store'])->name('store');
                Route::get('/{wo}',          [\Modules\Production\Http\Controllers\WorkOrderController::class, 'show'])->name('show');
-               Route::put('/{line}',     [WorkOrderCostLineController::class,'update'])->name('update');
-                    Route::delete('/{line}',  [WorkOrderCostLineController::class,'destroy'])->name('destroy');
+               Route::put('/{wo}',          [\Modules\Production\Http\Controllers\WorkOrderController::class, 'update'])->name('update');
+               Route::delete('/{wo}',       [\Modules\Production\Http\Controllers\WorkOrderController::class, 'destroy'])->name('destroy');
 
                // Lifecycle
                Route::post('/{wo}/release',  [\Modules\Production\Http\Controllers\WorkOrderController::class, 'release'])->name('release');

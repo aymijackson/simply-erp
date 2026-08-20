@@ -103,7 +103,7 @@
 <script>
 /** --------- URLs / constants --------- **/
 const CSRF          = @json(csrf_token());
-const DT_URL        = @json(route('admin.production.routings.steps.datatable')); // GLOBAL datatable
+const DT_URL        = @json(route('admin.production.routings.steps.datatable_all')); // GLOBAL datatable
 const STORE_URL     = @json(route('admin.production.routings.steps.store'));     // POST
 const UPDATE_URL    = id => @json(route('admin.production.routings.steps.update', ['step' => '__ID__'])).replace('__ID__', id);
 const DEL_URL       = id => @json(route('admin.production.routings.steps.destroy', ['step' => '__ID__'])).replace('__ID__', id);

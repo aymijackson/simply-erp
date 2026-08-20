@@ -124,6 +124,7 @@ function openBomModal(data=null){
       const pOpt = new Option(data.product_name, data.product_variant_id, true, true);
       $('#product_variant_id').append(pOpt).trigger('change');
       $('#name').val(data.name);
+      $('#bom_code').val(data.bom_code);
       $('#description').val(data.description);
       data.items.forEach(i=>newLine(i));
    }else{              // -------- CREATE -------

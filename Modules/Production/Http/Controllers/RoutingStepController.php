@@ -11,11 +11,9 @@ use Yajra\DataTables\Facades\DataTables;
 
 class RoutingStepController extends Controller
 {
-    public function index(Routing $routing)
+    public function index()
     {
-        return view('production.routings.steps.index', [
-            'routing' => $routing,
-        ]);
+        return view('production.routings.steps.index');
     }
 
     public function datatable(Request $r)

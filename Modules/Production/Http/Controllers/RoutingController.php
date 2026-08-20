@@ -159,6 +159,11 @@ class RoutingController extends Controller
         return response()->json(['message'=>'Step created','id'=>$step->id]);
     }
     
+    public function edit(Routing $routing)
+    {
+        return response()->json($routing->load('product_variant.product'));
+    }
+
     public function update(Request $request, Routing $routing)
     {
         $data = $request->validate([

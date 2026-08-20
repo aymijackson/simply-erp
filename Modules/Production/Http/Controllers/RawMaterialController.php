@@ -54,6 +54,11 @@ class RawMaterialController extends Controller
         return response()->json(['message' => 'Raw material added']);
     }
 
+    public function edit(RawMaterial $raw_material)
+    {
+        return response()->json($raw_material);
+    }
+
     public function update(Request $request, RawMaterial $raw_material)
     {
         $data = $request->validate([

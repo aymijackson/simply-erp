@@ -135,33 +135,12 @@ class WorkOrderService
             $qtyOutput  = (float)$wo->quantity_to_produce;
             $unitCostFG = $qtyOutput > 0 ? ($totalCost / $qtyOutput) : 0.0;
 
-            // 4) Optional: Post production receipt (as a stock entry) if you keep FG inventory
-            // Adjust to your actual "stock_entries" API; here is a safe placeholder.
+            // NOTE: Work Orders have no target store/warehouse column, and stock_entries.entry_type
+            // has no "production receipt" value - there is currently no valid way to receive the
+            // finished goods into inventory here. Rather than guess a store or write to columns
+            // that don't exist (both of which previously made this a hard SQL failure on every
+            // Work Order completion), this step is skipped until that's designed. See WorkOrderService.
             $receiptId = null;
-            if (Schema::hasTable('stock_entries')) {
-                $receiptId = DB::table('stock_entries')->insertGetId([
-                    'entry_no'     => $this->nextEntryNumber(),
-                    'entry_type'   => 'production_receipt',
-                    'store_id'     => $wo->to_store_id ?? $wo->from_store_id ?? null,
-                    'entry_date'   => now(),
-                    'reference'    => 'WO#'.$wo->id,
-                    'status'       => 'posted',
-                    'created_at'   => now(),
-                    'updated_at'   => now(),
-                ]);
-
-                // one line for the FG
-                DB::table('stock_entry_lines')->insert([
-                    'stock_entry_id'     => $receiptId,
-                    'product_variant_id' => $wo->product_variant_id,
-                    'qty'                => $qtyOutput,
-                    'unit_cost'          => $unitCostFG,
-                    'created_at'         => now(),
-                    'updated_at'         => now(),
-                ]);
-
-                // You may also write StockTransaction IN here, if your Entry posting service doesn’t.
-            }
 
             // 5) Mark WO completed
             DB::table('work_orders')->where('id', $wo->id)->update([
@@ -189,12 +168,5 @@ class WorkOrderService
             'status'     => 'closed',
             'updated_at' => now(),
         ]);
-    }
-
-    private function nextEntryNumber(): string
-    {
-        // Simple monotonic stub; replace with your sequence generator if you have one.
-        $n = DB::table('stock_entries')->max('id') + 1;
-        return 'PR'.str_pad((string)$n, 6, '0', STR_PAD_LEFT);
     }
 }

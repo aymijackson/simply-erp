@@ -127,8 +127,9 @@ class WorkOrderController extends Controller
 
     public function create()
     {
-        // load select data if needed
-        return view('production.work_orders.create');
+        // Work orders are created via the "New Work Order" modal on the index page, not a
+        // dedicated form - there is no production.work_orders.create view.
+        return redirect()->route('admin.production.work-orders.index');
     }
 
     public function store(Request $r)
@@ -139,8 +140,8 @@ class WorkOrderController extends Controller
             'bom_header_id'      => ['required','integer','exists:bom_headers,id'],
             'routing_id'         => ['required','integer','exists:routings,id'],
             'quantity_to_produce'=> ['required','numeric','min:0.0001'],
-            'start_date' => ['date'],
-            'end_date' => ['date'],
+            'start_date' => ['nullable','date'],
+            'end_date' => ['nullable','date'],
         ]);
 
         $id = DB::table('work_orders')->insertGetId([
@@ -149,7 +150,7 @@ class WorkOrderController extends Controller
             'bom_header_id'       => $data['bom_header_id'],
             'routing_id'          => $data['routing_id'],
             'quantity_to_produce' => $data['quantity_to_produce'],
-            'status'              => isset($data['status']) ? $data['status'] : 'pending',
+            'status'              => 'draft',
             'start_date'              => isset($data['start_date']) ? $data['start_date'] : NULL,
             'end_date'              => isset($data['end_date']) ? $data['end_date'] : NULL,
             'created_at'          => now(),
@@ -158,6 +159,51 @@ class WorkOrderController extends Controller
 
         return redirect()->route('admin.production.work-orders.show', $id)
             ->with('success','Work Order created.');
+    }
+
+    public function update(Request $r, int $wo)
+    {
+        $row = DB::table('work_orders')->where('id', $wo)->firstOrFail();
+
+        $data = $r->validate([
+            'work_order_number'   => ['required','string','max:50'],
+            'product_variant_id' => ['required','integer','exists:product_variants,id'],
+            'bom_header_id'      => ['required','integer','exists:bom_headers,id'],
+            'routing_id'         => ['required','integer','exists:routings,id'],
+            'quantity_to_produce'=> ['required','numeric','min:0.0001'],
+            'start_date' => ['nullable','date'],
+            'end_date' => ['nullable','date'],
+        ]);
+
+        if ($row->status !== 'draft') {
+            return response()->json(['message' => 'Only draft Work Orders can be edited.'], 422);
+        }
+
+        DB::table('work_orders')->where('id', $wo)->update([
+            'work_order_number'  => $data['work_order_number'],
+            'product_variant_id'  => $data['product_variant_id'],
+            'bom_header_id'       => $data['bom_header_id'],
+            'routing_id'          => $data['routing_id'],
+            'quantity_to_produce' => $data['quantity_to_produce'],
+            'start_date'          => $data['start_date'] ?? null,
+            'end_date'            => $data['end_date'] ?? null,
+            'updated_at'          => now(),
+        ]);
+
+        return response()->json(['message' => 'Work Order updated.']);
+    }
+
+    public function destroy(int $wo)
+    {
+        $row = DB::table('work_orders')->where('id', $wo)->firstOrFail();
+
+        if ($row->status !== 'draft') {
+            return response()->json(['message' => 'Only draft Work Orders can be deleted.'], 422);
+        }
+
+        DB::table('work_orders')->where('id', $wo)->delete();
+
+        return response()->json(['message' => 'Work Order deleted.']);
     }
 
     public function show(int $wo)

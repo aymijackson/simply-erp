@@ -200,7 +200,7 @@ class BomController extends Controller
      /**
      * Display a single Bill-of-Materials (read-only).
      */
-    public function show(BomHeader $bom)
+    public function show(Request $request, BomHeader $bom)
     {
         /*
          | We eager-load everything the Blade needs:
@@ -213,9 +213,38 @@ class BomController extends Controller
             // 'createdBy', 'approvedBy'            // optional user relations
         ]);
 
+        if ($request->wantsJson()) {
+            // Consumed by the "Edit" modal on the BOM list (boms/partials/modal.blade.php).
+            return response()->json([
+                'id' => $bom->id,
+                'name' => $bom->name,
+                'bom_code' => $bom->bom_code,
+                'description' => $bom->description,
+                'product_variant_id' => $bom->product_variant_id,
+                'product_name' => trim(($bom->product_variant->sku ?? '').' – '.($bom->product_variant->product->product_name ?? '')),
+                'items' => $bom->items->map(fn ($i) => [
+                    'product_variant_id' => $i->product_variant_id,
+                    'qty_per_parent' => (float) $i->qty_per_parent,
+                    'sku' => $i->product_variant->sku ?? '',
+                ]),
+            ]);
+        }
+
         //$canEdit = auth()->user()->can('update', $bom) && $bom->status === 'draft';
         $canEdit = true;
         return view('production.boms.show', compact('bom','canEdit'));
+    }
+
+    public function destroy(BomHeader $bom)
+    {
+        $bom->delete();
+        return response()->json(['message' => 'BOM deleted']);
+    }
+
+    public function bulkDelete(Request $request)
+    {
+        BomHeader::whereIn('id', $request->ids ?? [])->delete();
+        return response()->json(['message' => 'Bulk delete done']);
     }
 
     public function update(Request $request, BomHeader $bom)

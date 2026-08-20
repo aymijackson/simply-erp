@@ -49,8 +49,34 @@ $(function(){
           $('#bomTbl tbody')
             .off('click','.edit-btn')
             .on('click','.edit-btn', e=>{
-               $.getJSON(`/admin/production/boms/${$(e.currentTarget).data('id')}`,
-                         openBomModal );
+               $.get(`/admin/production/boms/${$(e.currentTarget).data('id')}`,
+                     null, openBomModal, 'json');
+            });
+
+          $('#bomTbl tbody')
+            .off('click','.delete-btn')
+            .on('click','.delete-btn', e=>{
+               const id = $(e.currentTarget).data('id');
+               Swal.fire({
+                   title: 'Delete this BOM?',
+                   icon: 'warning',
+                   showCancelButton: true,
+                   confirmButtonText: 'Yes, delete it!'
+               }).then(result => {
+                   if (!result.isConfirmed) return;
+                   $.ajax({
+                       url: `/admin/production/boms/${id}`,
+                       type: 'DELETE',
+                       data: { _token: '{{ csrf_token() }}' },
+                       success: function (res) {
+                           tbl.ajax.reload(null, false);
+                           Swal.fire('Deleted!', res.message, 'success');
+                       },
+                       error: function (xhr) {
+                           Swal.fire('Error', xhr.responseJSON?.message || 'Delete failed', 'error');
+                       }
+                   });
+               });
             });
       }
   });
