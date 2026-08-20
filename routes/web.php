@@ -1320,7 +1320,10 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
             Route::get('{id}/lines', [SupplierBillsController::class,'lines'])->name('lines');
             Route::post('{id}/post', [SupplierBillsController::class,'post'])->name('post');
             Route::post('{id}/void', [SupplierBillsController::class,'void'])->name('void');
-            
+
+            Route::get('{bill}/view', [SupplierBillsController::class, 'showPage'])
+                ->name('show_page')->middleware('permission:finance.ap.view');
+
             Route::get('{bill}', [SupplierBillsController::class, 'show']);
             Route::get('{bill}/pdf', [SupplierBillsController::class, 'pdf']);
         
@@ -1388,22 +1391,27 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
         });
 
 
-        Route::prefix('supplier-payments')->middleware(['auth'])->group(function () {
+        Route::prefix('supplier-payments')->name('supplier_payments.')->middleware(['auth'])->group(function () {
               Route::get('/', [SupplierPaymentsController::class,'index']);
               Route::get('datatable', [SupplierPaymentsController::class,'datatable']);
               Route::get('{id}/allocations', [SupplierPaymentsController::class,'allocations']);
-            
+
               Route::post('supplier-payments', [SupplierPaymentsController::class,'store']);
               Route::put('{id}', [SupplierPaymentsController::class,'update']);
               Route::delete('{id}', [SupplierPaymentsController::class,'destroy']);
-            
+
               Route::post('{id}/post', [SupplierPaymentsController::class,'post']);
               Route::post('{id}/void', [SupplierPaymentsController::class,'void']);
-            
+
               // lookups
               Route::get('lookups/suppliers', [\Modules\Finance\Http\Controllers\FinanceLookupsController::class,'suppliers']);
               Route::get('lookups/ap-control-accounts', [\Modules\Finance\Http\Controllers\FinanceLookupsController::class,'apControlAccounts']);
               Route::get('lookups/open-supplier-bills', [\Modules\Finance\Http\Controllers\FinanceLookupsController::class,'openSupplierBills']);
+
+              // New, named real detail page (the rest of this group is pre-existing and
+              // intentionally left as-is - see finance_supplier_payments show page work).
+              Route::get('{id}', [SupplierPaymentsController::class, 'show'])
+                  ->name('show')->middleware('permission:finance.payments.view');
         });
         
         Route::prefix('reports/supplier-statements')->name('reports.supplier_statements.')->group(function () {

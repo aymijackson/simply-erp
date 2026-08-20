@@ -123,12 +123,10 @@ class GlobalSearchController extends Controller
                     ->where(fn ($q) => $q->where('bill_no', 'like', $like)->orWhere('reference', 'like', $like))
                     ->orderByDesc('id')->limit($perGroup)->get(['id', 'bill_no', 'status']);
                 if ($rows->isNotEmpty()) {
-                    // No dedicated show page for a supplier bill (its {bill} route returns
-                    // JSON for an in-page modal, not a navigable page) - link to the list.
                     $groups[] = ['label' => 'Supplier Bills', 'items' => $rows->map(fn ($r) => [
                         'title' => $r->bill_no ?: ('Bill #'.$r->id),
                         'subtitle' => ucfirst($r->status ?? ''),
-                        'url' => route('admin.finance.supplier_bills.index'),
+                        'url' => route('admin.finance.supplier_bills.show_page', $r->id),
                     ])->values()];
                 }
             } catch (\Throwable $e) {
@@ -142,11 +140,10 @@ class GlobalSearchController extends Controller
                     ->where(fn ($q) => $q->where('payment_no', 'like', $like)->orWhere('reference', 'like', $like))
                     ->orderByDesc('id')->limit($perGroup)->get(['id', 'payment_no', 'status']);
                 if ($rows->isNotEmpty()) {
-                    // Route is unnamed - link to the list page.
                     $groups[] = ['label' => 'Supplier Payments', 'items' => $rows->map(fn ($r) => [
                         'title' => $r->payment_no ?: ('Payment #'.$r->id),
                         'subtitle' => ucfirst($r->status ?? ''),
-                        'url' => url('/admin/finance/supplier-payments'),
+                        'url' => route('admin.finance.supplier_payments.show', $r->id),
                     ])->values()];
                 }
             } catch (\Throwable $e) {

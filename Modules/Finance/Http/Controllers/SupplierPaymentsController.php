@@ -107,6 +107,37 @@ class SupplierPaymentsController extends Controller
     ]);
   }
 
+  /** Real, navigable detail page - none existed for this entity before. */
+  public function show($paymentId){
+    $companyId = auth()->user()->company_id ?? 1;
+
+    $payment = DB::table('finance_supplier_payments as p')
+      ->leftJoin('suppliers as s','s.id','=','p.supplier_id')
+      ->leftJoin('finance_bank_accounts as b','b.id','=','p.bank_account_id')
+      ->leftJoin('finance_accounts as a','a.id','=','p.ap_control_account_id')
+      ->where('p.company_id',$companyId)
+      ->where('p.id',(int)$paymentId)
+      ->whereNull('p.deleted_at')
+      ->select([
+        'p.*',
+        's.name as supplier_name',
+        'b.name as bank_name',
+        'a.code as ap_code',
+        'a.name as ap_name',
+      ])
+      ->first();
+
+    abort_unless($payment, 404);
+
+    $allocations = DB::table('finance_supplier_payment_allocations as al')
+      ->join('finance_supplier_bills as bl','bl.id','=','al.supplier_bill_id')
+      ->where('al.supplier_payment_id',(int)$paymentId)
+      ->orderBy('al.id')
+      ->get(['al.id','al.supplier_bill_id','al.allocated_amount','bl.bill_no','bl.bill_date','bl.total_amount']);
+
+    return view('finance.supplier_payments.show', compact('payment', 'allocations'));
+  }
+
   public function allocations($paymentId){
     $companyId = auth()->user()->company_id ?? 1;
 

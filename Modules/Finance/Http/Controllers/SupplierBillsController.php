@@ -1163,10 +1163,47 @@ class SupplierBillsController extends Controller
         return trim(($acc->code ?? '') . ' - ' . ($acc->name ?? ''));
     }
     
+    /**
+     * Real, navigable detail page - unlike show() below, which is JSON consumed by the
+     * list page's "View" modal. Reuses the same query so both stay in sync.
+     */
+    public function showPage($billId)
+    {
+        $companyId = auth()->user()->company_id ?? 1;
+
+        $bill = DB::table('finance_supplier_bills as b')
+            ->leftJoin('suppliers as s', 's.id', '=', 'b.supplier_id')
+            ->leftJoin('finance_accounts as a', 'a.id', '=', 'b.payable_account_id')
+            ->where('b.company_id', $companyId)
+            ->where('b.id', (int) $billId)
+            ->whereNull('b.deleted_at')
+            ->select([
+                'b.*',
+                's.name as supplier_name',
+                'a.code as payable_code',
+                'a.name as payable_name',
+            ])
+            ->first();
+
+        abort_unless($bill, 404);
+
+        $lines = DB::table('finance_supplier_bill_lines as l')
+            ->leftJoin('finance_accounts as fa', 'fa.id', '=', 'l.gl_account_id')
+            ->where('l.bill_id', (int) $billId)
+            ->orderBy('l.id')
+            ->get([
+                'l.*',
+                'fa.code as gl_code',
+                'fa.name as gl_name',
+            ]);
+
+        return view('finance.supplier_bills.show', compact('bill', 'lines'));
+    }
+
     public function show($billId)
     {
         $companyId = auth()->user()->company_id ?? 1;
-    
+
         $bill = DB::table('finance_supplier_bills as b')
             ->leftJoin('suppliers as s', 's.id', '=', 'b.supplier_id')
             ->leftJoin('finance_accounts as a', 'a.id', '=', 'b.payable_account_id')
