@@ -342,6 +342,7 @@
         toggle.addEventListener('click', function () {
             var next = resolvedIsDark() ? 'light' : 'dark';
             document.documentElement.setAttribute('data-mode', next);
+            document.documentElement.setAttribute('data-bs-theme', next);
             setToggleIcon(toggle);
 
             fetch(@json(route('admin.profile.theme')), {

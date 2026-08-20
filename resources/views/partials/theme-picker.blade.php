@@ -94,8 +94,11 @@
                         if (field === 'theme_mode') {
                             if (value) {
                                 document.documentElement.setAttribute('data-mode', value);
+                                document.documentElement.setAttribute('data-bs-theme', value);
                             } else {
                                 document.documentElement.removeAttribute('data-mode');
+                                var systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                                document.documentElement.setAttribute('data-bs-theme', systemDark ? 'dark' : 'light');
                             }
                         } else if (field === 'theme_accent') {
                             document.documentElement.setAttribute('data-accent', value);

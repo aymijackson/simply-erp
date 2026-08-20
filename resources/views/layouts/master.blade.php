@@ -13,10 +13,28 @@
     $__themeAccent = auth()->user()->theme_accent ?? $__companyTheme?->theme_accent ?? 'indigo';
     $__themeSidebar = auth()->user()->theme_sidebar ?? $__companyTheme?->theme_sidebar ?? 'dark';
 @endphp
-<html lang="en" @if($__themeMode) data-mode="{{ $__themeMode }}" @endif data-accent="{{ $__themeAccent }}" data-sidebar="{{ $__themeSidebar }}">
+<html lang="en" @if($__themeMode) data-mode="{{ $__themeMode }}" data-bs-theme="{{ $__themeMode }}" @endif data-accent="{{ $__themeAccent }}" data-sidebar="{{ $__themeSidebar }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
+
+    @if(!$__themeMode)
+    <script>
+        /* Bootstrap 5's own dark-mode system (data-bs-theme) re-themes every
+           component's own color variables (cards, modals, dropdowns, forms,
+           tables) - far more complete than patching each one by hand. The
+           <html> tag above already sets it when theme_mode is explicitly
+           light/dark; this only covers the "system" case (theme_mode unset
+           at every layer), where only the browser knows the OS preference.
+           Runs synchronously, before first paint, to avoid a flash of the
+           wrong theme. */
+        (function () {
+            if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.setAttribute('data-bs-theme', 'dark');
+            }
+        })();
+    </script>
+    @endif
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ env('APP_NAME','Simply-ERP') }}</title>
 
