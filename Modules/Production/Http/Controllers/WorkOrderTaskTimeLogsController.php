@@ -13,9 +13,16 @@ use Carbon\Carbon;
 
 class WorkOrderTaskTimeLogsController extends Controller
 {
-    // List logs for a task
-    public function datatable(WorkorderTask $task)
+    private function companyId(Request $r): int
     {
+        return (int) ($r->user()->company_id ?? 1);
+    }
+
+    // List logs for a task
+    public function datatable(Request $r, WorkorderTask $task)
+    {
+        abort_unless($task->workOrder->company_id == $this->companyId($r), 404);
+
         $q = WorkOrderTaskTimeLog::with('employee')->where('work_order_task_id', $task->id)->orderByDesc('started_at');
 
         return DataTables::of($q)
@@ -64,6 +71,8 @@ class WorkOrderTaskTimeLogsController extends Controller
     // Create manual log (useful for adjustments/backfills)
     public function store(Request $r, WorkOrderTask $task)
 {
+    abort_unless($task->workOrder->company_id == $this->companyId($r), 404);
+
     $v = Validator::make($r->all(), [
         'employee_id' => ['required','exists:employees,id'],
         'started_at'  => ['required','string'],
@@ -132,6 +141,8 @@ class WorkOrderTaskTimeLogsController extends Controller
 
     public function update(Request $r, WorkOrderTaskTimeLog $log)
     {
+        abort_unless($log->task->workOrder->company_id == $this->companyId($r), 404);
+
         $data = $r->validate([
             'employee_id' => 'required|exists:employees,id',
             'started_at'  => 'required|date',
@@ -160,8 +171,10 @@ class WorkOrderTaskTimeLogsController extends Controller
         return response()->json(['success'=>true,'message'=>'Log updated']);
     }
 
-    public function destroy(WorkOrderTaskTimeLog $log)
+    public function destroy(Request $r, WorkOrderTaskTimeLog $log)
     {
+        abort_unless($log->task->workOrder->company_id == $this->companyId($r), 404);
+
         $task = $log->task;
         DB::transaction(function () use ($log, $task) {
             $log->delete();

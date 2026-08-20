@@ -19,6 +19,8 @@ class AccountMapping extends Model
         'sales_revenue_account_id',
         'cogs_account_id',
         'inventory_asset_account_id',
+        'wip_account_id',
+        'finished_goods_account_id',
         'retained_earnings_account_id',
         'sales_discount_account_id',
         'purchase_discount_account_id',
@@ -35,6 +37,8 @@ class AccountMapping extends Model
         'sales_revenue_account_id' => 'integer',
         'cogs_account_id' => 'integer',
         'inventory_asset_account_id' => 'integer',
+        'wip_account_id' => 'integer',
+        'finished_goods_account_id' => 'integer',
         'retained_earnings_account_id' => 'integer',
         'sales_discount_account_id' => 'integer',
         'purchase_discount_account_id' => 'integer',
@@ -78,6 +82,16 @@ class AccountMapping extends Model
     public function inventoryAssetAccount(): BelongsTo
     {
         return $this->belongsTo(FinanceAccount::class, 'inventory_asset_account_id', 'id');
+    }
+
+    public function wipAccount(): BelongsTo
+    {
+        return $this->belongsTo(FinanceAccount::class, 'wip_account_id', 'id');
+    }
+
+    public function finishedGoodsAccount(): BelongsTo
+    {
+        return $this->belongsTo(FinanceAccount::class, 'finished_goods_account_id', 'id');
     }
 
     public function retainedEarningsAccount(): BelongsTo

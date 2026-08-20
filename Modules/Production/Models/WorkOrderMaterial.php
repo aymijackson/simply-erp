@@ -12,6 +12,7 @@ class WorkOrderMaterial extends Model
         'work_order_id',
         'bom_item_id',
         'product_variant_id',
+        'unit_cost',
         'planned_qty',
         'issued_qty',
         'returned_qty',

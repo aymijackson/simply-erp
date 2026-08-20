@@ -12,6 +12,11 @@ use Illuminate\Support\Facades\DB;
 
 class RoutingController extends Controller
 {
+    private function companyId(Request $r): int
+    {
+        return (int) ($r->user()->company_id ?? 1);
+    }
+
     public function select2(Request $r)
     {
         $term    = trim((string) $r->get('q', ''));
@@ -21,6 +26,7 @@ class RoutingController extends Controller
             ->from('routings as r')
             ->leftJoin('product_variants as v', 'v.id', '=', 'r.product_variant_id')
             ->leftJoin('products as p', 'p.id', '=', 'v.product_id')
+            ->where('r.company_id', $this->companyId($r))
             ->when($exclude, fn ($q) => $q->where('r.id', '<>', $exclude))
             ->when($term !== '', function ($q) use ($term) {
                 $like = '%'.$term.'%';
@@ -47,14 +53,16 @@ class RoutingController extends Controller
 
         return response()->json($out);
     }
-    
-    public function index()
+
+    public function index(Request $request)
     {
         return view('production.routings.index');
     }
 
-    public function show(Routing $routing)
+    public function show(Request $request, Routing $routing)
     {
+        abort_unless($routing->company_id == $this->companyId($request), 404);
+
         return view('production.routings.show', [
             'routing' => $routing,
         ]);
@@ -62,7 +70,7 @@ class RoutingController extends Controller
 
     public function datatable(Request $r)
 {
-    $q = Routing::with('product_variant');
+    $q = Routing::with('product_variant')->where('company_id', $this->companyId($r));
 
     if ($r->filled('sku'))     $q->where('v.sku', 'like', '%'.$r->sku.'%');
     if ($r->filled('product')) $q->where('p.product_name', 'like', '%'.$r->product.'%');
@@ -97,9 +105,11 @@ class RoutingController extends Controller
         ->make(true);
     }
 
-    
+
     public function stepsDatatable(Request $r, Routing $routing)
     {
+        abort_unless($routing->company_id == $this->companyId($r), 404);
+
         $q = RoutingStep::query()
             ->where('routing_id', $routing->id)
             ->orderBy('sequence')
@@ -126,7 +136,7 @@ class RoutingController extends Controller
             ->rawColumns(['checkbox','actions'])
             ->make(true);
     }
-    
+
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -135,13 +145,17 @@ class RoutingController extends Controller
             'product_variant_id' => 'required|exists:product_variants,id',
         ]);
 
+        $data['company_id'] = $this->companyId($request);
+
         Routing::create($data);
         return response()->json(['message' => 'Routing added']);
     }
 
-    
+
     public function storeStep(Request $r, Routing $routing)
     {
+        abort_unless($routing->company_id == $this->companyId($r), 404);
+
         $data = $r->validate([
             'step_name'    => ['required','string','max:255'],
             'instructions' => ['nullable','string'],
@@ -158,14 +172,18 @@ class RoutingController extends Controller
 
         return response()->json(['message'=>'Step created','id'=>$step->id]);
     }
-    
-    public function edit(Routing $routing)
+
+    public function edit(Request $request, Routing $routing)
     {
+        abort_unless($routing->company_id == $this->companyId($request), 404);
+
         return response()->json($routing->load('product_variant.product'));
     }
 
     public function update(Request $request, Routing $routing)
     {
+        abort_unless($routing->company_id == $this->companyId($request), 404);
+
         $data = $request->validate([
             'name'        => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -175,15 +193,19 @@ class RoutingController extends Controller
         return response()->json(['message' => 'Routing updated']);
     }
 
-    public function destroy(Routing $routing)
+    public function destroy(Request $request, Routing $routing)
     {
+        abort_unless($routing->company_id == $this->companyId($request), 404);
+
         $routing->delete();
         return response()->json(['message' => 'Deleted']);
     }
 
     public function bulkDelete(Request $request)
     {
-        Routing::whereIn('id', $request->ids ?? [])->delete();
+        Routing::where('company_id', $this->companyId($request))
+            ->whereIn('id', $request->ids ?? [])
+            ->delete();
         return response()->json(['message' => 'Bulk delete done']);
     }
 }

@@ -6,11 +6,20 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
+use Modules\Production\Models\WorkOrder;
 
 class WorkOrderStepController extends Controller
 {
-    public function datatable(int $wo)
+    private function companyId(Request $r): int
     {
+        return (int) ($r->user()->company_id ?? 1);
+    }
+
+    public function datatable(Request $r, int $wo)
+    {
+        $workOrder = WorkOrder::findOrFail($wo);
+        abort_unless($workOrder->company_id == $this->companyId($r), 404);
+
         $q = DB::table('work_order_steps')
             ->where('work_order_id', $wo)
             ->orderBy('sequence');
@@ -35,9 +44,12 @@ class WorkOrderStepController extends Controller
             ->make(true);
     }
 
-    public function start(int $step)
+    public function start(Request $r, int $step)
     {
         $row = DB::table('work_order_steps')->where('id',$step)->firstOrFail();
+        $workOrder = WorkOrder::findOrFail($row->work_order_id);
+        abort_unless($workOrder->company_id == $this->companyId($r), 404);
+
         if ($row->status !== 'pending') abort(422,'Step must be pending.');
         DB::table('work_order_steps')->where('id',$step)->update([
             'status'    => 'in_progress',
@@ -47,9 +59,12 @@ class WorkOrderStepController extends Controller
         return response()->json(['message'=>'Step started.']);
     }
 
-    public function finish(int $step)
+    public function finish(Request $r, int $step)
     {
         $row = DB::table('work_order_steps')->where('id',$step)->firstOrFail();
+        $workOrder = WorkOrder::findOrFail($row->work_order_id);
+        abort_unless($workOrder->company_id == $this->companyId($r), 404);
+
         if ($row->status !== 'in_progress') abort(422,'Step must be in progress.');
         DB::table('work_order_steps')->where('id',$step)->update([
             'status'       => 'done',

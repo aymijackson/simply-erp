@@ -7,7 +7,7 @@ use \Modules\Inventory\Models\Product\Product;
 
 class BomHeader extends Model
 {
-    protected $fillable = ['product_variant_id','name', 'bom_code','description','yield_qty','status'];
+    protected $fillable = ['company_id','product_variant_id','name', 'bom_code','description','yield_qty','status'];
 
     public function product_variant()  
     { 

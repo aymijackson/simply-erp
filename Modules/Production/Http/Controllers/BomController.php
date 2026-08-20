@@ -14,13 +14,21 @@ use Modules\Inventory\Models\Product\Product;
 
 class BomController extends Controller
 {
+    private function companyId(Request $r): int
+    {
+        return (int) ($r->user()->company_id ?? 1);
+    }
+
     // BOM headers
     public function otherSelect2(BomHeader $bom, Request $r)
     {
+        abort_unless($bom->company_id == $this->companyId($r), 404);
+
         $term    = trim($r->q ?? '');
         $exclude = (array) ($bom->id ?? []); // supports one or many
-    
+
         return \Modules\Production\Models\BomHeader::query()
+            ->where('company_id', $bom->company_id)
             ->when($exclude, fn ($q) => $q->whereNotIn('id', $exclude))
             ->when($term !== '', function ($q) use ($term) {
                 $like = "%{$term}%";
@@ -40,17 +48,22 @@ class BomController extends Controller
 
     // BOM headers
     public function select2(Request $r)
-    { 
-        return BomHeader::where('name','like','%'.$r->q.'%')
-                ->orWhere('bom_code','like','%'.$r->q.'%')
+    {
+        return BomHeader::where('company_id', $this->companyId($r))
+                ->where(function($q) use ($r) {
+                    $q->where('name','like','%'.$r->q.'%')
+                      ->orWhere('bom_code','like','%'.$r->q.'%');
+                })
                 ->limit(20)
                 ->get()
                 ->map(fn($b)=> ['id'=>$b->id,'text'=>$b->name.' '. $b->bom_code]);
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $boms = BomHeader::with('product_variant')->paginate(20);
+        $boms = BomHeader::with('product_variant')
+            ->where('company_id', $this->companyId($request))
+            ->paginate(20);
         return view('production.boms.index',compact('boms'));
     }
 
@@ -61,6 +74,7 @@ class BomController extends Controller
      {
          // eager-load the product once, and count the lines
          $q = BomHeader::with('product_variant')          // finished-goods product
+                 ->where('company_id', $this->companyId($request))
                  ->withCount('items')       // items_count alias
                  ->select('bom_headers.*');
  
@@ -94,6 +108,8 @@ class BomController extends Controller
      */
     public function bom_items_datatable(Request $request, BomHeader $bom)
     {
+        abort_unless($bom->company_id == $this->companyId($request), 404);
+
         // Base + joins so we can sort/filter by SKU/Product and compute ext_cost in SQL
         $base = BomItem::query()
             ->from('bom_items')
@@ -188,6 +204,8 @@ class BomController extends Controller
             'items.*.qty_per_parent'       => 'required|numeric|min:0.0001',
         ]);
 
+        $data['company_id'] = $this->companyId($r);
+
         DB::transaction(function() use ($data){
             $items = $data['items']; unset($data['items']);
             $bom   = BomHeader::create($data);
@@ -202,6 +220,8 @@ class BomController extends Controller
      */
     public function show(Request $request, BomHeader $bom)
     {
+        abort_unless($bom->company_id == $this->companyId($request), 404);
+
         /*
          | We eager-load everything the Blade needs:
          |   • parent variant & its product
@@ -235,20 +255,26 @@ class BomController extends Controller
         return view('production.boms.show', compact('bom','canEdit'));
     }
 
-    public function destroy(BomHeader $bom)
+    public function destroy(Request $request, BomHeader $bom)
     {
+        abort_unless($bom->company_id == $this->companyId($request), 404);
+
         $bom->delete();
         return response()->json(['message' => 'BOM deleted']);
     }
 
     public function bulkDelete(Request $request)
     {
-        BomHeader::whereIn('id', $request->ids ?? [])->delete();
+        BomHeader::where('company_id', $this->companyId($request))
+            ->whereIn('id', $request->ids ?? [])
+            ->delete();
         return response()->json(['message' => 'Bulk delete done']);
     }
 
     public function update(Request $request, BomHeader $bom)
     {
+        abort_unless($bom->company_id == $this->companyId($request), 404);
+
         // we only add the unique rules when the incoming value differs
         $rules = [
             'description'               => 'nullable|string',

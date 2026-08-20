@@ -14,8 +14,15 @@ class WorkOrderController extends Controller
 {
     public function __construct(private WorkOrderService $svc) {}
 
-    public function routingStepsDatatable(WorkOrder $work_order)
+    private function companyId(Request $r): int
     {
+        return (int) ($r->user()->company_id ?? 1);
+    }
+
+    public function routingStepsDatatable(Request $request, WorkOrder $work_order)
+    {
+        abort_unless($work_order->company_id == $this->companyId($request), 404);
+
         // No routing → no steps
         if (empty($work_order->routing_id)) {
             return DataTables::of(collect())->make(true);
@@ -96,6 +103,7 @@ class WorkOrderController extends Controller
             ->leftJoin('products as p', 'p.id', '=', 'v.product_id')
             ->leftJoin('bom_headers as b', 'b.id', '=', 'w.bom_header_id')
             ->leftJoin('routings as rt', 'rt.id', '=', 'w.routing_id')
+            ->where('w.company_id', $this->companyId($r))
             ->selectRaw("
                 w.id, w.status, w.quantity_to_produce, w.start_date, w.end_date,
                 v.sku as variant_sku, COALESCE(p.product_name,'') as product_name,
@@ -145,6 +153,7 @@ class WorkOrderController extends Controller
         ]);
 
         $id = DB::table('work_orders')->insertGetId([
+            'company_id'          => $this->companyId($r),
             'work_order_number'  => $data['work_order_number'],
             'product_variant_id'  => $data['product_variant_id'],
             'bom_header_id'       => $data['bom_header_id'],
@@ -163,7 +172,7 @@ class WorkOrderController extends Controller
 
     public function update(Request $r, int $wo)
     {
-        $row = DB::table('work_orders')->where('id', $wo)->firstOrFail();
+        $row = DB::table('work_orders')->where('id', $wo)->where('company_id', $this->companyId($r))->firstOrFail();
 
         $data = $r->validate([
             'work_order_number'   => ['required','string','max:50'],
@@ -193,9 +202,9 @@ class WorkOrderController extends Controller
         return response()->json(['message' => 'Work Order updated.']);
     }
 
-    public function destroy(int $wo)
+    public function destroy(Request $r, int $wo)
     {
-        $row = DB::table('work_orders')->where('id', $wo)->firstOrFail();
+        $row = DB::table('work_orders')->where('id', $wo)->where('company_id', $this->companyId($r))->firstOrFail();
 
         if ($row->status !== 'draft') {
             return response()->json(['message' => 'Only draft Work Orders can be deleted.'], 422);
@@ -206,7 +215,7 @@ class WorkOrderController extends Controller
         return response()->json(['message' => 'Work Order deleted.']);
     }
 
-    public function show(int $wo)
+    public function show(Request $r, int $wo)
     {
         $woRow = DB::table('work_orders as w')
             ->leftJoin('product_variants as v', 'v.id', '=', 'w.product_variant_id')
@@ -214,6 +223,7 @@ class WorkOrderController extends Controller
             ->leftJoin('bom_headers as b', 'b.id', '=', 'w.bom_header_id')
             ->leftJoin('routings as rt', 'rt.id', '=', 'w.routing_id')
             ->where('w.id', $wo)
+            ->where('w.company_id', $this->companyId($r))
             ->selectRaw("
                w.*, v.sku as variant_sku, COALESCE(p.product_name,'') as product_name,
                b.bom_code, rt.name as routing_name
@@ -223,30 +233,30 @@ class WorkOrderController extends Controller
         return view('production.work_orders.show', ['wo' => $woRow]);
     }
 
-    public function release(int $wo)
+    public function release(Request $r, int $wo)
     {
-        $row = DB::table('work_orders')->where('id', $wo)->firstOrFail();
+        $row = DB::table('work_orders')->where('id', $wo)->where('company_id', $this->companyId($r))->firstOrFail();
         $this->svc->release($row);
         return response()->json(['message'=>'Work Order released.']);
     }
 
-    public function start(int $wo)
+    public function start(Request $r, int $wo)
     {
-        $row = DB::table('work_orders')->where('id', $wo)->firstOrFail();
+        $row = DB::table('work_orders')->where('id', $wo)->where('company_id', $this->companyId($r))->firstOrFail();
         $this->svc->start($row);
         return response()->json(['message'=>'Work Order started.']);
     }
 
-    public function complete(int $wo)
+    public function complete(Request $r, int $wo)
     {
-        $row = DB::table('work_orders')->where('id', $wo)->firstOrFail();
+        $row = DB::table('work_orders')->where('id', $wo)->where('company_id', $this->companyId($r))->firstOrFail();
         $res = $this->svc->complete($row);
         return response()->json(['message'=>'Work Order completed.', 'summary'=>$res]);
     }
 
-    public function close(int $wo)
+    public function close(Request $r, int $wo)
     {
-        $row = DB::table('work_orders')->where('id', $wo)->firstOrFail();
+        $row = DB::table('work_orders')->where('id', $wo)->where('company_id', $this->companyId($r))->firstOrFail();
         $this->svc->close($row);
         return response()->json(['message'=>'Work Order closed.']);
     }

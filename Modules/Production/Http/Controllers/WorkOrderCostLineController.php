@@ -11,8 +11,21 @@ use Modules\Inventory\Models\Product\Unit;
 
 class WorkOrderCostLineController
 {
-    public function datatable(int $wo)
+    private function companyId(Request $r): int
     {
+        return (int) ($r->user()->company_id ?? 1);
+    }
+
+    private function assertOwnsWorkOrder(Request $r, int $wo): void
+    {
+        $companyId = DB::table('work_orders')->where('id', $wo)->value('company_id');
+        abort_unless($companyId == $this->companyId($r), 404);
+    }
+
+    public function datatable(Request $r, int $wo)
+    {
+        $this->assertOwnsWorkOrder($r, $wo);
+
         $q = DB::table('work_order_cost_lines as c')
            ->join('work_order_cost_types as t','t.id','=','c.work_order_cost_type_id')
            ->leftJoin('units as u','u.id','=','c.unit_id')
@@ -42,6 +55,8 @@ class WorkOrderCostLineController
 
     public function store(int $wo, Request $r)
     {
+        $this->assertOwnsWorkOrder($r, $wo);
+
         $data = $r->validate([
             'work_order_cost_type_id' => ['required','integer','exists:work_order_cost_types,id'],
             'unit_id'                 => ['nullable','integer','exists:units,id'],
@@ -67,6 +82,10 @@ class WorkOrderCostLineController
 
     public function update(int $line, Request $r)
     {
+        $wo = DB::table('work_order_cost_lines')->where('id', $line)->value('work_order_id');
+        abort_unless($wo, 404);
+        $this->assertOwnsWorkOrder($r, $wo);
+
         $data = $r->validate([
             'work_order_cost_type_id' => ['required','integer','exists:work_order_cost_types,id'],
             'unit_id'                 => ['nullable','integer','exists:units,id'],
@@ -87,8 +106,12 @@ class WorkOrderCostLineController
         return response()->json(['message'=>'Cost updated.']);
     }
 
-    public function destroy(int $line)
+    public function destroy(int $line, Request $r)
     {
+        $wo = DB::table('work_order_cost_lines')->where('id', $line)->value('work_order_id');
+        abort_unless($wo, 404);
+        $this->assertOwnsWorkOrder($r, $wo);
+
         DB::table('work_order_cost_lines')->where('id',$line)->delete();
         return response()->json(['message'=>'Cost removed.']);
     }

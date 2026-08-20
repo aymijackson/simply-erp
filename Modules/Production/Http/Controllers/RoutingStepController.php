@@ -11,6 +11,11 @@ use Yajra\DataTables\Facades\DataTables;
 
 class RoutingStepController extends Controller
 {
+    private function companyId(Request $r): int
+    {
+        return (int) ($r->user()->company_id ?? 1);
+    }
+
     public function index()
     {
         return view('production.routings.steps.index');
@@ -19,6 +24,7 @@ class RoutingStepController extends Controller
     public function datatable(Request $r)
     {
         $q = RoutingStep::query()
+            ->whereHas('routing', fn ($rq) => $rq->where('company_id', $this->companyId($r)))
             ->orderBy('sequence')
             ->select(['id','routing_id','step_name','instructions','sequence','created_at']);
 
@@ -61,20 +67,24 @@ class RoutingStepController extends Controller
             'routing_id'     => ['nullable','integer','min:0'],
         ]);
 
+        if (!empty($data['routing_id'])) {
+            $routing = Routing::findOrFail($data['routing_id']);
+            abort_unless($routing->company_id == $this->companyId($r), 404);
+        }
+
         // default sequence to next
         if (!isset($data['sequence'])) {
             $data['sequence'] = (int) RoutingStep::where('routing_id',$data['routing_id'])->max('sequence') + 10;
         }
 
-        //$data['routing_id'] = $routing->id;
         $step = RoutingStep::create($data);
 
         return response()->json(['message'=>'Step created','id'=>$step->id]);
     }
 
-    public function update(Request $r, Routing $routing, RoutingStep $step)
+    public function update(Request $r, RoutingStep $step)
     {
-        abort_if($step->routing_id !== $routing->id, 404);
+        abort_unless($step->routing->company_id == $this->companyId($r), 404);
 
         $data = $r->validate([
             'step_name'    => ['required','string','max:255'],
@@ -87,22 +97,27 @@ class RoutingStepController extends Controller
         return response()->json(['message'=>'Step updated']);
     }
 
-    public function destroy(RoutingStep $step)
+    public function destroy(Request $r, RoutingStep $step)
     {
-        abort_if($step->id !== $step->id, 404);
+        abort_unless($step->routing->company_id == $this->companyId($r), 404);
+
         $step->delete();
 
         return response()->json(['message'=>'Step deleted']);
     }
 
     /** Optional bulk reorder: lines: [{id,sequence},...] */
-    public function reorder(Request $r, Routing $routing)
+    public function reorder(Request $r)
     {
         $data = $r->validate([
+            'routing_id' => ['required','integer','exists:routings,id'],
             'lines'   => ['required','array','min:1'],
             'lines.*.id'       => ['required','integer','exists:routing_steps,id'],
             'lines.*.sequence' => ['required','integer','min:0'],
         ]);
+
+        $routing = Routing::findOrFail($data['routing_id']);
+        abort_unless($routing->company_id == $this->companyId($r), 404);
 
         DB::transaction(function() use ($data, $routing){
             foreach ($data['lines'] as $ln) {

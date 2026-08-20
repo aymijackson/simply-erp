@@ -2635,8 +2635,8 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
 
      /** Production */
      Route::prefix('production')->name('production.')->group(function () {
-          
-          Route::prefix('boms')->name('boms.')->group(function () {
+
+          Route::prefix('boms')->name('boms.')->middleware('permission:production.boms.manage')->group(function () {
 
                Route::prefix('headers')->name('headers.')->group(function () {
                     Route::get('/select2', [BomController::class, 'select2'])->name('select2');
@@ -2703,7 +2703,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
                
           });
 
-          Route::prefix('raw-materials')->name('raw-materials.')->group(function () {
+          Route::prefix('raw-materials')->name('raw-materials.')->middleware('permission:production.raw_materials.manage')->group(function () {
 
                Route::get('/', [RawMaterialController::class, 'index'])->name('index');
                Route::post('/', [RawMaterialController::class, 'store'])->name('store');
@@ -2715,7 +2715,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
                
           });
 
-          Route::prefix('routings')->name('routings.')->group(function () {
+          Route::prefix('routings')->name('routings.')->middleware('permission:production.routings.manage')->group(function () {
 
                Route::get('select2', [RoutingController::class, 'select2'])
                ->name('select2');
@@ -2756,8 +2756,8 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
                
           });
 
-          Route::prefix('work-orders')->name('work-orders.')->group(function () {
-               
+          Route::prefix('work-orders')->name('work-orders.')->middleware('permission:production.work_orders.manage')->group(function () {
+
                Route::get('tasks/{work_order}/select2',  [WorkOrderTaskController::class, 'workOrderTasksSelect2'])
                ->name('tasks.select2');
                

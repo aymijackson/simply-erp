@@ -102,6 +102,14 @@
                       <td>{!! $fmt($mapping->inventory_asset_account_id ?? null) !!}</td>
                     </tr>
                     <tr>
+                      <td class="fw-bold">Work in Progress</td>
+                      <td>{!! $fmt($mapping->wip_account_id ?? null) !!}</td>
+                    </tr>
+                    <tr>
+                      <td class="fw-bold">Finished Goods</td>
+                      <td>{!! $fmt($mapping->finished_goods_account_id ?? null) !!}</td>
+                    </tr>
+                    <tr>
                       <td class="fw-bold">VAT Output</td>
                       <td>{!! $fmt($mapping->vat_output_account_id ?? null) !!}</td>
                     </tr>
@@ -256,6 +264,32 @@
                 @endforeach
               </select>
               <small class="text-muted">Used for stock value and inventory purchases.</small>
+            </div>
+
+            <div class="col-md-4 mb-3">
+              <label class="text-muted small">Work in Progress Account (Optional)</label>
+              <select class="form-control" name="wip_account_id" id="wip_account_id">
+                <option value="">-- none --</option>
+                @foreach($accounts as $a)
+                  <option value="{{ $a->id }}" @selected(($mapping->wip_account_id ?? null) == $a->id)>
+                    {{ $a->code }} - {{ $a->name }}
+                  </option>
+                @endforeach
+              </select>
+              <small class="text-muted">Used when Manufacturing issues raw materials to a Work Order: DR WIP, CR Inventory Asset.</small>
+            </div>
+
+            <div class="col-md-4 mb-3">
+              <label class="text-muted small">Finished Goods Account (Optional)</label>
+              <select class="form-control" name="finished_goods_account_id" id="finished_goods_account_id">
+                <option value="">-- none --</option>
+                @foreach($accounts as $a)
+                  <option value="{{ $a->id }}" @selected(($mapping->finished_goods_account_id ?? null) == $a->id)>
+                    {{ $a->code }} - {{ $a->name }}
+                  </option>
+                @endforeach
+              </select>
+              <small class="text-muted">Used when a Work Order completes: DR Finished Goods, CR WIP + applied costs.</small>
             </div>
 
             <div class="col-md-4 mb-3">

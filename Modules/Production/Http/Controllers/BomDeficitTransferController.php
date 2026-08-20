@@ -12,9 +12,16 @@ use Modules\Production\Services\BomDeficitService;
 
 class BomDeficitTransferController extends Controller
 {
+    private function companyId(Request $r): int
+    {
+        return (int) ($r->user()->company_id ?? 1);
+    }
+
     /** Select2 source: variants that exist on this BOM, each with (avail) */
     public function itemsSelect2(Request $r, BomHeader $bom)
     {
+        abort_unless($bom->company_id == $this->companyId($r), 404);
+
         $q = trim((string)$r->q);
 
         $items = BomItem::query()
@@ -45,6 +52,8 @@ class BomDeficitTransferController extends Controller
     /** GET {bom}/available?variant_id= */
     public function available(Request $r, BomHeader $bom)
     {
+        abort_unless($bom->company_id == $this->companyId($r), 404);
+
         $r->validate(['variant_id' => ['required','integer']]);
         $qty = $this->availableOnBom($bom->id, (int)$r->variant_id);
         return response()->json(['qty_available' => (float)$qty]);
@@ -53,6 +62,8 @@ class BomDeficitTransferController extends Controller
     /** POST {bom}/transfer */
     public function transfer(Request $r, BomHeader $bom)
     {
+        abort_unless($bom->company_id == $this->companyId($r), 404);
+
         // Accept JSON-string 'lines' from the UI
         if (is_string($r->input('lines'))) {
             $decoded = json_decode($r->input('lines'), true);
@@ -86,7 +97,10 @@ class BomDeficitTransferController extends Controller
         }
     
         $destId = (int) $data['dest_bom_id'];
-    
+
+        $destBom = BomHeader::findOrFail($destId);
+        abort_unless($destBom->company_id == $this->companyId($r), 404);
+
         // move qty + repay destination deficits in one transaction
         $groupRef = DB::transaction(function () use ($data, $bom, $destId) {
     

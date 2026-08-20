@@ -10,16 +10,21 @@ use Yajra\DataTables\Facades\DataTables;
 
 class RawMaterialController extends Controller
 {
-    public function index()
+    private function companyId(Request $r): int
+    {
+        return (int) ($r->user()->company_id ?? 1);
+    }
+
+    public function index(Request $request)
     {
         $units = Unit::all();  // Get all units for dropdown
         return view('production.raw_materials.index', compact('units'));  // Blade to build later
     }
 
     /** DataTables JSON */
-    public function datatable()
+    public function datatable(Request $request)
     {
-        return DataTables::of(RawMaterial::query())
+        return DataTables::of(RawMaterial::where('company_id', $this->companyId($request)))
             ->addColumn('checkbox', fn($rm) =>
                 '<input type="checkbox" class="row-checkbox" value="'.$rm->id.'">'
             )
@@ -50,17 +55,23 @@ class RawMaterialController extends Controller
             'description' => 'nullable|string',
         ]);
 
+        $data['company_id'] = $this->companyId($request);
+
         RawMaterial::create($data);
         return response()->json(['message' => 'Raw material added']);
     }
 
-    public function edit(RawMaterial $raw_material)
+    public function edit(Request $request, RawMaterial $raw_material)
     {
+        abort_unless($raw_material->company_id == $this->companyId($request), 404);
+
         return response()->json($raw_material);
     }
 
     public function update(Request $request, RawMaterial $raw_material)
     {
+        abort_unless($raw_material->company_id == $this->companyId($request), 404);
+
         $data = $request->validate([
             'name'        => 'required|string|max:255',
             'code'        => 'required|string|max:50|unique:production_raw_materials,code,' .$raw_material->id,
@@ -74,15 +85,19 @@ class RawMaterialController extends Controller
         return response()->json(['message' => 'Raw material updated']);
     }
 
-    public function destroy(RawMaterial $raw_material)
+    public function destroy(Request $request, RawMaterial $raw_material)
     {
+        abort_unless($raw_material->company_id == $this->companyId($request), 404);
+
         $raw_material->delete();
         return response()->json(['message' => 'Deleted']);
     }
 
     public function bulkDelete(Request $request)
     {
-        RawMaterial::whereIn('id', $request->ids ?? [])->delete();
+        RawMaterial::where('company_id', $this->companyId($request))
+            ->whereIn('id', $request->ids ?? [])
+            ->delete();
         return response()->json(['message' => 'Bulk delete done']);
     }
 }

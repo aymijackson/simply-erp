@@ -10,9 +10,16 @@ use Modules\Production\Models\{ WorkorderTask, WorkOrderTaskDependency };
 
 class WorkOrderTaskDependenciesController extends Controller
 {
-    // List dependencies for a task (for a small modal DT)
-    public function datatable(WorkorderTask $task)
+    private function companyId(Request $r): int
     {
+        return (int) ($r->user()->company_id ?? 1);
+    }
+
+    // List dependencies for a task (for a small modal DT)
+    public function datatable(Request $r, WorkorderTask $task)
+    {
+        abort_unless($task->workOrder->company_id == $this->companyId($r), 404);
+
         $q = WorkOrderTaskDependency::with(['dependsOn'])
             ->where('work_order_task_id', $task->id);
 
@@ -28,6 +35,8 @@ class WorkOrderTaskDependenciesController extends Controller
     // Create dependency (task depends on depends_on_task_id)
     public function store(Request $r, WorkorderTask $task)
     {
+        abort_unless($task->workOrder->company_id == $this->companyId($r), 404);
+
         $data = $r->validate([
             'depends_on_task_id' => 'required|different:task_id|exists:work_order_tasks,id',
         ]);
@@ -53,8 +62,10 @@ class WorkOrderTaskDependenciesController extends Controller
         return response()->json(['success'=>true,'message'=>'Dependency added']);
     }
 
-    public function destroy(WorkOrderTaskDependency $dependency)
+    public function destroy(Request $r, WorkOrderTaskDependency $dependency)
     {
+        abort_unless($dependency->task->workOrder->company_id == $this->companyId($r), 404);
+
         $dependency->delete();
         return response()->json(['success'=>true,'message'=>'Dependency removed']);
     }

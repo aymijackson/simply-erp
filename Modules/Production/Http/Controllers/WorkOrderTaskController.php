@@ -19,8 +19,15 @@ use Modules\HRM\Models\Employee;
 
 class WorkOrderTaskController extends Controller
 {
+    private function companyId(Request $r): int
+    {
+        return (int) ($r->user()->company_id ?? 1);
+    }
+
     public function workOrderTasksSelect2(WorkOrder $work_order, Request $r)
     {
+        abort_unless($work_order->company_id == $this->companyId($r), 404);
+
         $q      = (string) $r->input('q', '');
         $except = (array) $r->input('except', []); // optional: exclude current task
 
@@ -40,8 +47,11 @@ class WorkOrderTaskController extends Controller
     }
 
     /** DataTable: tasks for a work order */
-    public function datatable($workOrderId)
+    public function datatable(Request $r, $workOrderId)
     {
+        $workOrder = WorkOrder::findOrFail($workOrderId);
+        abort_unless($workOrder->company_id == $this->companyId($r), 404);
+
         $employeeId = optional(optional(auth()->user())->employee)->id ?? 3; // if you map users->employee
 
         $q = WorkOrderTask::with(['step', 'assignees', 'checklistItems'])
@@ -126,6 +136,9 @@ HTML;
     /** Create task under a work order */
     public function store(Request $r, $workOrderId)
     {
+        $workOrder = WorkOrder::findOrFail($workOrderId);
+        abort_unless($workOrder->company_id == $this->companyId($r), 404);
+
         $data = $r->validate([
             'title'             => 'required|string|max:255',
             'priority'          => 'nullable|in:low,normal,high,urgent',
@@ -177,6 +190,8 @@ HTML;
     /** Update a task */
     public function update(Request $r, WorkOrderTask $task)
     {
+        abort_unless($task->workOrder->company_id == $this->companyId($r), 404);
+
         $data = $r->validate([
             'title'             => 'required|string|max:255',
             'priority'          => 'nullable|in:low,normal,high,urgent',
@@ -225,8 +240,10 @@ HTML;
     }
 
     /** Delete a task */
-    public function destroy(WorkOrderTask $task)
+    public function destroy(Request $r, WorkOrderTask $task)
     {
+        abort_unless($task->workOrder->company_id == $this->companyId($r), 404);
+
         $task->delete();
         return response()->json(['success'=>true,'message'=>'Task deleted']);
     }
@@ -234,6 +251,8 @@ HTML;
     /** Start timer on a task for an employee */
     public function start(Request $r, WorkOrderTask $task)
     {
+        abort_unless($task->workOrder->company_id == $this->companyId($r), 404);
+
         $data = $r->validate(['employee_id' => 'required|exists:employees,id']);
 
         // Close any running timer for this employee on this task
@@ -261,6 +280,8 @@ HTML;
     /** Stop timer and recompute actual minutes */
     public function stop(Request $r, WorkOrderTask $task)
     {
+        abort_unless($task->workOrder->company_id == $this->companyId($r), 404);
+
         $data = $r->validate(['employee_id' => 'required|exists:employees,id']);
 
         $log = WorkOrderTaskTimeLog::where('work_order_task_id',$task->id)
@@ -284,8 +305,10 @@ HTML;
     }
 
     /** Complete task (requires all required checklist items checked) */
-    public function complete(WorkOrderTask $task)
+    public function complete(Request $r, WorkOrderTask $task)
     {
+        abort_unless($task->workOrder->company_id == $this->companyId($r), 404);
+
         $openRequired = $task->checklistItems()->where('is_required', true)->where('is_checked', false)->count();
         if ($openRequired > 0) {
             return response()->json(['success'=>false,'message'=>'Complete required checklist items first.'], 422);

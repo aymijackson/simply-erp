@@ -11,11 +11,18 @@ use Modules\Production\Models\BomItem;
 
 class WorkOrderMaterialController extends Controller
 {
+    private function companyId(Request $r): int
+    {
+        return (int) ($r->user()->company_id ?? 1);
+    }
+
     /**
      * Return JSON for DataTables.
      */
-    public function bomItemsDatatable(WorkOrder $work_order)
+    public function bomItemsDatatable(Request $request, WorkOrder $work_order)
     {
+        abort_unless($work_order->company_id == $this->companyId($request), 404);
+
         $bom_header_id = $work_order->bom_header_id;
         $query = BomItem::where(['bom_header_id' => $bom_header_id])->with(['bom', 'product_variant'])
             ->select('bom_items.*');
@@ -40,6 +47,9 @@ class WorkOrderMaterialController extends Controller
 
     public function datatable(int $wo, Request $r)
     {
+        $workOrder = WorkOrder::findOrFail($wo);
+        abort_unless($workOrder->company_id == $this->companyId($r), 404);
+
         $q = DB::table('work_order_materials as m')
             ->join('product_variants as v','v.id','=','m.product_variant_id')
             ->leftJoin('products as p','p.id','=','v.product_id')

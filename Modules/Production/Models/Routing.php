@@ -10,7 +10,7 @@ use Modules\Inventory\Models\Product\Product;
 class Routing extends Model
 {
     protected $fillable = [
-        'name', 'description', 'is_active', 'product_variant_id'
+        'company_id', 'name', 'description', 'is_active', 'product_variant_id'
     ];
 
     public function steps()

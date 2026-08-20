@@ -3,7 +3,7 @@
 namespace Modules\Production\Services;
 
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
+use Modules\Production\Services\WorkOrderPostingService;
 
 /**
  * Orchestrates WO lifecycle: release → start → complete → close.
@@ -101,52 +101,38 @@ class WorkOrderService
                 ->where('work_order_id', $wo->id)
                 ->sum(DB::raw('qty * rate'));
 
-            // 3) Compute material cost:
-            // Prefer stock_transactions linked to stock_issues that are linked to THIS WO if column exists.
-            $materialCost = 0.0;
-            $hasWOonIssues = Schema::hasColumn('stock_issues', 'work_order_id');
-
-            if ($hasWOonIssues) {
-                $materialCost = (float) DB::table('stock_transactions as t')
-                    ->join('stock_issues as si', function ($j) {
-                        $j->on('si.id', '=', 't.txable_id')
-                          ->where('t.txable_type', '=', \Modules\Inventory\Models\StockIssue::class);
-                    })
-                    ->where('si.work_order_id', $wo->id)
-                    ->where('t.tx_type', 'ISSUE')
-                    ->sum(DB::raw('t.qty * t.unit_cost'));
-            } else {
-                // Fallback: estimate by planned items * last unit_cost (or variant price)
-                $rows = DB::table('work_order_materials as m')
-                    ->join('product_variants as v', 'v.id', '=', 'm.product_variant_id')
-                    ->leftJoin('products as p', 'p.id', '=', 'v.product_id')
-                    ->where('m.work_order_id', $wo->id)
-                    ->select('m.product_variant_id', 'm.issued_qty', 'm.planned_qty', 'v.price')
-                    ->get();
-
-                foreach ($rows as $r) {
-                    $qty = $r->issued_qty ?: $r->planned_qty;
-                    $unit = (float) ($r->price ?? 0);
-                    $materialCost += ((float)$qty) * $unit;
-                }
-            }
+            // 3) Material cost: the running total actually posted to WIP as materials were
+            // issued (issued - returned, at the unit cost snapshotted on first issue). This is
+            // the same number WorkOrderPostingService::postMaterialIssue/Return debited/credited
+            // WIP with, so it's what has to be cleared out of WIP below - not a separate estimate.
+            $materialCost = (float) DB::table('work_order_materials')
+                ->where('work_order_id', $wo->id)
+                ->selectRaw('SUM((issued_qty - returned_qty) * COALESCE(unit_cost, 0)) as total')
+                ->value('total');
 
             $totalCost  = (float)$materialCost + (float)$extraCost;
             $qtyOutput  = (float)$wo->quantity_to_produce;
             $unitCostFG = $qtyOutput > 0 ? ($totalCost / $qtyOutput) : 0.0;
 
-            // NOTE: Work Orders have no target store/warehouse column, and stock_entries.entry_type
-            // has no "production receipt" value - there is currently no valid way to receive the
-            // finished goods into inventory here. Rather than guess a store or write to columns
-            // that don't exist (both of which previously made this a hard SQL failure on every
-            // Work Order completion), this step is skipped until that's designed. See WorkOrderService.
-            $receiptId = null;
+            $companyId = (int) ($wo->company_id ?? 1);
+
+            $journalEntryId = WorkOrderPostingService::postCompletion(
+                $companyId,
+                $wo->id,
+                $materialCost,
+                $extraCost,
+                'WO#'.$wo->id.' completion'
+            );
 
             // 5) Mark WO completed
             DB::table('work_orders')->where('id', $wo->id)->update([
-                'status'     => 'completed',
-                'end_date'   => now(),
-                'updated_at' => now(),
+                'status'       => 'completed',
+                'end_date'     => now(),
+                'material_cost'=> round($materialCost, 2),
+                'total_cost'   => round($totalCost, 2),
+                'costs_materials' => round($materialCost, 2),
+                'costs_total'  => round($totalCost, 2),
+                'updated_at'   => now(),
             ]);
 
             return [
@@ -154,7 +140,7 @@ class WorkOrderService
                 'extra_cost'    => round($extraCost, 2),
                 'total_cost'    => round($totalCost, 2),
                 'unit_cost'     => round($unitCostFG, 4),
-                'receipt_id'    => $receiptId,
+                'journal_entry_id' => $journalEntryId,
             ];
         });
     }

@@ -12,17 +12,22 @@ use Modules\Inventory\Models\Product\ProductVariant;
 
 class BomDeficitController extends Controller
 {
+    private function companyId(Request $r): int
+    {
+        return (int) ($r->user()->company_id ?? 1);
+    }
+
     /* =====================  PAGES  ===================== */
 
-    public function index()
+    public function index(Request $request)
     {
-        $boms = BomHeader::select('id','bom_code','name')->orderBy('name')->get();
+        $boms = BomHeader::where('company_id', $this->companyId($request))->select('id','bom_code','name')->orderBy('name')->get();
         return view('production.boms.deficits.index', compact('boms'));
     }
 
-    public function txnsIndex()
+    public function txnsIndex(Request $request)
     {
-        $boms = BomHeader::select('id','bom_code','name')->orderBy('name')->get();
+        $boms = BomHeader::where('company_id', $this->companyId($request))->select('id','bom_code','name')->orderBy('name')->get();
         return view('production.boms.deficits.transactions.index', compact('boms'));
     }
 
@@ -34,6 +39,7 @@ class BomDeficitController extends Controller
             ->join('bom_headers as b', 'b.id', '=', 'd.bom_id')
             ->join('product_variants as v', 'v.id', '=', 'd.product_variant_id')
             ->leftJoin('products as p', 'p.id', '=', 'v.product_id')
+            ->where('b.company_id', $this->companyId($r))
             ->when($r->filled('bom_id'), fn($qq)=>$qq->where('d.bom_id', $r->bom_id))
             ->selectRaw("
                 d.id, d.bom_id, d.product_variant_id,
@@ -78,6 +84,7 @@ class BomDeficitController extends Controller
     ->join('product_variants as v', 'v.id', '=', 't.product_variant_id')
     ->leftJoin('products as p', 'p.id', '=', 'v.product_id')
     ->leftJoin('bom_headers as sb', 'sb.id', '=', 't.source_bom_id') // ← add this
+    ->where('b.company_id', $this->companyId($r))
     ->selectRaw("
         t.id, t.bom_id, t.product_variant_id, t.direction, t.qty, t.unit_cost, t.source_bom_id,
         t.ref_type, t.ref_id, t.note, t.created_at,
@@ -129,6 +136,9 @@ class BomDeficitController extends Controller
             'unit_cost'             => ['nullable','numeric','min:0'],
             'note'                  => ['nullable','string','max:1000'],
         ]);
+
+        $bom = BomHeader::findOrFail($data['bom_id']);
+        abort_unless($bom->company_id == $this->companyId($r), 404);
 
         $bomId  = (int) $data['bom_id'];
         $varId  = (int) $data['product_variant_id'];
@@ -203,8 +213,11 @@ class BomDeficitController extends Controller
         });
     }
 
-    public function destroyTxn(BomDeficitTransaction $txn)
+    public function destroyTxn(Request $r, BomDeficitTransaction $txn)
     {
+        $bom = BomHeader::findOrFail($txn->bom_id);
+        abort_unless($bom->company_id == $this->companyId($r), 404);
+
         // Only allow deleting the last transaction for that (bom,variant)
         $lastId = BomDeficit::where('bom_id',$txn->bom_id)
                     ->where('product_variant_id',$txn->product_variant_id)

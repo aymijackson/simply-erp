@@ -11,6 +11,11 @@ use Modules\Product\Models\ProductVariant;
 
 class WorkOrderMaterialsController extends Controller
 {
+    private function companyId(Request $r): int
+    {
+        return (int) ($r->user()->company_id ?? 1);
+    }
+
     /**
      * Select2: BOM variants that still have remaining allocatable quantity
      * GET /admin/production/work-orders/{work_order}/materials/variants/available
@@ -22,6 +27,8 @@ class WorkOrderMaterialsController extends Controller
      */
     public function variantsAvailableSelect2(WorkOrder $work_order, Request $r)
 {
+    abort_unless($work_order->company_id == $this->companyId($r), 404);
+
     $tblBomItems  = 'bom_items';            // bom_header_id, product_variant_id, qty_per_parent
     $tblVariants  = 'product_variants';     // id, sku, product_id
     $tblProducts  = 'products';             // id, product_name
@@ -136,8 +143,11 @@ class WorkOrderMaterialsController extends Controller
 }
 
     
-    public function datatable($workOrderId)
+    public function datatable(Request $r, $workOrderId)
     {
+        $workOrder = WorkOrder::findOrFail($workOrderId);
+        abort_unless($workOrder->company_id == $this->companyId($r), 404);
+
         $q = WorkOrderMaterial::query()
             ->with(['product_variant.product'])
             ->where('work_order_id', $workOrderId);
@@ -171,7 +181,9 @@ class WorkOrderMaterialsController extends Controller
 
     // ---- CREATE ----
     public function store(Request $r, WorkOrder $workOrder)
-    { 
+    {
+        abort_unless($workOrder->company_id == $this->companyId($r), 404);
+
         $data = $r->validate([
             'product_variant_id' => ['required','exists:product_variants,id',
                 Rule::unique('work_order_materials', 'product_variant_id')->where(fn($q)=>$q->where('work_order_id',$workOrder->id))
@@ -195,6 +207,8 @@ class WorkOrderMaterialsController extends Controller
     // ---- UPDATE ----
     public function update(Request $r, WorkOrderMaterial $material)
     {
+        abort_unless($material->workOrder->company_id == $this->companyId($r), 404);
+
         $data = $r->validate([
             'product_variant_id' => ['required','exists:product_variants,id',
                 Rule::unique('work_order_materials', 'product_variant_id')
@@ -222,8 +236,10 @@ class WorkOrderMaterialsController extends Controller
     }
 
     // ---- DELETE ----
-    public function destroy(WorkOrderMaterial $material)
+    public function destroy(Request $r, WorkOrderMaterial $material)
     {
+        abort_unless($material->workOrder->company_id == $this->companyId($r), 404);
+
         if ($material->issued_qty > 0 || $material->returned_qty > 0) {
             return response()->json(['message'=>'Cannot delete a line with any issue/return activity.'], 422);
         }
@@ -234,6 +250,8 @@ class WorkOrderMaterialsController extends Controller
     // ---- Select2: variants for this WO ----
     public function variantsSelect2(WorkOrder $workOrder, Request $r)
     {
+        abort_unless($workOrder->company_id == $this->companyId($r), 404);
+
         $term = trim((string)$r->input('q',''));
 
         $q = ProductVariant::query()
