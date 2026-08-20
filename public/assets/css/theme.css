@@ -144,6 +144,47 @@ body {
   font-size: var(--fs-body);
 }
 
+p, label, .form-label {
+  color: var(--text-primary);
+}
+
+/* SB Admin 2 ships #wrapper/#content-wrapper with a hardcoded #f8f9fc
+   background (ID selector, higher specificity than a plain `body` rule),
+   and .text-gray-100..900 / .text-muted / .text-dark / .text-black* /
+   .bg-white / .bg-light as hardcoded !important colors meant for light
+   backgrounds - all used throughout hundreds of existing view files with
+   no dependency on this file's tokens, so mode/surface theming above never
+   reaches them on its own. Remapped here instead of auditing every view;
+   these reference the tokens above so they already flip correctly with
+   mode/accent - no need to duplicate this block per mode. */
+#wrapper, #content-wrapper {
+  background-color: var(--surface-page) !important;
+}
+
+.text-gray-100, .text-gray-200, .text-gray-300, .text-gray-400 {
+  color: var(--text-muted) !important;
+}
+
+.text-gray-500, .text-gray-600, .text-secondary {
+  color: var(--text-secondary) !important;
+}
+
+.text-gray-700, .text-gray-800, .text-gray-900, .text-dark, .text-black {
+  color: var(--text-primary) !important;
+}
+
+.text-muted, .text-black-50 {
+  color: var(--text-secondary) !important;
+}
+
+.bg-white {
+  background-color: var(--surface-card) !important;
+}
+
+.bg-light {
+  background-color: var(--surface-page) !important;
+}
+
 h1.h3, h1.h4 {
   font-size: var(--fs-page-title) !important;
   font-weight: var(--fw-page-title) !important;
