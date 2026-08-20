@@ -1107,6 +1107,11 @@
                     <i class="fas fa-percentage me-1"></i><span>Pricing Rules</span>
                 </a>
             @endcan
+            @can('sales.quotes.view')
+              <a class="collapse-item" href="{{ route('admin.sales.quotes.index') }}">
+                <i class="fas fa-file-invoice"></i><span>Sales Quotes</span>
+              </a>
+            @endcan
             @can('sales.orders.view')
               <a class="collapse-item" href="{{ route('admin.sales.orders.index') }}">
                 <i class="fas fa-file-signature"></i><span>Sales Orders</span>

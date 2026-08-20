@@ -181,6 +181,7 @@ use Modules\Sales\Http\Controllers\SalesDataFlushController;
 use Modules\Sales\Http\Controllers\SalesDeliveryController;
 use Modules\Sales\Http\Controllers\SalesInvoiceController;
 use Modules\Sales\Http\Controllers\SalesOrderController;
+use Modules\Sales\Http\Controllers\SalesQuoteController;
 use Modules\Sales\Http\Controllers\SalesPaymentController;
 
 use App\Http\Controllers\SupplierController;
@@ -1660,7 +1661,58 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
             Route::get('{order}/lines', [SalesOrderController::class, 'lines'])
                 ->name('lines')->middleware('permission:sales.orders.lines');
         });
-        
+
+        // Sales Quotes
+        Route::prefix('quotes')->name('quotes.')->group(function () {
+            Route::get('/', [SalesQuoteController::class, 'index'])
+                ->name('index')->middleware('permission:sales.quotes.view');
+
+            Route::get('create', [SalesQuoteController::class, 'create'])
+                ->name('create')->middleware('permission:sales.quotes.create');
+
+            Route::post('/', [SalesQuoteController::class, 'store'])
+                ->name('store')->middleware('permission:sales.quotes.create');
+
+            Route::get('datatable', [SalesQuoteController::class, 'datatable'])
+                ->name('datatable')->middleware('permission:sales.quotes.view');
+
+            Route::get('select2', [SalesQuoteController::class, 'select2'])
+                ->name('select2')->middleware('permission:sales.quotes.view');
+
+            Route::get('{quote}', [SalesQuoteController::class, 'show'])
+                ->name('show')->middleware('permission:sales.quotes.view');
+
+            Route::get('{quote}/edit', [SalesQuoteController::class, 'edit'])
+                ->name('edit')->middleware('permission:sales.quotes.edit');
+
+            Route::put('{quote}', [SalesQuoteController::class, 'update'])
+                ->name('update')->middleware('permission:sales.quotes.edit');
+
+            Route::delete('{quote}', [SalesQuoteController::class, 'destroy'])
+                ->name('destroy')->middleware('permission:sales.quotes.delete');
+
+            Route::post('{quote}/send', [SalesQuoteController::class, 'send'])
+                ->name('send')->middleware('permission:sales.quotes.send');
+
+            Route::post('{quote}/win', [SalesQuoteController::class, 'win'])
+                ->name('win')->middleware('permission:sales.quotes.win');
+
+            Route::post('{quote}/reject', [SalesQuoteController::class, 'reject'])
+                ->name('reject')->middleware('permission:sales.quotes.reject');
+
+            Route::post('{quote}/expire', [SalesQuoteController::class, 'expire'])
+                ->name('expire')->middleware('permission:sales.quotes.expire');
+
+            Route::post('{quote}/review', [SalesQuoteController::class, 'review'])
+                ->name('review')->middleware('permission:sales.quotes.review');
+
+            Route::post('{quote}/convert', [SalesQuoteController::class, 'convert'])
+                ->name('convert')->middleware('permission:sales.quotes.convert');
+
+            Route::get('{quote}/pdf', [SalesQuoteController::class, 'pdf'])
+                ->name('pdf')->middleware('permission:sales.quotes.view');
+        });
+
         Route::prefix('payments')->name('payments.')->group(function () {
 
             // Payments

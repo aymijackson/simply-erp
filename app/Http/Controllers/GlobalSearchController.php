@@ -16,9 +16,6 @@ class GlobalSearchController extends Controller
      * the destination route enforces its own access regardless) and
      * try/catch-guarded so one bad query can't blank the whole response.
      *
-     * No dedicated "Sales Quotes" entity exists in this app (only Procurement's
-     * supplier-side quotations, a different concept) - Sales search covers
-     * Orders and Invoices only.
      */
     public function search(Request $request)
     {
@@ -78,6 +75,24 @@ class GlobalSearchController extends Controller
                         'title' => $r->order_no ?: ('Order #'.$r->id),
                         'subtitle' => ucfirst($r->status ?? ''),
                         'url' => route('admin.sales.orders.show', $r->id),
+                    ])->values()];
+                }
+            } catch (\Throwable $e) {
+            }
+        }
+
+        if ($user->can('sales.quotes.view')) {
+            try {
+                $rows = DB::table('sales_quotes')
+                    ->where('company_id', $companyId)
+                    ->whereNull('deleted_at')
+                    ->where(fn ($q) => $q->where('quote_no', 'like', $like)->orWhere('reference', 'like', $like))
+                    ->orderByDesc('id')->limit($perGroup)->get(['id', 'quote_no', 'status']);
+                if ($rows->isNotEmpty()) {
+                    $groups[] = ['label' => 'Sales Quotes', 'items' => $rows->map(fn ($r) => [
+                        'title' => $r->quote_no ?: ('Quote #'.$r->id),
+                        'subtitle' => ucfirst($r->status ?? ''),
+                        'url' => route('admin.sales.quotes.show', $r->id),
                     ])->values()];
                 }
             } catch (\Throwable $e) {
