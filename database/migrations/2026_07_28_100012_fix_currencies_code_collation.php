@@ -17,7 +17,11 @@ return new class extends Migration
      * columns reference by FK. Which tables do that varies between environments (the
      * dev mirror doesn't have every FK the real server has), so rather than hardcode
      * one known constraint, every FK referencing an altered column is discovered from
-     * information_schema, dropped, and recreated with its original definition.
+     * information_schema, dropped, and recreated with its original definition - and
+     * the referencing (child) column is brought to the same collation too, since MySQL
+     * refuses to form a FK between columns whose collations no longer match, which is
+     * exactly what happens to every column referencing currencies.code once code itself
+     * changes collation but the child column doesn't.
      */
     private array $columns = [
         ['table' => 'currencies', 'column' => 'code', 'definition' => 'VARCHAR(3)'],
@@ -43,23 +47,13 @@ return new class extends Migration
         }
 
         foreach ($this->columns as $c) {
-            if (!Schema::hasTable($c['table']) || !Schema::hasColumn($c['table'], $c['column'])) {
-                continue;
-            }
+            $this->alterColumnCollation($c['table'], $c['column'], $c['definition']);
+        }
 
-            $collation = DB::selectOne("
-                SELECT COLLATION_NAME AS collation, IS_NULLABLE AS is_nullable
-                FROM information_schema.COLUMNS
-                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?
-            ", [$c['table'], $c['column']]);
-
-            if (!$collation || $collation->collation === 'utf8mb4_unicode_ci') {
-                continue;
-            }
-
-            $null = $collation->is_nullable === 'YES' ? 'NULL' : 'NOT NULL';
-
-            DB::statement("ALTER TABLE `{$c['table']}` MODIFY `{$c['column']}` {$c['definition']} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci {$null}");
+        // The child side of every FK we just dropped also has to match currencies.code's
+        // new collation, or MySQL refuses to recreate the constraint (errno 150).
+        foreach ($droppedForeignKeys as $fk) {
+            $this->alterColumnCollation($fk->TABLE_NAME, $fk->COLUMN_NAME);
         }
 
         foreach ($droppedForeignKeys as $fk) {
@@ -79,6 +73,37 @@ return new class extends Migration
     public function down(): void
     {
         // Intentionally no-op: reverting to a mismatched collation would just reintroduce the bug.
+    }
+
+    /**
+     * Bring a single column to utf8mb4_unicode_ci if it isn't already. $definition is used
+     * when known (the 5 columns this migration targets by name); for columns discovered
+     * dynamically via a FK relationship, it's reconstructed from information_schema instead.
+     */
+    private function alterColumnCollation(string $table, string $column, ?string $definition = null): void
+    {
+        if (!Schema::hasTable($table) || !Schema::hasColumn($table, $column)) {
+            return;
+        }
+
+        $col = DB::selectOne("
+            SELECT DATA_TYPE AS data_type, CHARACTER_MAXIMUM_LENGTH AS max_length,
+                   IS_NULLABLE AS is_nullable, COLLATION_NAME AS collation
+            FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?
+        ", [$table, $column]);
+
+        if (!$col || $col->collation === 'utf8mb4_unicode_ci') {
+            return;
+        }
+
+        $definition ??= $col->max_length
+            ? strtoupper($col->data_type).'('.$col->max_length.')'
+            : strtoupper($col->data_type);
+
+        $null = $col->is_nullable === 'YES' ? 'NULL' : 'NOT NULL';
+
+        DB::statement("ALTER TABLE `{$table}` MODIFY `{$column}` {$definition} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci {$null}");
     }
 
     /** All FK constraints (from any table) that reference $table.$column, with their ON UPDATE/DELETE rules. */
