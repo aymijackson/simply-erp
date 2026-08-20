@@ -33,7 +33,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"/>
 
     {{-- Design system (theming tokens + component overrides) --}}
-    <link rel="stylesheet" href="{{ asset('assets/css/theme.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/theme.css') }}?v={{ @filemtime(public_path('assets/css/theme.css')) ?: '1' }}">
 
     {{-- Custom layout fixes (Mobile sidebar support) --}}
 
