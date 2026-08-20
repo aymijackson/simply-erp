@@ -153,328 +153,314 @@
     <a class="nav-link" href="{{ route('admin.dashboard.index') }}">
       <i class="fas fa-tachometer-alt"></i><span>Dashboard</span>
     </a>
-    <a class="nav-link" href="{{ route('admin.dashboard.ceo') }}">
-        <i class="fas fa-chalkboard"></i>
-        <span>CEO Dashboard</span>
-    </a>
-    <a class="nav-link" href="{{ route('admin.dashboard.cfo') }}">
-        <i class="fas fa-coins"></i>
-        <span>CFO Dashboard</span>
-    </a>
-    <a class="nav-link" href="{{ route('admin.dashboard.coo') }}">
-        <i class="fas fa-industry"></i>
-        <span>COO Dashboard</span>
-    </a>
-    <a class="nav-link" href="{{ route('admin.control_center') }}">
-        <i class="fas fa-satellite-dish"></i>
-        <span>Control Center</span>
-    </a>
-    <a class="nav-link" href="{{ route('admin.notifications.index') }}">
-        <i class="fas fa-bell"></i>
-        <span>Notifications</span>
-    </a>
   </li>
 
-  <hr class="sidebar-divider">
-  <div class="sidebar-heading">Core ERP</div>
-
-  {{-- ===================== Geography ===================== --}}
-  @php
-    $geoPerms = [
-      'core.geography.regions.view',
-      'core.geography.subregions.view',
-      'core.geography.countries.view',
-      'core.geography.states.view',
-      'core.geography.cities.view',
-    ];
-  @endphp
-
-  @canany($geoPerms)
-    <li class="nav-item">
-      <a href="#" class="nav-link collapsed" data-bs-toggle="collapse" data-bs-target="#collapseGeography"
-         aria-expanded="false" aria-controls="collapseGeography">
-        <i class="fas fa-map-marked-alt"></i><span>Geography</span>
-      </a>
-
-      <div id="collapseGeography" class="collapse" data-bs-parent="#accordionSidebar">
-        <div class="bg-white py-2 collapse-inner rounded">
-          @can('core.geography.regions.view')
-            <a class="collapse-item" href="{{ route('admin.regions.index') }}">
-              <i class="fas fa-draw-polygon"></i><span>Regions</span>
-            </a>
-          @endcan
-
-          @can('core.geography.subregions.view')
-            <a class="collapse-item" href="{{ route('admin.subregions.index') }}">
-              <i class="fas fa-bezier-curve"></i><span>Sub-regions</span>
-            </a>
-          @endcan
-
-          @can('core.geography.countries.view')
-            <a class="collapse-item" href="{{ route('admin.countries.index') }}">
-              <i class="fas fa-flag"></i><span>Countries</span>
-            </a>
-          @endcan
-
-          @can('core.geography.states.view')
-            <a class="collapse-item" href="{{ route('admin.states.index') }}">
-              <i class="fas fa-map"></i><span>States</span>
-            </a>
-          @endcan
-
-          @can('core.geography.cities.view')
-            <a class="collapse-item" href="{{ route('admin.cities.index') }}">
-              <i class="fas fa-city"></i><span>Cities</span>
-            </a>
-          @endcan
-        </div>
+  <li class="nav-item">
+    <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseDashboardVariants"
+       aria-expanded="false" aria-controls="collapseDashboardVariants">
+      <i class="fas fa-th-large"></i><span>Dashboards</span>
+    </a>
+    <div id="collapseDashboardVariants" class="collapse" data-bs-parent="#accordionSidebar">
+      <div class="bg-white py-2 collapse-inner rounded">
+        <a class="collapse-item" href="{{ route('admin.dashboard.ceo') }}">
+          <i class="fas fa-chalkboard"></i><span>CEO Dashboard</span>
+        </a>
+        <a class="collapse-item" href="{{ route('admin.dashboard.cfo') }}">
+          <i class="fas fa-coins"></i><span>CFO Dashboard</span>
+        </a>
+        <a class="collapse-item" href="{{ route('admin.dashboard.coo') }}">
+          <i class="fas fa-industry"></i><span>COO Dashboard</span>
+        </a>
+        <a class="collapse-item" href="{{ route('admin.control_center') }}">
+          <i class="fas fa-satellite-dish"></i><span>Control Center</span>
+        </a>
+        <a class="collapse-item" href="{{ route('admin.notifications.index') }}">
+          <i class="fas fa-bell"></i><span>Notifications</span>
+        </a>
       </div>
-    </li>
-  @endcanany
+    </div>
+  </li>
 
-  {{-- ===================== Locations ===================== --}}
-  @canany([
-    'core.locations.types.view',
-    'core.locations.locations.view',
-    'core.locations.blocks.view',
-    'core.locations.floors.view',
-    'core.locations.rooms.view'
-  ])
-    <li class="nav-item">
-      <a href="#" class="nav-link collapsed" data-bs-toggle="collapse" data-bs-target="#collapseLocation">
-        <i class="fas fa-building"></i><span>Locations</span>
-      </a>
-      <div id="collapseLocation" class="collapse" data-bs-parent="#accordionSidebar">
-        <div class="bg-white py-2 collapse-inner rounded">
-          @can('core.locations.types.view')
-            <a class="collapse-item" href="{{ route('admin.location_types.index') }}">
-              <i class="fas fa-tags"></i><span>Location Types</span>
-            </a>
-          @endcan
-          @can('core.locations.locations.view')
-            <a class="collapse-item" href="{{ route('admin.locations.index') }}">
-              <i class="fas fa-map-marker-alt"></i><span>Locations</span>
-            </a>
-          @endcan
-          @can('core.locations.blocks.view')
-            <a class="collapse-item" href="{{ route('admin.location_blocks.index') }}">
-              <i class="fas fa-th-large"></i><span>Blocks</span>
-            </a>
-          @endcan
-          @can('core.locations.floors.view')
-            <a class="collapse-item" href="{{ route('admin.location_floors.index') }}">
-              <i class="fas fa-layer-group"></i><span>Floors</span>
-            </a>
-          @endcan
-          @can('core.locations.rooms.view')
-            <a class="collapse-item" href="{{ route('admin.location_rooms.index') }}">
-              <i class="fas fa-door-open"></i><span>Rooms</span>
-            </a>
-          @endcan
+  {{-- ===================== CRM ===================== --}}
+  @if(canAccessModule('crm'))
+    @canany([
+      'crm.leads.view',
+      'crm.opportunities.view',
+      'crm.activities.view',
+      'crm.notes.view',
+      'crm.interactions.view',
+      'crm.support_tickets.view',
+    ])
+      <div class="sidebar-heading">CRM</div>
+
+      <li class="nav-item my-0">
+        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseCRM">
+          <i class="fas fa-user-friends"></i><span>CRM</span>
+        </a>
+        <div id="collapseCRM" class="collapse" data-bs-parent="#accordionSidebar">
+          <div class="bg-white collapse-inner rounded">
+            @can('crm.leads.view')
+              <a class="collapse-item" href="{{ route('admin.crm.leads.index') }}">
+                <i class="fas fa-user-plus"></i><span>Leads</span>
+              </a>
+            @endcan
+            @can('crm.opportunities.view')
+              <a class="collapse-item" href="{{ route('admin.crm.opportunities.index') }}">
+                <i class="fas fa-bullseye"></i><span>Opportunities</span>
+              </a>
+            @endcan
+            @can('crm.activities.view')
+              <a class="collapse-item" href="{{ route('admin.crm.activities.index') }}">
+                <i class="fas fa-calendar-check"></i><span>Activities</span>
+              </a>
+            @endcan
+            @can('crm.notes.view')
+              <a class="collapse-item" href="{{ route('admin.crm.notes.index') }}">
+                <i class="fas fa-sticky-note"></i><span>Notes</span>
+              </a>
+            @endcan
+            @can('crm.interactions.view')
+              <a class="collapse-item" href="{{ route('admin.crm.interactions.index') }}">
+                <i class="fas fa-comments"></i><span>Interactions</span>
+              </a>
+            @endcan
+            @can('crm.support_tickets.view')
+              <a class="collapse-item" href="{{ route('admin.crm.support_tickets.index') }}">
+                <i class="fas fa-life-ring"></i><span>Support Tickets</span>
+              </a>
+            @endcan
+            @can('crm.docs.view')
+              <a class="collapse-item" href="{{ route('admin.crm.docs.workflow_privileges.index') }}">
+                <i class="fas fa-book"></i><span>CRM SOP & Privileges</span>
+              </a>
+            @endcan
+          </div>
         </div>
-      </div>
-    </li>
-  @endcanany
+      </li>
+    @endcanany
 
-  {{-- ===================== Storage ===================== --}}
-  @canany(['core.storage.stores.view','core.storage.shelves.view'])
-    <li class="nav-item">
-      <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseStorage">
-        <i class="fas fa-warehouse"></i><span>Storage</span>
-      </a>
-      <div id="collapseStorage" class="collapse" data-bs-parent="#accordionSidebar">
-        <div class="bg-white py-2 collapse-inner rounded">
-          @can('core.storage.stores.view')
-            <a class="collapse-item" href="{{ route('admin.location_stores.index') }}">
-              <i class="fas fa-store"></i><span>Stores</span>
-            </a>
-          @endcan
-          @can('core.storage.shelves.view')
-            <a class="collapse-item" href="{{ route('admin.store_shelves.index') }}">
-              <i class="fas fa-grip-lines"></i><span>Shelves</span>
-            </a>
-          @endcan
+    {{-- CRM Analytics --}}
+    @canany([
+      'crm.leads.analytics.view',
+      'crm.opportunities.analytics.view',
+      'crm.activities.analytics.view',
+      'crm.notes.analytics.view',
+      'crm.interactions.analytics.view',
+      'crm.support_tickets.analytics.view',
+      'crm.customers.analytics.view',
+      'crm.dashboard.view',
+      'crm.analytics.customer_segmentation.view',
+    ])
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseCRMAnalytics">
+          <i class="fas fa-chart-pie"></i><span>CRM Analytics</span>
+        </a>
+        <div id="collapseCRMAnalytics" class="collapse" data-bs-parent="#accordionSidebar">
+          <div class="bg-white collapse-inner rounded">
+            @can('crm.leads.analytics.view')
+              <a class="collapse-item" href="{{ route('admin.crm.leads.analytics.index') }}">
+                <i class="fas fa-chart-pie"></i><span>Leads</span>
+              </a>
+            @endcan
+            @can('crm.opportunities.analytics.view')
+              <a class="collapse-item" href="{{ route('admin.crm.opportunities.analytics.index') }}">
+                <i class="fas fa-funnel-dollar"></i><span>Opportunities</span>
+              </a>
+            @endcan
+            @can('crm.activities.analytics.view')
+              <a class="collapse-item" href="{{ route('admin.crm.activities.analytics.index') }}">
+                <i class="fas fa-chart-line"></i><span>Activities</span>
+              </a>
+            @endcan
+            @can('crm.notes.analytics.view')
+              <a class="collapse-item" href="{{ route('admin.crm.notes.analytics.index') }}">
+                <i class="fas fa-chart-line"></i><span>Notes</span>
+              </a>
+            @endcan
+            @can('crm.interactions.analytics.view')
+              <a class="collapse-item" href="{{ route('admin.crm.interactions.analytics.index') }}">
+                <i class="fas fa-comments"></i><span>Interactions</span>
+              </a>
+            @endcan
+            @can('crm.support_tickets.analytics.view')
+              <a class="collapse-item" href="{{ route('admin.crm.support_tickets.analytics.index') }}">
+                <i class="fas fa-chart-line"></i><span>Tickets</span>
+              </a>
+            @endcan
+            @can('crm.customers.analytics.view')
+              <a class="collapse-item" href="{{ route('admin.crm.customers.analytics.index') }}">
+                <i class="fas fa-chart-pie"></i><span>Customers</span>
+              </a>
+            @endcan
+            @can('crm.dashboard.view')
+              <a class="collapse-item" href="{{ route('admin.crm.dashboard.index') }}">
+                <i class="fas fa-tachometer-alt"></i><span>CRM Executive</span>
+              </a>
+            @endcan
+            @can('crm.customers.segmentation_presets.view')
+              <a class="collapse-item" href="{{ route('admin.crm.customers.segmentation_presets.index') }}">
+                <i class="fas fa-sliders-h"></i><span>Segment Presets</span>
+              </a>
+            @endcan
+            @can('crm.analytics.customer_segmentation.view')
+              <a class="collapse-item" href="{{ route('admin.crm.analytics.customer_segmentation.index') }}">
+                <i class="fas fa-chart-pie"></i><span>Customer Segmentation</span>
+              </a>
+            @endcan
+          </div>
         </div>
-      </div>
-    </li>
-  @endcanany
+      </li>
+    @endcanany
+  @endif
 
-  {{-- ===================== Core Settings ===================== --}}
-  @canany(['core.master_data.customers.view','core.master_data.companies.view'])
-    <li class="nav-item">
-      <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseSettings">
-        <i class="fas fa-cogs"></i><span>Core Settings</span>
-      </a>
-      <div id="collapseSettings" class="collapse" data-bs-parent="#accordionSidebar">
-        <div class="bg-white py-2 collapse-inner rounded">
-          @can('core.master_data.customers.view')
-            <a class="collapse-item" href="{{ route('admin.settings.index') }}">
-              <i class="fas fa-sliders-h"></i><span>All Settings</span>
+  {{-- ===================== Sales ===================== --}}
+  {{-- IMPORTANT FIX: this should be canAccessModule('sales'), not procurement --}}
+  @if(canAccessModule('sales'))
+    @canany([
+      'sales.orders.view',
+      'sales.delivery.view',
+      'sales.delivery.create',
+      'sales.delivery.store',
+      'sales.invoices.view',
+      'sales.payments.view',
+      'sales.credit_notes.view'
+    ])
+      <div class="sidebar-heading">Sales</div>
+
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseSales">
+          <i class="fas fa-shopping-cart"></i><span>Sales</span>
+        </a>
+
+        <div id="collapseSales" class="collapse" data-bs-parent="#accordionSidebar">
+          <div class="bg-white py-2 collapse-inner rounded">
+            @can('sales.price_lists.view')
+                <a class="collapse-item" href="{{ route('admin.sales.price-lists.index') }}">
+                    <i class="fas fa-tags me-1"></i><span>Price Lists</span>
+                </a>
+            @endcan
+             
+            @can('sales.pricing_rules.view')
+                <a class="collapse-item" href="{{ route('admin.sales.pricing-rules.index') }}">
+                    <i class="fas fa-percentage me-1"></i><span>Pricing Rules</span>
+                </a>
+            @endcan
+            @can('sales.quotes.view')
+              <a class="collapse-item" href="{{ route('admin.sales.quotes.index') }}">
+                <i class="fas fa-file-invoice"></i><span>Sales Quotes</span>
+              </a>
+            @endcan
+            @can('sales.orders.view')
+              <a class="collapse-item" href="{{ route('admin.sales.orders.index') }}">
+                <i class="fas fa-file-signature"></i><span>Sales Orders</span>
+              </a>
+            @endcan
+            @can('sales.delivery.view')
+              <a class="collapse-item" href="{{ route('admin.sales.deliveries.index') }}">
+                <i class="fas fa-truck"></i><span>Delivery Notes</span>
+              </a>
+            @endcan
+            @canany(['sales.delivery.create','sales.delivery.store'])
+              <a class="collapse-item" href="{{ route('admin.sales.deliveries.create') }}">
+                <i class="fas fa-plus"></i><span>Create Delivery Note</span>
+              </a>
+            @endcanany
+            @can('sales.invoices.view')
+              <a class="collapse-item" href="{{ route('admin.sales.invoices.index') }}">
+                <i class="fas fa-file-invoice-dollar"></i><span>Invoices</span>
+              </a>
+            @endcan
+            @can('sales.payments.view')
+              <a class="collapse-item" href="{{ route('admin.sales.payments.index') }}">
+                <i class="fas fa-money-bill-wave"></i><span>Payments</span>
+              </a>
+            @endcan
+            @can('sales.credit_notes.view')
+              <a class="collapse-item" href="{{ route('admin.sales.credit-notes.index') }}">
+                <i class="fas fa-undo-alt"></i><span>Credit Notes</span>
+              </a>
+            @endcan
+
+            <a class="collapse-item" href="{{ route('admin.help.sales-module') }}">
+              <i class="fas fa-book"></i><span>Sales Guide</span>
             </a>
-          @endcan
-          @can('core.master_data.companies.view')
-            <a class="collapse-item" href="{{ route('admin.setting_groups.index') }}">
-              <i class="fas fa-layer-group"></i><span>Setting Groups</span>
-            </a>
-          @endcan
-          <a class="collapse-item" href="{{ route('admin.workflows.index') }}">
-              <i class="fas fa-random"></i>
-              <span>Workflow Automation</span>
-          </a>
-          @can('finance.data_flush.view')
-            <a class="collapse-item" href="{{ route('admin.finance.data_flush.index') }}">
-              <i class="fas fa-broom me-1 text-danger"></i><span class="text-danger">Flush Finance Data </span>
-            </a>
-          @endcan
-          @can('inventory.flush.view')
-            <a class="collapse-item" href="{{ route('admin.inventory.flush.index') }}">
-              <i class="fas fa-broom me-1 text-danger"></i><span class="text-danger">Flush Inventory Data</span>
-            </a>
-          @endcan
-          @can('sales.flush.manage')
-            <a class="collapse-item {{ request()->routeIs('admin.sales.data-flush.*') ? 'active' : '' }}"
-             href="{{ route('admin.sales.data-flush.index') }}">
-              <i class="fas fa-broom fa-fw me-1 text-danger"></i><span class="text-danger">Flush Sales Data</span>
-            </a>
-          @endcan
+          </div>
         </div>
-      </div>
-    </li>
-  @endcanany
+      </li>
+    @endcanany
+  @endif
 
-  {{-- ===================== Master Data ===================== --}}
-  @canany([
-    'core.master_data.customers.view',
-    'core.master_data.companies.view',
-    'core.master_data.departments.view',
-    'core.master_data.users.view'
-  ])
-    <li class="nav-item">
-      <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseMasterData">
-        <i class="fas fa-database"></i><span>Master Data</span>
-      </a>
-      <div id="collapseMasterData" class="collapse" data-bs-parent="#accordionSidebar">
-        <div class="bg-white py-2 collapse-inner rounded">
-          @can('core.master_data.customers.view')
-            <a class="collapse-item" href="{{ route('admin.customers.index') }}">
-              <i class="fas fa-user-tag"></i><span>Customers</span>
+  {{-- Sales Analytics --}}
+  @if(canAccessModule('sales'))
+    @can('sales.analytics.view')
+      <div class="sidebar-heading">Sales Analytics</div>
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseSalesAnalytics">
+          <i class="fas fa-chart-line"></i><span>Sales Analytics</span>
+        </a>
+        <div id="collapseSalesAnalytics" class="collapse" data-bs-parent="#accordionSidebar">
+          <div class="bg-white py-2 collapse-inner rounded">
+            <a class="collapse-item" href="{{ route('admin.sales.analytics.index') }}">
+              <i class="fas fa-chart-line"></i><span>Sales Analytics</span>
             </a>
-          @endcan
-          @can('core.master_data.companies.view')
-            <a class="collapse-item" href="{{ route('admin.companies.index') }}">
-              <i class="fas fa-building"></i><span>Companies</span>
-            </a>
-          @endcan
-          @can('core.master_data.departments.view')
-            <a class="collapse-item" href="{{ route('admin.companies.departments.index') }}">
-              <i class="fas fa-sitemap"></i><span>Departments</span>
-            </a>
-          @endcan
-          @can('core.master_data.users.view')
-            <a class="collapse-item" href="{{ route('admin.users.index') }}">
-              <i class="fas fa-users"></i><span>Users</span>
-            </a>
-          @endcan
-
-          @can('core.master_data.vehicles.view')
-            <a class="collapse-item" href="{{ route('admin.vehicles.index') }}">
-              <i class="fas fa-car"></i><span>Vehicles</span>
-            </a>
-          @endcan
-          @can('core.master_data.drivers.view')
-            <a class="collapse-item" href="{{ route('admin.drivers.index') }}">
-              <i class="fas fa-user-tie"></i><span>Drivers</span>
-            </a>
-          @endcan
-
-          @can('core.master_data.suppliers.view')
-            <a class="collapse-item" href="{{ route('admin.suppliers.index') }}">
-              <i class="fas fa-people-carry"></i><span>Suppliers</span>
-            </a>
-            <a class="collapse-item" href="{{ route('admin.suppliers.addresses.index') }}">
-              <i class="fas fa-map-marker-alt"></i><span>Supplier Addresses</span>
-            </a>
-            <a class="collapse-item" href="{{ route('admin.suppliers.contacts.index') }}">
-              <i class="fas fa-user-friends"></i><span>Supplier Contacts</span>
-            </a>
-          @endcan
+          </div>
         </div>
-      </div>
-    </li>
-  @endcanany
+      </li>
+    @endcan
+  @endif
 
-  {{-- Audit --}}
-  @can('core.audit.view')
-    <li class="nav-item">
-      <a class="nav-link" href="{{ route('admin.audit.index') }}">
-        <i class="fas fa-user-shield"></i><span>Audit Logs</span>
-      </a>
-    </li>
-  @endcan
-
-  @can('core.audit.view.analytics')
-    <li class="nav-item">
-      <a class="nav-link" href="{{ route('admin.audit.analytics') }}">
-        <i class="fas fa-chart-line"></i><span>Audit Analytics</span>
-      </a>
-    </li>
-  @endcan
-
-  {{-- Parameters --}}
-  @canany([
-    'core.parameters.customers.view',
-    'core.parameters.companies.view',
-    'core.parameters.modules.view',
-    'core.parameters.roles.view',
-    'core.parameters.permissions.view',
-    'core.parameters.departments.view',
-    'core.parameters.users.view'
-  ])
-    <li class="nav-item">
-      <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseParameters">
-        <i class="fas fa-sliders-h"></i><span>Parameters</span>
-      </a>
-      <div id="collapseParameters" class="collapse" data-bs-parent="#accordionSidebar">
-        <div class="bg-white py-2 collapse-inner rounded">
-          @can('core.parameters.customers.view')
-            <a class="collapse-item" href="{{ route('admin.customers.index') }}">
-              <i class="fas fa-user-tag"></i><span>Customers</span>
+  {{-- ===================== Procurement ===================== --}}
+  @if(canAccessModule('procurement'))
+    @canany([
+        'procurement.requisitions.view',
+        'procurement.rfqs.view',
+        'procurement.quotations.view',
+        'procurement.purchase_orders.view',
+        'procurement.goods_receipts.view'
+    ])
+      <div class="sidebar-heading">Procurement</div>
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseProcurement">
+          <i class="fas fa-file-signature"></i><span>Procurement</span>
+        </a>
+        <div id="collapseProcurement" class="collapse" data-bs-parent="#accordionSidebar">
+          <div class="bg-white py-2 collapse-inner rounded">
+            @can('procurement.requisitions.view')
+              <a class="collapse-item" href="{{ route('admin.procurement.purchase_requisitions.index') }}">
+                <i class="fas fa-file-alt me-2"></i> Purchase Reqs.
+              </a>
+            @endcan
+            @can('procurement.rfqs.view')
+            <a class="collapse-item" href="{{ route('admin.procurement.rfqs.index') }}">
+              <i class="fas fa-file-signature me-2"></i> RFQs
             </a>
-          @endcan
-          @can('core.parameters.companies.view')
-            <a class="collapse-item" href="{{ route('admin.companies.index') }}">
-              <i class="fas fa-building"></i><span>Companies</span>
+            @endcan
+            @can('procurement.supplier_quotations.view')
+            <a class="collapse-item" href="{{ route('admin.procurement.supplier_quotations.index') }}">
+                <i class="fas fa-file-invoice-dollar me-2"></i> Supplier Quotes
             </a>
-          @endcan
-          @can('core.parameters.departments.view')
-            <a class="collapse-item" href="{{ route('admin.companies.departments.index') }}">
-              <i class="fas fa-sitemap"></i><span>Departments</span>
+            @endcan
+            @can('procurement.purchase_orders.view')
+            <a class="collapse-item" href="{{ route('admin.procurement.purchase_orders.index') }}">
+                <i class="fas fa-shopping-cart me-2"></i> Purchase Orders
             </a>
-          @endcan
-          @can('core.parameters.modules.view')
-            <a class="collapse-item" href="{{ route('admin.modules.index') }}">
-              <i class="fas fa-puzzle-piece"></i><span>Modules</span>
+            @endcan
+            @can('procurement.goods_receipts.view')
+            <a class="collapse-item" href="{{ route('admin.procurement.goods_receipts.index') }}">
+                <i class="fas fa-truck-loading me-2"></i> Goods Receipts
             </a>
-          @endcan
-          @can('core.parameters.permissions.view')
-            <a class="collapse-item" href="{{ route('admin.permissions.index') }}">
-              <i class="fas fa-key"></i><span>Permissions</span>
+            @endcan
+            @can('procurement.guide.view')
+            <a class="collapse-item" href="{{ route('admin.procurement.guide.index') }}">
+                <i class="fas fa-book me-2"></i>
+                <span>Procurement Guide</span>
             </a>
-          @endcan
-          @can('core.parameters.roles.view')
-            <a class="collapse-item" href="{{ route('admin.roles.index') }}">
-              <i class="fas fa-user-check"></i><span>Roles</span>
-            </a>
-          @endcan
-          @can('core.parameters.users.view')
-            <a class="collapse-item" href="{{ route('admin.users.index') }}">
-              <i class="fas fa-users"></i><span>Users</span>
-            </a>
-          @endcan
+            @endcan
+          </div>
         </div>
-      </div>
-    </li>
-  @endcanany
+      </li>
+    @endcanany
+  @endif
 
   {{-- ===================== Inventory ===================== --}}
   @if(canAccessModule('inventory'))
@@ -692,6 +678,93 @@
               </a>
               <a class="collapse-item" href="{{ route('admin.supplier_analytics.index') }}">
                 <i class="fas fa-chart-bar"></i><span>Supp-Ret. Analytics</span>
+              </a>
+            @endcan
+          </div>
+        </div>
+      </li>
+    @endcanany
+  @endif
+
+  {{-- ===================== Manufacturing ===================== --}}
+  @if(canAccessModule('production'))
+    @canany([
+      'production.work_orders.cost_types.view',
+      'production.routings.view',
+      'production.routings.steps.view'
+    ])
+      <div class="sidebar-heading">Manufacturing</div>
+
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseManufacturingParameters">
+          <i class="fas fa-industry"></i><span>Production Parameters</span>
+        </a>
+        <div id="collapseManufacturingParameters" class="collapse" data-bs-parent="#accordionSidebar">
+          <div class="bg-white py-2 collapse-inner rounded">
+            @can('production.work_orders.cost_types.view')
+              <a class="collapse-item" href="{{ route('admin.production.work-orders.cost_types.index') }}">
+                <i class="fas fa-coins"></i><span>WO Cost Types</span>
+              </a>
+            @endcan
+            @can('production.routings.view')
+              <a class="collapse-item" href="{{ route('admin.production.routings.index') }}">
+                <i class="fas fa-route"></i><span>Routings</span>
+              </a>
+            @endcan
+            @can('production.routings.steps.view')
+              <a class="collapse-item" href="{{ route('admin.production.routings.steps.index') }}">
+                <i class="fas fa-shoe-prints"></i><span>Routing Steps</span>
+              </a>
+            @endcan
+          </div>
+        </div>
+      </li>
+    @endcanany
+
+    @canany([
+      'production.raw_materials.view',
+      'production.boms.view',
+      'production.bom_items.view',
+      'production.bom_deficits.view',
+      'production.bom_deficit_transactions.view',
+      'production.work_orders.view',
+      'production.work_order_materials.view',
+      'production.work_order_steps.view'
+    ])
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseManufacturing">
+          <i class="fas fa-industry"></i><span>Production</span>
+        </a>
+        <div id="collapseManufacturing" class="collapse" data-bs-parent="#accordionSidebar">
+          <div class="bg-white py-2 collapse-inner rounded">
+            @can('production.raw_materials.view')
+              <a class="collapse-item" href="{{ route('admin.production.raw-materials.index') }}">
+                <i class="fas fa-cubes"></i><span>Raw Materials</span>
+              </a>
+            @endcan
+            @can('production.boms.view')
+              <a class="collapse-item" href="{{ route('admin.production.boms.index') }}">
+                <i class="fas fa-stream"></i><span>Bill of Materials (BOM)</span>
+              </a>
+            @endcan
+            @can('production.bom_items.view')
+              <a class="collapse-item" href="{{ route('admin.production.boms.items.index') }}">
+                <i class="fas fa-list"></i><span>BOM Items</span>
+              </a>
+            @endcan
+            @can('production.bom_deficits.view')
+              <a class="collapse-item" href="{{ route('admin.production.boms.deficits.index') }}">
+                <i class="fas fa-exclamation-circle"></i><span>BOM Deficits</span>
+              </a>
+            @endcan
+            @can('production.bom_deficit_transactions.view')
+              <a class="collapse-item" href="{{ route('admin.production.boms.deficits.transactions.index') }}">
+                <i class="fas fa-exchange-alt"></i><span>BOM Deficit Txns</span>
+              </a>
+            @endcan
+            @can('production.work_orders.view')
+              <a class="collapse-item" href="{{ route('admin.production.work-orders.index') }}">
+                <i class="fas fa-tasks"></i><span>Work Orders</span>
               </a>
             @endcan
           </div>
@@ -1075,374 +1148,6 @@
     @endcanany
   @endif
 
-  {{-- ===================== Sales ===================== --}}
-  {{-- IMPORTANT FIX: this should be canAccessModule('sales'), not procurement --}}
-  @if(canAccessModule('sales'))
-    @canany([
-      'sales.orders.view',
-      'sales.delivery.view',
-      'sales.delivery.create',
-      'sales.delivery.store',
-      'sales.invoices.view',
-      'sales.payments.view',
-      'sales.credit_notes.view'
-    ])
-      <div class="sidebar-heading">Sales</div>
-
-      <li class="nav-item">
-        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseSales">
-          <i class="fas fa-shopping-cart"></i><span>Sales</span>
-        </a>
-
-        <div id="collapseSales" class="collapse" data-bs-parent="#accordionSidebar">
-          <div class="bg-white py-2 collapse-inner rounded">
-            @can('sales.price_lists.view')
-                <a class="collapse-item" href="{{ route('admin.sales.price-lists.index') }}">
-                    <i class="fas fa-tags me-1"></i><span>Price Lists</span>
-                </a>
-            @endcan
-             
-            @can('sales.pricing_rules.view')
-                <a class="collapse-item" href="{{ route('admin.sales.pricing-rules.index') }}">
-                    <i class="fas fa-percentage me-1"></i><span>Pricing Rules</span>
-                </a>
-            @endcan
-            @can('sales.quotes.view')
-              <a class="collapse-item" href="{{ route('admin.sales.quotes.index') }}">
-                <i class="fas fa-file-invoice"></i><span>Sales Quotes</span>
-              </a>
-            @endcan
-            @can('sales.orders.view')
-              <a class="collapse-item" href="{{ route('admin.sales.orders.index') }}">
-                <i class="fas fa-file-signature"></i><span>Sales Orders</span>
-              </a>
-            @endcan
-            @can('sales.delivery.view')
-              <a class="collapse-item" href="{{ route('admin.sales.deliveries.index') }}">
-                <i class="fas fa-truck"></i><span>Delivery Notes</span>
-              </a>
-            @endcan
-            @canany(['sales.delivery.create','sales.delivery.store'])
-              <a class="collapse-item" href="{{ route('admin.sales.deliveries.create') }}">
-                <i class="fas fa-plus"></i><span>Create Delivery Note</span>
-              </a>
-            @endcanany
-            @can('sales.invoices.view')
-              <a class="collapse-item" href="{{ route('admin.sales.invoices.index') }}">
-                <i class="fas fa-file-invoice-dollar"></i><span>Invoices</span>
-              </a>
-            @endcan
-            @can('sales.payments.view')
-              <a class="collapse-item" href="{{ route('admin.sales.payments.index') }}">
-                <i class="fas fa-money-bill-wave"></i><span>Payments</span>
-              </a>
-            @endcan
-            @can('sales.credit_notes.view')
-              <a class="collapse-item" href="{{ route('admin.sales.credit-notes.index') }}">
-                <i class="fas fa-undo-alt"></i><span>Credit Notes</span>
-              </a>
-            @endcan
-
-            <a class="collapse-item" href="{{ route('admin.help.sales-module') }}">
-              <i class="fas fa-book"></i><span>Sales Guide</span>
-            </a>
-          </div>
-        </div>
-      </li>
-    @endcanany
-  @endif
-
-  {{-- Sales Analytics --}}
-  @if(canAccessModule('sales'))
-    @can('sales.analytics.view')
-      <div class="sidebar-heading">Sales Analytics</div>
-      <li class="nav-item">
-        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseSalesAnalytics">
-          <i class="fas fa-chart-line"></i><span>Sales Analytics</span>
-        </a>
-        <div id="collapseSalesAnalytics" class="collapse" data-bs-parent="#accordionSidebar">
-          <div class="bg-white py-2 collapse-inner rounded">
-            <a class="collapse-item" href="{{ route('admin.sales.analytics.index') }}">
-              <i class="fas fa-chart-line"></i><span>Sales Analytics</span>
-            </a>
-          </div>
-        </div>
-      </li>
-    @endcan
-  @endif
-
-  {{-- ===================== Procurement ===================== --}}
-  @if(canAccessModule('procurement'))
-    @canany([
-        'procurement.requisitions.view',
-        'procurement.rfqs.view',
-        'procurement.quotations.view',
-        'procurement.purchase_orders.view',
-        'procurement.goods_receipts.view'
-    ])
-      <div class="sidebar-heading">Procurement</div>
-      <li class="nav-item">
-        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseProcurement">
-          <i class="fas fa-file-signature"></i><span>Procurement</span>
-        </a>
-        <div id="collapseProcurement" class="collapse" data-bs-parent="#accordionSidebar">
-          <div class="bg-white py-2 collapse-inner rounded">
-            @can('procurement.requisitions.view')
-              <a class="collapse-item" href="{{ route('admin.procurement.purchase_requisitions.index') }}">
-                <i class="fas fa-file-alt me-2"></i> Purchase Reqs.
-              </a>
-            @endcan
-            @can('procurement.rfqs.view')
-            <a class="collapse-item" href="{{ route('admin.procurement.rfqs.index') }}">
-              <i class="fas fa-file-signature me-2"></i> RFQs
-            </a>
-            @endcan
-            @can('procurement.supplier_quotations.view')
-            <a class="collapse-item" href="{{ route('admin.procurement.supplier_quotations.index') }}">
-                <i class="fas fa-file-invoice-dollar me-2"></i> Supplier Quotes
-            </a>
-            @endcan
-            @can('procurement.purchase_orders.view')
-            <a class="collapse-item" href="{{ route('admin.procurement.purchase_orders.index') }}">
-                <i class="fas fa-shopping-cart me-2"></i> Purchase Orders
-            </a>
-            @endcan
-            @can('procurement.goods_receipts.view')
-            <a class="collapse-item" href="{{ route('admin.procurement.goods_receipts.index') }}">
-                <i class="fas fa-truck-loading me-2"></i> Goods Receipts
-            </a>
-            @endcan
-            @can('procurement.guide.view')
-            <a class="collapse-item" href="{{ route('admin.procurement.guide.index') }}">
-                <i class="fas fa-book me-2"></i>
-                <span>Procurement Guide</span>
-            </a>
-            @endcan
-          </div>
-        </div>
-      </li>
-    @endcanany
-  @endif
-
-  {{-- ===================== Manufacturing ===================== --}}
-  @if(canAccessModule('production'))
-    @canany([
-      'production.work_orders.cost_types.view',
-      'production.routings.view',
-      'production.routings.steps.view'
-    ])
-      <div class="sidebar-heading">Manufacturing</div>
-
-      <li class="nav-item">
-        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseManufacturingParameters">
-          <i class="fas fa-industry"></i><span>Production Parameters</span>
-        </a>
-        <div id="collapseManufacturingParameters" class="collapse" data-bs-parent="#accordionSidebar">
-          <div class="bg-white py-2 collapse-inner rounded">
-            @can('production.work_orders.cost_types.view')
-              <a class="collapse-item" href="{{ route('admin.production.work-orders.cost_types.index') }}">
-                <i class="fas fa-coins"></i><span>WO Cost Types</span>
-              </a>
-            @endcan
-            @can('production.routings.view')
-              <a class="collapse-item" href="{{ route('admin.production.routings.index') }}">
-                <i class="fas fa-route"></i><span>Routings</span>
-              </a>
-            @endcan
-            @can('production.routings.steps.view')
-              <a class="collapse-item" href="{{ route('admin.production.routings.steps.index') }}">
-                <i class="fas fa-shoe-prints"></i><span>Routing Steps</span>
-              </a>
-            @endcan
-          </div>
-        </div>
-      </li>
-    @endcanany
-
-    @canany([
-      'production.raw_materials.view',
-      'production.boms.view',
-      'production.bom_items.view',
-      'production.bom_deficits.view',
-      'production.bom_deficit_transactions.view',
-      'production.work_orders.view',
-      'production.work_order_materials.view',
-      'production.work_order_steps.view'
-    ])
-      <li class="nav-item">
-        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseManufacturing">
-          <i class="fas fa-industry"></i><span>Production</span>
-        </a>
-        <div id="collapseManufacturing" class="collapse" data-bs-parent="#accordionSidebar">
-          <div class="bg-white py-2 collapse-inner rounded">
-            @can('production.raw_materials.view')
-              <a class="collapse-item" href="{{ route('admin.production.raw-materials.index') }}">
-                <i class="fas fa-cubes"></i><span>Raw Materials</span>
-              </a>
-            @endcan
-            @can('production.boms.view')
-              <a class="collapse-item" href="{{ route('admin.production.boms.index') }}">
-                <i class="fas fa-stream"></i><span>Bill of Materials (BOM)</span>
-              </a>
-            @endcan
-            @can('production.bom_items.view')
-              <a class="collapse-item" href="{{ route('admin.production.boms.items.index') }}">
-                <i class="fas fa-list"></i><span>BOM Items</span>
-              </a>
-            @endcan
-            @can('production.bom_deficits.view')
-              <a class="collapse-item" href="{{ route('admin.production.boms.deficits.index') }}">
-                <i class="fas fa-exclamation-circle"></i><span>BOM Deficits</span>
-              </a>
-            @endcan
-            @can('production.bom_deficit_transactions.view')
-              <a class="collapse-item" href="{{ route('admin.production.boms.deficits.transactions.index') }}">
-                <i class="fas fa-exchange-alt"></i><span>BOM Deficit Txns</span>
-              </a>
-            @endcan
-            @can('production.work_orders.view')
-              <a class="collapse-item" href="{{ route('admin.production.work-orders.index') }}">
-                <i class="fas fa-tasks"></i><span>Work Orders</span>
-              </a>
-            @endcan
-          </div>
-        </div>
-      </li>
-    @endcanany
-  @endif
-
-  {{-- ===================== CRM ===================== --}}
-  @if(canAccessModule('crm'))
-    @canany([
-      'crm.leads.view',
-      'crm.opportunities.view',
-      'crm.activities.view',
-      'crm.notes.view',
-      'crm.interactions.view',
-      'crm.support_tickets.view',
-    ])
-      <div class="sidebar-heading">CRM</div>
-
-      <li class="nav-item my-0">
-        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseCRM">
-          <i class="fas fa-user-friends"></i><span>CRM</span>
-        </a>
-        <div id="collapseCRM" class="collapse" data-bs-parent="#accordionSidebar">
-          <div class="bg-white collapse-inner rounded">
-            @can('crm.leads.view')
-              <a class="collapse-item" href="{{ route('admin.crm.leads.index') }}">
-                <i class="fas fa-user-plus"></i><span>Leads</span>
-              </a>
-            @endcan
-            @can('crm.opportunities.view')
-              <a class="collapse-item" href="{{ route('admin.crm.opportunities.index') }}">
-                <i class="fas fa-bullseye"></i><span>Opportunities</span>
-              </a>
-            @endcan
-            @can('crm.activities.view')
-              <a class="collapse-item" href="{{ route('admin.crm.activities.index') }}">
-                <i class="fas fa-calendar-check"></i><span>Activities</span>
-              </a>
-            @endcan
-            @can('crm.notes.view')
-              <a class="collapse-item" href="{{ route('admin.crm.notes.index') }}">
-                <i class="fas fa-sticky-note"></i><span>Notes</span>
-              </a>
-            @endcan
-            @can('crm.interactions.view')
-              <a class="collapse-item" href="{{ route('admin.crm.interactions.index') }}">
-                <i class="fas fa-comments"></i><span>Interactions</span>
-              </a>
-            @endcan
-            @can('crm.support_tickets.view')
-              <a class="collapse-item" href="{{ route('admin.crm.support_tickets.index') }}">
-                <i class="fas fa-life-ring"></i><span>Support Tickets</span>
-              </a>
-            @endcan
-            @can('crm.docs.view')
-              <a class="collapse-item" href="{{ route('admin.crm.docs.workflow_privileges.index') }}">
-                <i class="fas fa-book"></i><span>CRM SOP & Privileges</span>
-              </a>
-            @endcan
-          </div>
-        </div>
-      </li>
-    @endcanany
-
-    {{-- CRM Analytics --}}
-    @canany([
-      'crm.leads.analytics.view',
-      'crm.opportunities.analytics.view',
-      'crm.activities.analytics.view',
-      'crm.notes.analytics.view',
-      'crm.interactions.analytics.view',
-      'crm.support_tickets.analytics.view',
-      'crm.customers.analytics.view',
-      'crm.dashboard.view',
-      'crm.analytics.customer_segmentation.view',
-    ])
-      <li class="nav-item">
-        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseCRMAnalytics">
-          <i class="fas fa-chart-pie"></i><span>CRM Analytics</span>
-        </a>
-        <div id="collapseCRMAnalytics" class="collapse" data-bs-parent="#accordionSidebar">
-          <div class="bg-white collapse-inner rounded">
-            @can('crm.leads.analytics.view')
-              <a class="collapse-item" href="{{ route('admin.crm.leads.analytics.index') }}">
-                <i class="fas fa-chart-pie"></i><span>Leads</span>
-              </a>
-            @endcan
-            @can('crm.opportunities.analytics.view')
-              <a class="collapse-item" href="{{ route('admin.crm.opportunities.analytics.index') }}">
-                <i class="fas fa-funnel-dollar"></i><span>Opportunities</span>
-              </a>
-            @endcan
-            @can('crm.activities.analytics.view')
-              <a class="collapse-item" href="{{ route('admin.crm.activities.analytics.index') }}">
-                <i class="fas fa-chart-line"></i><span>Activities</span>
-              </a>
-            @endcan
-            @can('crm.notes.analytics.view')
-              <a class="collapse-item" href="{{ route('admin.crm.notes.analytics.index') }}">
-                <i class="fas fa-chart-line"></i><span>Notes</span>
-              </a>
-            @endcan
-            @can('crm.interactions.analytics.view')
-              <a class="collapse-item" href="{{ route('admin.crm.interactions.analytics.index') }}">
-                <i class="fas fa-comments"></i><span>Interactions</span>
-              </a>
-            @endcan
-            @can('crm.support_tickets.analytics.view')
-              <a class="collapse-item" href="{{ route('admin.crm.support_tickets.analytics.index') }}">
-                <i class="fas fa-chart-line"></i><span>Tickets</span>
-              </a>
-            @endcan
-            @can('crm.customers.analytics.view')
-              <a class="collapse-item" href="{{ route('admin.crm.customers.analytics.index') }}">
-                <i class="fas fa-chart-pie"></i><span>Customers</span>
-              </a>
-            @endcan
-            @can('crm.dashboard.view')
-              <a class="collapse-item" href="{{ route('admin.crm.dashboard.index') }}">
-                <i class="fas fa-tachometer-alt"></i><span>CRM Executive</span>
-              </a>
-            @endcan
-            @can('crm.customers.segmentation_presets.view')
-              <a class="collapse-item" href="{{ route('admin.crm.customers.segmentation_presets.index') }}">
-                <i class="fas fa-sliders-h"></i><span>Segment Presets</span>
-              </a>
-            @endcan
-            @can('crm.analytics.customer_segmentation.view')
-              <a class="collapse-item" href="{{ route('admin.crm.analytics.customer_segmentation.index') }}">
-                <i class="fas fa-chart-pie"></i><span>Customer Segmentation</span>
-              </a>
-            @endcan
-          </div>
-        </div>
-      </li>
-    @endcanany
-  @endif
-
   {{-- ===================== HRM ===================== --}}
   @if(canAccessModule('hrm'))
     @canany([
@@ -1644,7 +1349,7 @@
         </div>
     </li>
     @endif
-    
+
   {{-- ===================== Reports ===================== --}}
   @if(canAccessModule('reports'))
     @canany([
@@ -1673,6 +1378,307 @@
       </li>
     @endcanany
   @endif
+
+  <hr class="sidebar-divider">
+  <div class="sidebar-heading">Core ERP</div>
+
+  {{-- ===================== Geography ===================== --}}
+  @php
+    $geoPerms = [
+      'core.geography.regions.view',
+      'core.geography.subregions.view',
+      'core.geography.countries.view',
+      'core.geography.states.view',
+      'core.geography.cities.view',
+    ];
+  @endphp
+
+  @canany($geoPerms)
+    <li class="nav-item">
+      <a href="#" class="nav-link collapsed" data-bs-toggle="collapse" data-bs-target="#collapseGeography"
+         aria-expanded="false" aria-controls="collapseGeography">
+        <i class="fas fa-map-marked-alt"></i><span>Geography</span>
+      </a>
+
+      <div id="collapseGeography" class="collapse" data-bs-parent="#accordionSidebar">
+        <div class="bg-white py-2 collapse-inner rounded">
+          @can('core.geography.regions.view')
+            <a class="collapse-item" href="{{ route('admin.regions.index') }}">
+              <i class="fas fa-draw-polygon"></i><span>Regions</span>
+            </a>
+          @endcan
+
+          @can('core.geography.subregions.view')
+            <a class="collapse-item" href="{{ route('admin.subregions.index') }}">
+              <i class="fas fa-bezier-curve"></i><span>Sub-regions</span>
+            </a>
+          @endcan
+
+          @can('core.geography.countries.view')
+            <a class="collapse-item" href="{{ route('admin.countries.index') }}">
+              <i class="fas fa-flag"></i><span>Countries</span>
+            </a>
+          @endcan
+
+          @can('core.geography.states.view')
+            <a class="collapse-item" href="{{ route('admin.states.index') }}">
+              <i class="fas fa-map"></i><span>States</span>
+            </a>
+          @endcan
+
+          @can('core.geography.cities.view')
+            <a class="collapse-item" href="{{ route('admin.cities.index') }}">
+              <i class="fas fa-city"></i><span>Cities</span>
+            </a>
+          @endcan
+        </div>
+      </div>
+    </li>
+  @endcanany
+
+  {{-- ===================== Locations ===================== --}}
+  @canany([
+    'core.locations.types.view',
+    'core.locations.locations.view',
+    'core.locations.blocks.view',
+    'core.locations.floors.view',
+    'core.locations.rooms.view'
+  ])
+    <li class="nav-item">
+      <a href="#" class="nav-link collapsed" data-bs-toggle="collapse" data-bs-target="#collapseLocation">
+        <i class="fas fa-building"></i><span>Locations</span>
+      </a>
+      <div id="collapseLocation" class="collapse" data-bs-parent="#accordionSidebar">
+        <div class="bg-white py-2 collapse-inner rounded">
+          @can('core.locations.types.view')
+            <a class="collapse-item" href="{{ route('admin.location_types.index') }}">
+              <i class="fas fa-tags"></i><span>Location Types</span>
+            </a>
+          @endcan
+          @can('core.locations.locations.view')
+            <a class="collapse-item" href="{{ route('admin.locations.index') }}">
+              <i class="fas fa-map-marker-alt"></i><span>Locations</span>
+            </a>
+          @endcan
+          @can('core.locations.blocks.view')
+            <a class="collapse-item" href="{{ route('admin.location_blocks.index') }}">
+              <i class="fas fa-th-large"></i><span>Blocks</span>
+            </a>
+          @endcan
+          @can('core.locations.floors.view')
+            <a class="collapse-item" href="{{ route('admin.location_floors.index') }}">
+              <i class="fas fa-layer-group"></i><span>Floors</span>
+            </a>
+          @endcan
+          @can('core.locations.rooms.view')
+            <a class="collapse-item" href="{{ route('admin.location_rooms.index') }}">
+              <i class="fas fa-door-open"></i><span>Rooms</span>
+            </a>
+          @endcan
+        </div>
+      </div>
+    </li>
+  @endcanany
+
+  {{-- ===================== Storage ===================== --}}
+  @canany(['core.storage.stores.view','core.storage.shelves.view'])
+    <li class="nav-item">
+      <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseStorage">
+        <i class="fas fa-warehouse"></i><span>Storage</span>
+      </a>
+      <div id="collapseStorage" class="collapse" data-bs-parent="#accordionSidebar">
+        <div class="bg-white py-2 collapse-inner rounded">
+          @can('core.storage.stores.view')
+            <a class="collapse-item" href="{{ route('admin.location_stores.index') }}">
+              <i class="fas fa-store"></i><span>Stores</span>
+            </a>
+          @endcan
+          @can('core.storage.shelves.view')
+            <a class="collapse-item" href="{{ route('admin.store_shelves.index') }}">
+              <i class="fas fa-grip-lines"></i><span>Shelves</span>
+            </a>
+          @endcan
+        </div>
+      </div>
+    </li>
+  @endcanany
+
+  {{-- ===================== Core Settings ===================== --}}
+  @canany(['core.master_data.customers.view','core.master_data.companies.view'])
+    <li class="nav-item">
+      <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseSettings">
+        <i class="fas fa-cogs"></i><span>Core Settings</span>
+      </a>
+      <div id="collapseSettings" class="collapse" data-bs-parent="#accordionSidebar">
+        <div class="bg-white py-2 collapse-inner rounded">
+          @can('core.master_data.customers.view')
+            <a class="collapse-item" href="{{ route('admin.settings.index') }}">
+              <i class="fas fa-sliders-h"></i><span>All Settings</span>
+            </a>
+          @endcan
+          @can('core.master_data.companies.view')
+            <a class="collapse-item" href="{{ route('admin.setting_groups.index') }}">
+              <i class="fas fa-layer-group"></i><span>Setting Groups</span>
+            </a>
+          @endcan
+          <a class="collapse-item" href="{{ route('admin.workflows.index') }}">
+              <i class="fas fa-random"></i>
+              <span>Workflow Automation</span>
+          </a>
+          @can('finance.data_flush.view')
+            <a class="collapse-item" href="{{ route('admin.finance.data_flush.index') }}">
+              <i class="fas fa-broom me-1 text-danger"></i><span class="text-danger">Flush Finance Data </span>
+            </a>
+          @endcan
+          @can('inventory.flush.view')
+            <a class="collapse-item" href="{{ route('admin.inventory.flush.index') }}">
+              <i class="fas fa-broom me-1 text-danger"></i><span class="text-danger">Flush Inventory Data</span>
+            </a>
+          @endcan
+          @can('sales.flush.manage')
+            <a class="collapse-item {{ request()->routeIs('admin.sales.data-flush.*') ? 'active' : '' }}"
+             href="{{ route('admin.sales.data-flush.index') }}">
+              <i class="fas fa-broom fa-fw me-1 text-danger"></i><span class="text-danger">Flush Sales Data</span>
+            </a>
+          @endcan
+        </div>
+      </div>
+    </li>
+  @endcanany
+
+  {{-- ===================== Master Data ===================== --}}
+  @canany([
+    'core.master_data.customers.view',
+    'core.master_data.companies.view',
+    'core.master_data.departments.view',
+    'core.master_data.users.view'
+  ])
+    <li class="nav-item">
+      <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseMasterData">
+        <i class="fas fa-database"></i><span>Master Data</span>
+      </a>
+      <div id="collapseMasterData" class="collapse" data-bs-parent="#accordionSidebar">
+        <div class="bg-white py-2 collapse-inner rounded">
+          @can('core.master_data.customers.view')
+            <a class="collapse-item" href="{{ route('admin.customers.index') }}">
+              <i class="fas fa-user-tag"></i><span>Customers</span>
+            </a>
+          @endcan
+          @can('core.master_data.companies.view')
+            <a class="collapse-item" href="{{ route('admin.companies.index') }}">
+              <i class="fas fa-building"></i><span>Companies</span>
+            </a>
+          @endcan
+          @can('core.master_data.departments.view')
+            <a class="collapse-item" href="{{ route('admin.companies.departments.index') }}">
+              <i class="fas fa-sitemap"></i><span>Departments</span>
+            </a>
+          @endcan
+          @can('core.master_data.users.view')
+            <a class="collapse-item" href="{{ route('admin.users.index') }}">
+              <i class="fas fa-users"></i><span>Users</span>
+            </a>
+          @endcan
+
+          @can('core.master_data.vehicles.view')
+            <a class="collapse-item" href="{{ route('admin.vehicles.index') }}">
+              <i class="fas fa-car"></i><span>Vehicles</span>
+            </a>
+          @endcan
+          @can('core.master_data.drivers.view')
+            <a class="collapse-item" href="{{ route('admin.drivers.index') }}">
+              <i class="fas fa-user-tie"></i><span>Drivers</span>
+            </a>
+          @endcan
+
+          @can('core.master_data.suppliers.view')
+            <a class="collapse-item" href="{{ route('admin.suppliers.index') }}">
+              <i class="fas fa-people-carry"></i><span>Suppliers</span>
+            </a>
+            <a class="collapse-item" href="{{ route('admin.suppliers.addresses.index') }}">
+              <i class="fas fa-map-marker-alt"></i><span>Supplier Addresses</span>
+            </a>
+            <a class="collapse-item" href="{{ route('admin.suppliers.contacts.index') }}">
+              <i class="fas fa-user-friends"></i><span>Supplier Contacts</span>
+            </a>
+          @endcan
+        </div>
+      </div>
+    </li>
+  @endcanany
+
+  {{-- Audit --}}
+  @can('core.audit.view')
+    <li class="nav-item">
+      <a class="nav-link" href="{{ route('admin.audit.index') }}">
+        <i class="fas fa-user-shield"></i><span>Audit Logs</span>
+      </a>
+    </li>
+  @endcan
+
+  @can('core.audit.view.analytics')
+    <li class="nav-item">
+      <a class="nav-link" href="{{ route('admin.audit.analytics') }}">
+        <i class="fas fa-chart-line"></i><span>Audit Analytics</span>
+      </a>
+    </li>
+  @endcan
+
+  {{-- Parameters --}}
+  @canany([
+    'core.parameters.customers.view',
+    'core.parameters.companies.view',
+    'core.parameters.modules.view',
+    'core.parameters.roles.view',
+    'core.parameters.permissions.view',
+    'core.parameters.departments.view',
+    'core.parameters.users.view'
+  ])
+    <li class="nav-item">
+      <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseParameters">
+        <i class="fas fa-sliders-h"></i><span>Parameters</span>
+      </a>
+      <div id="collapseParameters" class="collapse" data-bs-parent="#accordionSidebar">
+        <div class="bg-white py-2 collapse-inner rounded">
+          @can('core.parameters.customers.view')
+            <a class="collapse-item" href="{{ route('admin.customers.index') }}">
+              <i class="fas fa-user-tag"></i><span>Customers</span>
+            </a>
+          @endcan
+          @can('core.parameters.companies.view')
+            <a class="collapse-item" href="{{ route('admin.companies.index') }}">
+              <i class="fas fa-building"></i><span>Companies</span>
+            </a>
+          @endcan
+          @can('core.parameters.departments.view')
+            <a class="collapse-item" href="{{ route('admin.companies.departments.index') }}">
+              <i class="fas fa-sitemap"></i><span>Departments</span>
+            </a>
+          @endcan
+          @can('core.parameters.modules.view')
+            <a class="collapse-item" href="{{ route('admin.modules.index') }}">
+              <i class="fas fa-puzzle-piece"></i><span>Modules</span>
+            </a>
+          @endcan
+          @can('core.parameters.permissions.view')
+            <a class="collapse-item" href="{{ route('admin.permissions.index') }}">
+              <i class="fas fa-key"></i><span>Permissions</span>
+            </a>
+          @endcan
+          @can('core.parameters.roles.view')
+            <a class="collapse-item" href="{{ route('admin.roles.index') }}">
+              <i class="fas fa-user-check"></i><span>Roles</span>
+            </a>
+          @endcan
+          @can('core.parameters.users.view')
+            <a class="collapse-item" href="{{ route('admin.users.index') }}">
+              <i class="fas fa-users"></i><span>Users</span>
+            </a>
+          @endcan
+        </div>
+      </div>
+    </li>
+  @endcanany
 
   <hr class="sidebar-divider d-none d-md-block">
 
