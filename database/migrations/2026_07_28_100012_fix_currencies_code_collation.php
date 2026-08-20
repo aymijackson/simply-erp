@@ -12,6 +12,12 @@ return new class extends Migration
      * server rather than through Laravel's schema builder), which breaks any join
      * against a matching column that IS utf8mb4_unicode_ci with "Illegal mix of
      * collations". Bring the outliers in line with the rest of the schema.
+     *
+     * currencies.code in particular is a lookup key that other tables' currency_code
+     * columns reference by FK. Which tables do that varies between environments (the
+     * dev mirror doesn't have every FK the real server has), so rather than hardcode
+     * one known constraint, every FK referencing an altered column is discovered from
+     * information_schema, dropped, and recreated with its original definition.
      */
     private array $columns = [
         ['table' => 'currencies', 'column' => 'code', 'definition' => 'VARCHAR(3)'],
@@ -23,10 +29,17 @@ return new class extends Migration
 
     public function up(): void
     {
-        $hadForeignKey = $this->hasForeignKey('sales_orders', 'fk_so_currency');
+        $droppedForeignKeys = [];
 
-        if ($hadForeignKey) {
-            DB::statement("ALTER TABLE sales_orders DROP FOREIGN KEY fk_so_currency");
+        foreach ($this->columns as $c) {
+            if (!Schema::hasTable($c['table']) || !Schema::hasColumn($c['table'], $c['column'])) {
+                continue;
+            }
+
+            foreach ($this->foreignKeysReferencing($c['table'], $c['column']) as $fk) {
+                DB::statement("ALTER TABLE `{$fk->TABLE_NAME}` DROP FOREIGN KEY `{$fk->CONSTRAINT_NAME}`");
+                $droppedForeignKeys[] = $fk;
+            }
         }
 
         foreach ($this->columns as $c) {
@@ -49,8 +62,17 @@ return new class extends Migration
             DB::statement("ALTER TABLE `{$c['table']}` MODIFY `{$c['column']}` {$c['definition']} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci {$null}");
         }
 
-        if ($hadForeignKey) {
-            DB::statement("ALTER TABLE sales_orders ADD CONSTRAINT fk_so_currency FOREIGN KEY (currency_code) REFERENCES currencies (code)");
+        foreach ($droppedForeignKeys as $fk) {
+            $onUpdate = $fk->UPDATE_RULE && $fk->UPDATE_RULE !== 'RESTRICT' ? " ON UPDATE {$fk->UPDATE_RULE}" : '';
+            $onDelete = $fk->DELETE_RULE && $fk->DELETE_RULE !== 'RESTRICT' ? " ON DELETE {$fk->DELETE_RULE}" : '';
+
+            DB::statement("
+                ALTER TABLE `{$fk->TABLE_NAME}`
+                ADD CONSTRAINT `{$fk->CONSTRAINT_NAME}`
+                FOREIGN KEY (`{$fk->COLUMN_NAME}`)
+                REFERENCES `{$fk->REFERENCED_TABLE_NAME}` (`{$fk->REFERENCED_COLUMN_NAME}`)
+                {$onUpdate}{$onDelete}
+            ");
         }
     }
 
@@ -59,14 +81,20 @@ return new class extends Migration
         // Intentionally no-op: reverting to a mismatched collation would just reintroduce the bug.
     }
 
-    private function hasForeignKey(string $table, string $constraint): bool
+    /** All FK constraints (from any table) that reference $table.$column, with their ON UPDATE/DELETE rules. */
+    private function foreignKeysReferencing(string $table, string $column): array
     {
-        $row = DB::selectOne("
-            SELECT 1 AS found
-            FROM information_schema.TABLE_CONSTRAINTS
-            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND CONSTRAINT_NAME = ? AND CONSTRAINT_TYPE = 'FOREIGN KEY'
-        ", [$table, $constraint]);
-
-        return (bool) $row;
+        return DB::select("
+            SELECT
+                kcu.CONSTRAINT_NAME, kcu.TABLE_NAME, kcu.COLUMN_NAME,
+                kcu.REFERENCED_TABLE_NAME, kcu.REFERENCED_COLUMN_NAME,
+                rc.UPDATE_RULE, rc.DELETE_RULE
+            FROM information_schema.KEY_COLUMN_USAGE kcu
+            JOIN information_schema.REFERENTIAL_CONSTRAINTS rc
+                ON rc.CONSTRAINT_SCHEMA = kcu.TABLE_SCHEMA AND rc.CONSTRAINT_NAME = kcu.CONSTRAINT_NAME
+            WHERE kcu.TABLE_SCHEMA = DATABASE()
+                AND kcu.REFERENCED_TABLE_NAME = ?
+                AND kcu.REFERENCED_COLUMN_NAME = ?
+        ", [$table, $column]);
     }
 };
