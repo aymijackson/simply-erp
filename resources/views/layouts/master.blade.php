@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 {{--
     Theming attributes resolved server-side (no flash-of-wrong-theme):
-    per-user preference ?? company default ?? built-in default. The company
-    default resolution lands in Phase 2 of the design-system work; for now
-    these fall straight to the built-in defaults (system mode, indigo, dark
-    sidebar).
+    per-user preference ?? company default ?? built-in default. theme_mode is
+    only ever null|'light'|'dark' at either layer (no stored 'system' value -
+    null already means "follow OS preference" via the prefers-color-scheme
+    rule in theme.css), so leaving data-mode off the <html> tag entirely is
+    correct whenever both layers are unset.
 --}}
 @php
-    $__themeMode = auth()->user()->theme_mode ?? null;
-    $__themeAccent = auth()->user()->theme_accent ?? 'indigo';
-    $__themeSidebar = auth()->user()->theme_sidebar ?? 'dark';
+    $__companyTheme = auth()->user()?->company;
+    $__themeMode = auth()->user()->theme_mode ?? $__companyTheme?->theme_mode ?? null;
+    $__themeAccent = auth()->user()->theme_accent ?? $__companyTheme?->theme_accent ?? 'indigo';
+    $__themeSidebar = auth()->user()->theme_sidebar ?? $__companyTheme?->theme_sidebar ?? 'dark';
 @endphp
 <html lang="en" @if($__themeMode) data-mode="{{ $__themeMode }}" @endif data-accent="{{ $__themeAccent }}" data-sidebar="{{ $__themeSidebar }}">
 <head>

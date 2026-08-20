@@ -26,6 +26,13 @@
     {{-- Topbar Navbar --}}
     <ul class="navbar-nav ms-auto">
 
+        {{-- Nav Item - Quick dark/light toggle --}}
+        <li class="nav-item">
+            <button type="button" class="nav-link border-0 bg-transparent" id="themeQuickToggle" aria-label="Toggle dark mode">
+                <i class="fas fa-moon fa-fw"></i>
+            </button>
+        </li>
+
         {{-- Nav Item - Search Dropdown (Visible Only XS) --}}
         <li class="nav-item dropdown d-sm-none">
             <a class="nav-link dropdown-toggle" href="#" id="searchDropdown"
@@ -312,6 +319,41 @@
     document.addEventListener('DOMContentLoaded', function () {
         wireUpSearch('globalSearchInput', 'globalSearchResults');
         wireUpSearch('globalSearchInputMobile', 'globalSearchResultsMobile');
+    });
+
+    function resolvedIsDark() {
+        var attr = document.documentElement.getAttribute('data-mode');
+        if (attr) return attr === 'dark';
+        return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+
+    function setToggleIcon(btn) {
+        var icon = btn.querySelector('i');
+        if (!icon) return;
+        icon.className = resolvedIsDark() ? 'fas fa-sun fa-fw' : 'fas fa-moon fa-fw';
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var toggle = document.getElementById('themeQuickToggle');
+        if (!toggle) return;
+
+        setToggleIcon(toggle);
+
+        toggle.addEventListener('click', function () {
+            var next = resolvedIsDark() ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-mode', next);
+            setToggleIcon(toggle);
+
+            fetch(@json(route('admin.profile.theme')), {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({ theme_mode: next }),
+            }).catch(function () {});
+        });
     });
 })();
 </script>

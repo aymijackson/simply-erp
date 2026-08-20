@@ -77,6 +77,9 @@ class CompanyController extends Controller
             'email'   => ['nullable','email','max:255'],
             'website' => ['nullable','url','max:255'],
             'address' => ['nullable','string','max:255'],
+            'theme_mode'    => ['nullable','in:light,dark'],
+            'theme_accent'  => ['nullable','in:indigo,emerald,sky,rose,amber,slate'],
+            'theme_sidebar' => ['nullable','in:dark,light'],
         ]);
 
         $company = Company::create($validated);
@@ -117,15 +120,18 @@ class CompanyController extends Controller
             'email'   => ['nullable','email','max:255'],
             'website' => ['nullable','url','max:255'],
             'address' => ['nullable','string','max:255'],
+            'theme_mode'    => ['nullable','in:light,dark'],
+            'theme_accent'  => ['nullable','in:indigo,emerald,sky,rose,amber,slate'],
+            'theme_sidebar' => ['nullable','in:dark,light'],
         ]);
 
         $company = Company::findOrFail($id);
 
-        $before = $company->only(['id','name','email','website','address']);
+        $before = $company->only(['id','name','email','website','address','theme_mode','theme_accent','theme_sidebar']);
 
         $company->update($validated);
 
-        $after = $company->fresh()->only(['id','name','email','website','address']);
+        $after = $company->fresh()->only(['id','name','email','website','address','theme_mode','theme_accent','theme_sidebar']);
 
         $this->audit(
             module: 'crm.companies',

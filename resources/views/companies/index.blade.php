@@ -60,6 +60,17 @@
                             <label for="address">Address</label>
                             <textarea class="form-control" name="address" id="address"></textarea>
                         </div>
+
+                        <hr>
+                        <h6 class="mb-2">Appearance Defaults</h6>
+                        <p class="text-muted small mb-3">Applied to users of this company who haven't set a personal preference.</p>
+                        @include('partials.theme-picker', [
+                            'mode'     => null,
+                            'accent'   => 'indigo',
+                            'sidebar'  => 'dark',
+                            'idSuffix' => 'company',
+                            'autosave' => false,
+                        ])
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -79,6 +90,25 @@
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         }
     });
+
+    function setThemePickerValues(mode, accent, sidebar) {
+        const picker = document.getElementById('themePicker-company');
+        if (!picker) return;
+
+        const values = { theme_mode: mode || '', theme_accent: accent || 'indigo', theme_sidebar: sidebar || 'dark' };
+
+        Object.keys(values).forEach(function (field) {
+            const group = picker.querySelector('[data-field="' + field + '"]');
+            if (!group) return;
+
+            group.querySelectorAll('[data-value]').forEach(function (btn) {
+                btn.classList.toggle('active', btn.dataset.value === values[field]);
+            });
+
+            const hidden = picker.querySelector('input[type="hidden"][name="' + field + '"]');
+            if (hidden) hidden.value = values[field];
+        });
+    }
 
     $(function () {
         // Initialize DataTable
@@ -106,6 +136,7 @@
         $('#createCompany').on('click', function () {
             $('#companyForm')[0].reset();
             $('#company_id').val('');
+            setThemePickerValues(null, 'indigo', 'dark');
             $('#companyModalLabel').text('Add Company');
             $('#companyModal').modal('show');
         });
@@ -149,6 +180,7 @@
                 $('#email').val(c.email);
                 $('#website').val(c.website);
                 $('#address').val(c.address);
+                setThemePickerValues(c.theme_mode, c.theme_accent, c.theme_sidebar);
                 $('#companyModalLabel').text('Edit Company');
                 $('#companyModal').modal('show');
              })

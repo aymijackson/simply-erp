@@ -166,9 +166,19 @@ ul.navbar-nav.sidebar {
   background-image: none !important;
 }
 
+.sidebar .nav-item {
+  padding: 0 .5rem;
+}
+
 .sidebar .nav-item .nav-link {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
   color: var(--sidebar-text);
   border-left: 3px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: .55rem .65rem;
+  margin: .1rem 0;
   transition: background-color .12s ease, color .12s ease;
 }
 
@@ -186,36 +196,91 @@ ul.navbar-nav.sidebar {
 }
 
 .sidebar .nav-item .nav-link i {
-  width: 20px;
+  width: 18px;
+  flex: 0 0 18px;
   text-align: center;
   color: inherit;
-  opacity: .9;
+  opacity: .75;
+  transition: opacity .12s ease;
+}
+
+.sidebar .nav-item .nav-link:hover i,
+.sidebar .nav-item .nav-link.active i,
+.sidebar .nav-item .nav-link[aria-expanded="true"] i {
+  opacity: 1;
+}
+
+.sidebar .nav-item .nav-link span {
+  flex: 1 1 auto;
+}
+
+/* Collapse chevron — SB Admin 2's built-in rule targets data-toggle (BS4);
+   this app uses data-bs-toggle (BS5), so that rule never matched. Single
+   glyph that rotates instead of swapping icons, for a smoother feel. */
+.sidebar .nav-item .nav-link[data-bs-toggle="collapse"]::after {
+  content: '\f107';
+  font-family: 'Font Awesome 5 Free';
+  font-weight: 900;
+  font-size: .7rem;
+  color: var(--sidebar-text-muted);
+  margin-left: auto;
+  flex: 0 0 auto;
+  transition: transform .15s ease;
+}
+
+.sidebar .nav-item .nav-link[data-bs-toggle="collapse"].collapsed::after {
+  transform: rotate(-90deg);
 }
 
 .sidebar .sidebar-heading {
   color: var(--sidebar-text-muted);
   font-weight: 700;
   letter-spacing: .06em;
+  padding: 0 1rem;
+  margin-top: 1.25rem;
+  margin-bottom: .35rem;
+}
+
+.sidebar .sidebar-heading:first-of-type {
+  margin-top: .5rem;
 }
 
 .sidebar hr.sidebar-divider {
   border-color: var(--sidebar-border);
   opacity: 1;
+  margin: .75rem 1rem;
 }
 
 .sidebar .collapse-inner {
   background-color: var(--sidebar-surface-2) !important;
   border-radius: var(--radius-sm);
+  padding: .35rem !important;
 }
 
 .sidebar .collapse-inner .collapse-item {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
   color: var(--sidebar-text);
+  border-radius: var(--radius-sm);
+  padding: .45rem .6rem;
+  margin: .05rem 0;
+}
+
+.sidebar .collapse-inner .collapse-item i {
+  opacity: .75;
+  transition: opacity .12s ease;
 }
 
 .sidebar .collapse-inner .collapse-item:hover,
 .sidebar .collapse-inner .collapse-item.active {
   color: var(--sidebar-text-active);
   background-color: var(--sidebar-item-hover);
+}
+
+.sidebar .collapse-inner .collapse-item:hover i,
+.sidebar .collapse-inner .collapse-item.active i {
+  opacity: 1;
 }
 
 /* Brand */
@@ -509,6 +574,44 @@ nav.topbar {
 
 .modal-footer {
   border-top: 1px solid var(--border-color);
+}
+
+/* ============================== APPEARANCE PICKER ============================== */
+
+.theme-picker-buttons .theme-picker-btn {
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
+.theme-picker-buttons .theme-picker-btn.active {
+  background-color: var(--brand-primary);
+  border-color: var(--brand-primary);
+  color: #fff;
+}
+
+.theme-picker-swatches {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+}
+
+.theme-picker-swatch {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  box-shadow: var(--shadow-sm);
+  transition: transform .12s ease, border-color .12s ease;
+}
+
+.theme-picker-swatch:hover {
+  transform: scale(1.08);
+}
+
+.theme-picker-swatch.active {
+  border-color: var(--text-primary);
 }
 
 /* ============================== UTILITIES / MOTION ============================== */

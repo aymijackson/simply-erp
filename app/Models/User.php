@@ -27,6 +27,9 @@ class User extends Authenticatable
         'password',
         'can_access_erp',
         'can_access_admin',
+        'theme_mode',
+        'theme_accent',
+        'theme_sidebar',
     ];
 
     /**
@@ -55,6 +58,11 @@ class User extends Authenticatable
     public function modules()
     {
         return $this->belongsToMany(\App\Models\Module::class);
+    }
+
+    public function company()
+    {
+        return $this->belongsTo(\App\Models\Company::class, 'company_id');
     }
     
     public function auditLogs()

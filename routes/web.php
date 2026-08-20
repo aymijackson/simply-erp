@@ -325,7 +325,8 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
     Route::prefix('profile')->name('profile.')->group(function () {
 
         Route::get('/', [AdminController::class, 'profile'])->name('index');
-        
+        Route::patch('/theme', [AdminController::class, 'updateTheme'])->name('theme');
+
     });
     
     Route::prefix('supplier-analytics')->name('supplier_analytics.')->group(function () {

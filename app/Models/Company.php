@@ -13,6 +13,9 @@ class Company extends Model
         'email',
         'address',
         'website',
+        'theme_mode',
+        'theme_accent',
+        'theme_sidebar',
     ];
     
     public function financeAccountMapping()

@@ -4,19 +4,10 @@
 {{-- ===================== 1) STYLES ===================== --}}
 {{-- --sidebar-width / --sidebar-width-mobile / --sidebar-collapsed-width are defined once in theme.css --}}
 <style>
-  .collapse-inner .collapse-item{
-    display:flex;
-    align-items:center;
-    gap:.55rem;
-    white-space: nowrap;
-  }
-
-  .collapse-inner .collapse-item i{
-    width:18px;
-    text-align:center;
-    opacity:.85;
-    flex: 0 0 18px;
-  }
+  /* .collapse-inner .collapse-item sizing/alignment now lives in theme.css
+     (public/assets/css/theme.css, SIDEBAR section) alongside the rest of the
+     sidebar's themed styling - kept there so it responds to accent/dark-mode
+     tokens instead of being hardcoded here. */
 
   /* Overlay hidden by default */
   .sidebar-overlay{
