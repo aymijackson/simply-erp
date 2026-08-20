@@ -121,7 +121,7 @@
   <hr class="sidebar-divider my-0">
 
   {{-- Sidebar Search --}}
-  <li class="nav-item px-3 mt-3 mb-2">
+  <li class="nav-item px-3 mt-3 mb-2" id="sidebarSearchBox">
     <div class="sidebar-search-wrap">
       <i class="fas fa-search sidebar-search-icon"></i>
 
@@ -1701,6 +1701,7 @@
 
   const searchInput = document.getElementById('sidebarSearch');
   const searchClear = document.getElementById('sidebarSearchClear');
+  const searchEmpty = document.getElementById('sidebarSearchEmpty');
 
   function isMobile() {
     return window.matchMedia('(max-width: 767.98px)').matches;
@@ -1773,19 +1774,89 @@
     }
   });
 
+  function resetSidebarFilter() {
+    if (!sidebar) return;
+    sidebar.querySelectorAll(':scope > .sidebar-heading, :scope > li.nav-item').forEach(el => {
+      if (el.id === 'sidebarSearchBox') return;
+      el.style.display = '';
+    });
+    searchEmpty?.classList.add('d-none');
+  }
+
   function handleSearchCleared() {
+    resetSidebarFilter();
     collapseAllSidebarMenus();
+    refreshSidebarScroll();
+    searchClear?.classList.add('d-none');
+  }
+
+  function filterSidebar(rawQuery) {
+    const query = (rawQuery || '').trim().toLowerCase();
+
+    if (!sidebar) return;
+
+    if (query === '') {
+      handleSearchCleared();
+      return;
+    }
+
+    searchClear?.classList.remove('d-none');
+
+    const children = Array.from(sidebar.children);
+    let pendingHeading = null;
+    let headingHasMatch = false;
+    let anyMatch = false;
+
+    function finalizeHeading() {
+      if (pendingHeading) {
+        pendingHeading.style.display = headingHasMatch ? '' : 'none';
+      }
+      pendingHeading = null;
+      headingHasMatch = false;
+    }
+
+    children.forEach(el => {
+      if (el.classList?.contains('sidebar-heading')) {
+        finalizeHeading();
+        pendingHeading = el;
+        return;
+      }
+
+      if (el.id === 'sidebarSearchBox') {
+        return;
+      }
+
+      if (!(el.tagName === 'LI' && el.classList.contains('nav-item'))) {
+        return;
+      }
+
+      const matched = el.textContent.toLowerCase().includes(query);
+      el.style.display = matched ? '' : 'none';
+
+      if (matched) {
+        anyMatch = true;
+        headingHasMatch = true;
+
+        el.querySelectorAll('.collapse').forEach(panel => {
+          bootstrap.Collapse.getOrCreateInstance(panel, { toggle: false }).show();
+        });
+      }
+    });
+
+    finalizeHeading();
+
+    searchEmpty?.classList.toggle('d-none', anyMatch);
     refreshSidebarScroll();
   }
 
   searchClear?.addEventListener('click', function () {
+    searchInput.value = '';
     handleSearchCleared();
+    searchInput?.focus();
   });
 
   searchInput?.addEventListener('input', function () {
-    if ((searchInput.value || '').trim() === '') {
-      handleSearchCleared();
-    }
+    filterSidebar(searchInput.value);
   });
 
   window.addEventListener('resize', function () {
