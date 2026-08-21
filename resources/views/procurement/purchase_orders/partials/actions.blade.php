@@ -2,7 +2,7 @@
   $status = strtolower($json['status'] ?? 'draft');
   $isDraft = $status === 'draft';
   $isApproved = $status === 'approved';
-  $canClose = in_array($status, ['issued', 'partially_received', 'received', 'partially_billed', 'billed'], true);
+  $canClose = in_array($status, ['issued', 'partially_rcv', 'fully_rcv', 'partially_billed', 'billed'], true);
 @endphp
 
 <div class="btn-group btn-group-sm">

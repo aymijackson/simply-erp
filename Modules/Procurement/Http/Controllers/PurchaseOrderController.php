@@ -656,7 +656,7 @@ class PurchaseOrderController extends Controller
 
     public function close($id)
     {
-        return $this->changeStatus($id, ['issued', 'partially_received', 'received', 'partially_billed', 'billed'], 'closed', 'closed_at', 'closed_by', 'Purchase Order closed');
+        return $this->changeStatus($id, ['issued', 'partially_rcv', 'fully_rcv', 'partially_billed', 'billed'], 'closed', 'closed_at', 'closed_by', 'Purchase Order closed');
     }
 
     public function cancel($id)
@@ -1181,8 +1181,8 @@ class PurchaseOrderController extends Controller
         return match (strtolower((string)$status)) {
             'approved' => '<span class="badge bg-success">APPROVED</span>',
             'issued' => '<span class="badge bg-primary">ISSUED</span>',
-            'partially_received' => '<span class="badge bg-info">PARTIALLY RECEIVED</span>',
-            'received' => '<span class="badge bg-success">RECEIVED</span>',
+            'partially_rcv' => '<span class="badge bg-info">PARTIALLY RECEIVED</span>',
+            'fully_rcv' => '<span class="badge bg-success">FULLY RECEIVED</span>',
             'partially_billed' => '<span class="badge bg-warning text-dark">PARTIALLY BILLED</span>',
             'billed' => '<span class="badge bg-dark">BILLED</span>',
             'closed' => '<span class="badge bg-secondary">CLOSED</span>',

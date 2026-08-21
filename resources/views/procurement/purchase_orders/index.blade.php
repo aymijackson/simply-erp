@@ -96,8 +96,8 @@
             <option value="draft">Draft</option>
             <option value="approved">Approved</option>
             <option value="issued">Issued</option>
-            <option value="partially_received">Partially Received</option>
-            <option value="received">Received</option>
+            <option value="partially_rcv">Partially Received</option>
+            <option value="fully_rcv">Fully Received</option>
             <option value="partially_billed">Partially Billed</option>
             <option value="billed">Billed</option>
             <option value="closed">Closed</option>
