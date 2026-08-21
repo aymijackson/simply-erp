@@ -15,6 +15,39 @@ class PurchaseOrderController extends Controller
         return view('procurement.purchase_orders.index');
     }
 
+    /**
+     * Temporary diagnostic: shows the raw stored status and the exact
+     * actions HTML the datatable would generate for one PO, so this can be
+     * checked by visiting a URL instead of digging through DevTools.
+     * Remove once the "some action buttons missing" report is resolved.
+     */
+    public function debugActions($id)
+    {
+        $companyId = auth()->user()->company_id ?? 1;
+
+        $row = DB::table('proc_purchase_orders')
+            ->where('company_id', $companyId)
+            ->where('id', (int) $id)
+            ->whereNull('deleted_at')
+            ->first();
+
+        if (!$row) {
+            return response()->json(['message' => 'Purchase order not found.'], 404);
+        }
+
+        $json = ['id' => $row->id, 'po_no' => $row->po_no, 'status' => $row->status];
+
+        return response()->json([
+            'id' => $row->id,
+            'po_no' => $row->po_no,
+            'raw_status' => $row->status,
+            'raw_status_length' => strlen((string) $row->status),
+            'raw_status_bytes' => array_map('ord', str_split((string) $row->status)),
+            'status_badge_html' => $this->statusBadge($row->status),
+            'actions_html' => view('procurement.purchase_orders.partials.actions', compact('json'))->render(),
+        ]);
+    }
+
     public function datatable(Request $request)
     {
         $companyId = auth()->user()->company_id ?? 1;

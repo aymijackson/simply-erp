@@ -1860,6 +1860,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
             Route::get('/{id}', [PurchaseOrderController::class, 'show'])->name('show');
             Route::get('/{id}/details', [PurchaseOrderController::class, 'details'])->name('details');
             Route::get('/{id}/pdf', [PurchaseOrderController::class, 'pdf'])->name('pdf');
+            Route::get('/{id}/debug-actions', [PurchaseOrderController::class, 'debugActions'])->name('debug_actions');
         
             Route::post('/', [PurchaseOrderController::class, 'store'])->name('store');
             Route::put('/{id}', [PurchaseOrderController::class, 'update'])->name('update');
