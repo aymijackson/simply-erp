@@ -16,28 +16,6 @@ class AdminController extends Controller
     }
 
     /**
-     * Temporary diagnostic: shows the logged-in user's own roles and their
-     * procurement.purchase_orders.* permissions as plain JSON, so this can
-     * be checked by just visiting the URL in a browser instead of running
-     * a terminal command. Remove once the permissions mismatch it's meant
-     * to diagnose is resolved.
-     */
-    public function debugPermissions()
-    {
-        $u = auth()->user();
-
-        $perms = collect(['view', 'edit', 'approve', 'cancel', 'delete', 'issue', 'pdf', 'close', 'create'])
-            ->mapWithKeys(fn ($p) => ["procurement.purchase_orders.{$p}" => $u->can("procurement.purchase_orders.{$p}")]);
-
-        return response()->json([
-            'user_id' => $u->id,
-            'email' => $u->email,
-            'roles' => $u->getRoleNames(),
-            'procurement.purchase_orders.*' => $perms,
-        ]);
-    }
-
-    /**
      * Partial update of the current user's own appearance preference.
      * Only touches whichever field(s) are present in the request, so the
      * topbar quick-toggle can send just theme_mode without clobbering a
