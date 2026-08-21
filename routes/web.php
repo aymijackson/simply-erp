@@ -326,6 +326,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function() {
 
         Route::get('/', [AdminController::class, 'profile'])->name('index');
         Route::patch('/theme', [AdminController::class, 'updateTheme'])->name('theme');
+        Route::get('/debug-permissions', [AdminController::class, 'debugPermissions'])->name('debug-permissions');
 
     });
     
