@@ -161,7 +161,6 @@
     const URLS = {
         datatable  : '{{ route('admin.sales.price-lists.datatable') }}',
         store      : '{{ route('admin.sales.price-lists.store') }}',
-        show       : (id) => `/admin/sales/price-lists/${id}`,
         update     : (id) => `/admin/sales/price-lists/${id}`,
         destroy    : (id) => `/admin/sales/price-lists/${id}`,
         bulkDelete : '{{ route('admin.sales.price-lists.bulk-delete') }}',
@@ -216,21 +215,19 @@
         $modal.show();
     }
 
-    function openEdit(id) {
-        $.get(URLS.show(id)).done(r => {
-            $('#plId').val(r.id);
-            $('#pl_name').val(r.name);
-            $('#pl_code').val(r.code);
-            $('#pl_currency').val(r.currency_code);
-            $('#pl_type').val(r.type);
-            $('#pl_valid_from').val(r.valid_from ? r.valid_from.substring(0,10) : '');
-            $('#pl_valid_to').val(r.valid_to   ? r.valid_to.substring(0,10)   : '');
-            $('#pl_is_default').prop('checked', !!r.is_default);
-            $('#pl_is_active').prop('checked',  !!r.is_active);
-            $('#pl_notes').val(r.notes);
-            $('#modalTitle').text('Edit Price List');
-            $modal.show();
-        }).fail(() => Swal.fire('Error', 'Could not load record.', 'error'));
+    function openEdit(r) {
+        $('#plId').val(r.id);
+        $('#pl_name').val(r.name);
+        $('#pl_code').val(r.code);
+        $('#pl_currency').val(r.currency_code);
+        $('#pl_type').val(r.type);
+        $('#pl_valid_from').val(r.valid_from ? r.valid_from.substring(0,10) : '');
+        $('#pl_valid_to').val(r.valid_to   ? r.valid_to.substring(0,10)   : '');
+        $('#pl_is_default').prop('checked', !!r.is_default);
+        $('#pl_is_active').prop('checked',  !!r.is_active);
+        $('#pl_notes').val(r.notes);
+        $('#modalTitle').text('Edit Price List');
+        $modal.show();
     }
 
     $('#btnCreate').on('click', openCreate);
@@ -254,7 +251,7 @@
     });
 
     // ── Actions (delegated) ─────────────────────────────────────────────────
-    $('#tblPriceLists').on('click', '.btn-edit-pl', function () { openEdit($(this).data('id')); });
+    $('#tblPriceLists').on('click', '.btn-edit-pl', function () { openEdit($(this).data('record')); });
 
     $('#tblPriceLists').on('click', '.btn-delete-pl', function () {
         const id = $(this).data('id');
