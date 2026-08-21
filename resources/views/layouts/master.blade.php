@@ -227,7 +227,17 @@
             z-index: 1990 !important;
         }
         
-        .select2-container {
+        /* Select2's own dropdown panel defaults to z-index 1051, below this
+           app's custom .modal z-index (2000) - without a boost, a select2
+           opened from inside a modal renders its options behind the modal.
+           This must target .select2-dropdown (the popup panel, which only
+           exists in the DOM while open) and NOT .select2-container (the
+           always-present closed widget wrapper every select2 has, on every
+           page, modal or not) - boosting the container's z-index made every
+           select2 on a page float above any modal that later opened on top
+           of it, closed state included, since the container's box-index
+           applies regardless of whether its dropdown is open. */
+        .select2-dropdown {
             z-index: 2100 !important;
         }
 
